@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DL Parfums | Alta Perfumería{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-sans { font-family: 'Montserrat', sans-serif; }
+        
+        /* Desplazamiento suave para los anclajes del menú */
+        html { scroll-behavior: smooth; }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-white text-gray-900 font-sans flex flex-col min-h-screen">
+
+    <header class="w-full bg-white/90 backdrop-blur-md border-b border-gray-100 fixed top-0 z-50 transition-all duration-300">
+        <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div class="flex justify-between items-center h-20">
+                
+                <nav class="hidden md:flex space-x-8 w-1/3">
+                    <a href="{% url 'home' %}" class="text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 transition-colors">Inicio</a>
+                    <a href="{% url 'home' %}#catalogo" class="text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 transition-colors">Catálogo</a>
+                </nav>
+
+                <div class="flex justify-center w-1/3">
+                    <a href="{% url 'home' %}" class="font-serif text-2xl md:text-3xl font-semibold tracking-widest text-gray-900">
+                        DL PARFUMS
+                    </a>
+                </div>
+
+                <div class="flex justify-end items-center space-x-6 w-1/3">
+                    <a href="{% url 'contacto' %}" class="text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 transition-colors hidden md:block">Contacto</a>
+                    
+                    <button class="md:hidden text-gray-900 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-20">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="bg-gray-900 text-white pt-20 pb-10 mt-auto">
+        <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left mb-16">
+                
+                <div class="flex flex-col items-center md:items-start">
+                    <h3 class="font-serif text-2xl tracking-widest mb-4">DL PARFUMS</h3>
+                    <p class="text-gray-400 font-light text-sm max-w-xs leading-relaxed">
+                        La colección más exclusiva de alta perfumería. Encuentra la esencia que define tu personalidad y deja una huella imborrable.
+                    </p>
+                </div>
+
+                <div class="flex flex-col items-center md:items-start">
+                    <h4 class="text-xs uppercase tracking-[0.3em] text-gray-500 mb-6">Explorar</h4>
+                    <ul class="space-y-3 font-light text-sm text-gray-400">
+                        <li><a href="{% url 'home' %}" class="hover:text-white transition-colors">Inicio</a></li>
+                        <li><a href="{% url 'home' %}#catalogo" class="hover:text-white transition-colors">Nuestro Catálogo</a></li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-col items-center md:items-start">
+                    <h4 class="text-xs uppercase tracking-[0.3em] text-gray-500 mb-6">Atención al Cliente</h4>
+                    <ul class="space-y-3 font-light text-sm text-gray-400">
+                        <li><a href="https://wa.me/56962169898" target="_blank" class="hover:text-white transition-colors">Venta y Asesoría por WhatsApp</a></li>
+                        <li><a href="{% url 'politicas' %}" class="hover:text-white transition-colors">Políticas de Envío</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 font-light tracking-wider">
+                <p>&copy; 2026 DL Parfums. Todos los derechos reservados.</p>
+                <p class="mt-4 md:mt-0 uppercase tracking-[0.2em]">Diseñado con elegancia por Perseus Technology</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

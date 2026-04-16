@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+    .font-serif { font-family: 'Playfair Display', serif; }
+    .font-sans { font-family: 'Montserrat', sans-serif; }
+
+    .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="relative w-full h-screen flex items-center justify-center overflow-hidden bg-gray-900">
+    <div class="absolute inset-0 z-0 bg-gradient-to-b from-gray-800 to-black opacity-90">
+    </div>
+    
+    <div class="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center mt-[-80px]">
+        <span class="text-xs tracking-[0.4em] text-gray-300 uppercase mb-6">Alta Perfumeria</span>
+        <h1 class="text-5xl md:text-7xl font-serif text-white mb-6 tracking-wide drop-shadow-lg">Descubre Tu Esencia</h1>
+        <p class="text-lg md:text-xl text-gray-300 mb-10 font-light max-w-2xl">La colección más exclusiva para quienes buscan dejar una huella imborrable.</p>
+        <a href="#catalogo" class="bg-white text-gray-900 px-10 py-4 uppercase tracking-widest text-sm font-medium hover:bg-gray-200 transition duration-300">
+            Explorar Colección
+        </a>
+    </div>
+</section>
+
+<section class="py-12 bg-white border-b border-gray-100">
+    <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+        <p class="text-center text-xs tracking-[0.3em] text-gray-400 uppercase mb-8">Nuestras Casas</p>
+        
+        <div class="flex overflow-x-auto space-x-12 md:space-x-24 items-center justify-start md:justify-center no-scrollbar py-4 px-4 snap-x">
+            
+            {% for marca in marcas %}
+            <a href="?marca={{ marca.id }}#catalogo" 
+               class="flex-shrink-0 snap-center transition-all duration-500 
+               {% if marca_seleccionada.id == marca.id %} grayscale-0 opacity-100 scale-110 {% else %} grayscale opacity-60 hover:grayscale-0 hover:opacity-100 {% endif %}">
+                
+                {% if marca.logo %}
+                    <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="h-10 md:h-14 object-contain">
+                {% else %}
+                    <span class="font-serif text-xl md:text-2xl text-gray-800 tracking-widest">{{ marca.nombre }}</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+
+        </div>
+    </div>
+</section>
+
+<section id="catalogo" class="py-24 px-4 md:px-8 max-w-[1400px] mx-auto font-sans">
+    
+    <div class="flex flex-col items-center justify-center mb-16 text-center">
+        <span class="text-xs tracking-[0.3em] text-gray-400 uppercase mb-4">Colección Exclusiva</span>
+        <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mb-6">Nuestro Catálogo</h2>
+        <div class="w-12 h-[1px] bg-gray-800"></div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">
+        
+        {% for perfume in perfumes_destacados %}
+        <div class="group relative flex flex-col bg-white cursor-pointer">
+            
+            <div class="relative w-full aspect-[4/5] bg-[#f8f8f8] overflow-hidden flex items-center justify-center mb-6">
+                {% if perfume.imagen %}
+                    <img src="{{ perfume.imagen.url }}" alt="{{ perfume.nombre }}" 
+                         class="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-110">
+                {% else %}
+                    <span class="text-gray-300 font-light text-sm tracking-widest uppercase">Próximamente</span>
+                {% endif %}
+                
+                <div class="absolute bottom-0 left-0 w-full p-4 opacity-0 transform translate-y-4 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 flex justify-center">
+                    <a href="{% url 'perfume_detalle' perfume.id %}" class="bg-gray-900 text-white text-xs tracking-widest uppercase py-3 px-6 w-full max-w-[200px] hover:bg-gray-800 transition-colors block text-center">
+                        Ver Detalles
+                    </a>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center text-center px-2">
+                <p class="text-[10px] tracking-[0.2em] text-gray-500 uppercase mb-2">{{ perfume.marca.nombre }}</p>
+                <h3 class="text-xl font-serif text-gray-900 mb-2 group-hover:text-gray-600 transition-colors duration-300">
+                    {{ perfume.nombre }}
+                </h3>
+                
+                {% if perfume.familia %}
+                <p class="text-xs text-gray-400 italic font-serif mb-3">{{ perfume.familia.nombre }}</p>
+                {% endif %}
+
+                <p class="text-sm tracking-wider text-gray-900 font-light">${{ perfume.precio }}</p>
+            </div>
+            
+        </div>
+        {% empty %}
+        <div class="col-span-full py-20 text-center">
+            <p class="text-gray-400 font-serif text-xl italic">El catálogo se está preparando...</p>
+        </div>
+        {% endfor %}
+
+    </div>
+</section>
+{% endblock %}

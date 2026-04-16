@@ -1,0 +1,16 @@
+
+venv/
+env/
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+db.sqlite3
+ngrok.exe
+/staticfiles/
+/media/
+
+.env
+.idea/
+.vscode/

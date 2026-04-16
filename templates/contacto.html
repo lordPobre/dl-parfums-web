@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contacto | DL Parfums{% endblock %}
+
+{% block content %}
+<section class="max-w-[1200px] mx-auto px-4 md:px-8 py-16 md:py-24 font-sans">
+    
+    <div class="text-center mb-16">
+        <span class="text-xs tracking-[0.3em] text-gray-400 uppercase mb-4 block">Atención Personalizada</span>
+        <h1 class="text-4xl md:text-5xl font-serif text-gray-900 mb-6">Ponte en Contacto</h1>
+        <div class="w-12 h-[1px] bg-gray-800 mx-auto"></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32">
+        
+        <div class="space-y-12">
+            <div>
+                <h3 class="text-xs uppercase tracking-[0.2em] text-gray-500 mb-6">Canales Directos</h3>
+                <ul class="space-y-6">
+                    <li class="flex items-start space-x-4">
+                        <div class="text-gray-900 mt-1">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-2.277 0-4.141 1.864-4.141 4.141 0 2.277 1.864 4.141 4.141 4.141 2.277 0 4.141-1.864 4.141-4.141 0-2.277-1.864-4.141-4.141-4.141zm0 7.282c-1.732 0-3.141-1.409-3.141-3.141s1.409-3.141 3.141-3.141 3.141 1.409 3.141 3.141-1.409 3.141-3.141 3.141zm10.377-9.453c-1.733-1.733-4.56-1.733-6.293 0l-1.414 1.414c-1.733-1.733-4.56-1.733-6.293 0L7.001 6.828c-1.733-1.733-4.56-1.733-6.293 0-1.733 1.733-1.733 4.56 0 6.293l10.607 10.607 10.607-10.607c1.733-1.733 1.733-4.56 0-6.293z"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">WhatsApp</p>
+                            <a href="https://wa.me/56962169898" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">+56 9 62169898</a>
+                        </div>
+                    </li>
+                    <li class="flex items-start space-x-4">
+                        <div class="text-gray-900 mt-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 11-5.656 5.656 4 4 0 015.656-5.656z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12.422 2.057a10 10 0 00-10.365 10.365 10 10 0 0010.365 10.365 10 10 0 0010.365-10.365 10 10 0 00-10.365-10.365z"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">Instagram</p>
+                            <a href="https://instagram.com/diegofernandoshou" target="_blank" class="text-sm text-gray-500 hover:text-gray-900 transition-colors">@dlparfums</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 class="text-xs uppercase tracking-[0.2em] text-gray-500 mb-6">Ubicación</h3>
+                <div class="space-y-4">
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        Visítanos en nuestro showroom exclusivo.<br>
+                        Pablo Neruda 654-600, Castro, Los Lagos
+                    </p>
+                    <div class="w-full h-64 bg-gray-100 grayscale hover:grayscale-0 transition-all duration-700">
+                        <iframe 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1424.7940348679465!2d-73.7860228411282!3d-42.466676401855786!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9622177040a577ed%3A0xa35554be2254e695!2sPablo%20Neruda%20654-600%2C%20Castro%2C%20Los%20Lagos!5e1!3m2!1ses!2scl!4v1776357444465!5m2!1ses!2scl"
+                            width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 p-8 md:p-12">
+            <h3 class="text-xs uppercase tracking-[0.2em] text-gray-500 mb-8">Envíanos un mensaje</h3>
+            <form action="#" method="POST" class="space-y-6">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Nombre Completo</label>
+                    <input type="text" name="nombre" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Correo Electrónico</label>
+                    <input type="email" name="email" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Mensaje</label>
+                    <textarea name="mensaje" rows="4" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-gray-900 text-white uppercase tracking-widest text-xs py-5 hover:bg-black transition-colors">
+                    Enviar Consulta
+                </button>
+            </form>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
