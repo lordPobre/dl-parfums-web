@@ -12,8 +12,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
         .font-serif { font-family: 'Playfair Display', serif; }
         .font-sans { font-family: 'Montserrat', sans-serif; }
-        
-        /* Desplazamiento suave para los anclajes del menú */
         html { scroll-behavior: smooth; }
     </style>
 
@@ -39,7 +37,7 @@
                 <div class="flex justify-end items-center space-x-6 w-1/3">
                     <a href="{% url 'contacto' %}" class="text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 transition-colors hidden md:block">Contacto</a>
                     
-                    <button class="md:hidden text-gray-900 focus:outline-none">
+                    <button id="mobile-menu-button" class="md:hidden text-gray-900 focus:outline-none">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
@@ -47,6 +45,12 @@
                 </div>
 
             </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 py-4 space-y-4 shadow-lg text-center">
+            <a href="{% url 'home' %}" class="block text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 py-2">Inicio</a>
+            <a href="{% url 'home' %}#catalogo" class="block text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 py-2">Catálogo</a>
+            <a href="{% url 'contacto' %}" class="block text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 py-2">Contacto</a>
         </div>
     </header>
 
@@ -90,5 +94,15 @@
         </div>
     </footer>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const btnMenu = document.getElementById('mobile-menu-button');
+            const menuMovil = document.getElementById('mobile-menu');
+
+            btnMenu.addEventListener('click', () => {
+                menuMovil.classList.toggle('hidden');
+            });
+        });
+    </script>
 </body>
 </html>
