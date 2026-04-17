@@ -98,19 +98,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        # Fallback a SQLite si no hay DATABASE_URL
-        default=f'sqlite:///{os.path.join(BASE_DIR, "db.sqlite3")}',
-        conn_max_age=600,
-    )
-}
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-# Solo agregamos SSL si NO estamos usando SQLite (o sea, si estamos en Neon/Vercel)
-if DATABASES['default']['ENGINE'] != 'django.db.backends.sqlite3':
-    DATABASES['default']['OPTIONS'] = {
-        'sslmode': 'require',
+if DATABASE_URL:
+    # Si existe la variable (estamos en Vercel/Neon)
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL)
     }
+    # Configuraciones específicas para Neon/Postgres
+    DATABASES['default']['CONN_MAX_AGE'] = 600
+    DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
+else:
+    # Si no existe (estamos en local)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+    
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
