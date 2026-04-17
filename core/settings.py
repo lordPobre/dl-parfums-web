@@ -12,7 +12,7 @@ SECRET_KEY = 'django-insecure-28i(reybo8a0!#pvyruafpflvemg8s33o8(gxougf9do^uqb2s
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['dlparfums-web.vercel.app', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     'jazzmin',
