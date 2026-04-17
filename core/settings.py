@@ -151,19 +151,22 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
 }
 
+# Usamos exclusivamente STORAGES (Estándar moderno de Django)
 STORAGES = {
     "default": {
+        # Aquí le decimos que todo lo de /media/ va para Cloudinary
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
+        # Aquí usamos la versión tolerante a errores de WhiteNoise
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
-
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
