@@ -56,7 +56,7 @@ def contacto(request):
         except Exception as e:
             messages.error(request, 'Hubo un problema al enviar el mensaje. Intenta nuevamente.')
             
-    return render(request, 'tu_template_de_contacto.html')
+    return render(request, 'contacto.html')
 
 def politicas_envio(request):
     return render(request, 'politicas.html')
