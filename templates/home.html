@@ -39,7 +39,7 @@
         <div class="flex overflow-x-auto space-x-12 md:space-x-24 items-center justify-start md:justify-center no-scrollbar py-4 px-4 snap-x">
             
             {% for marca in marcas %}
-            <a href="?marca={{ marca.id }}#catalogo" 
+            <a href="?marca={{ marca.id }}{% if genero_actual %}&genero={{ genero_actual }}{% endif %}#catalogo" 
                class="flex-shrink-0 snap-center transition-all duration-500 
                {% if marca_seleccionada.id == marca.id %} grayscale-0 opacity-100 scale-110 {% else %} grayscale opacity-60 hover:grayscale-0 hover:opacity-100 {% endif %}">
                 
@@ -61,6 +61,28 @@
         <span class="text-xs tracking-[0.3em] text-gray-400 uppercase mb-4">Colección Exclusiva</span>
         <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mb-6">Nuestro Catálogo</h2>
         <div class="w-12 h-[1px] bg-gray-800"></div>
+    </div>
+
+    <div class="flex justify-center gap-4 mb-10">
+        <a href="?{% if marca_seleccionada %}marca={{ marca_seleccionada.id }}{% endif %}#catalogo" 
+        class="px-6 py-2 border border-black rounded-full transition-all duration-300 {% if not genero_actual %}bg-black text-white{% else %}bg-transparent text-black hover:bg-gray-100{% endif %}">
+        Todos
+        </a>
+        
+        <a href="?genero=F{% if marca_seleccionada %}&marca={{ marca_seleccionada.id }}{% endif %}#catalogo" 
+        class="px-6 py-2 border border-black rounded-full transition-all duration-300 {% if genero_actual == 'F' %}bg-black text-white{% else %}bg-transparent text-black hover:bg-gray-100{% endif %}">
+        Mujer
+        </a>
+        
+        <a href="?genero=M{% if marca_seleccionada %}&marca={{ marca_seleccionada.id }}{% endif %}#catalogo" 
+        class="px-6 py-2 border border-black rounded-full transition-all duration-300 {% if genero_actual == 'M' %}bg-black text-white{% else %}bg-transparent text-black hover:bg-gray-100{% endif %}">
+        Hombre
+        </a>
+        
+        <a href="?genero=U{% if marca_seleccionada %}&marca={{ marca_seleccionada.id }}{% endif %}#catalogo" 
+        class="px-6 py-2 border border-black rounded-full transition-all duration-300 {% if genero_actual == 'U' %}bg-black text-white{% else %}bg-transparent text-black hover:bg-gray-100{% endif %}">
+        Unisex
+        </a>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">

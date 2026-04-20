@@ -3,8 +3,11 @@ import os
 from pathlib import Path
 import mimetypes
 import dj_database_url
+from dotenv import load_dotenv
 
 mimetypes.add_type("text/css", ".css", True)
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -101,6 +104,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 if DATABASE_URL:
     # Si existe la variable (estamos en Vercel/Neon)
