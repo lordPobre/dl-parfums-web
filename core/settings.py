@@ -10,8 +10,6 @@ mimetypes.add_type("text/css", ".css", True)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 env_path = BASE_DIR / '.env'
-
-# 2. SEGUNDO le ordenamos a dotenv que lea exactamente esa ruta
 load_dotenv(dotenv_path=env_path)
 
 SECRET_KEY = 'django-insecure-28i(reybo8a0!#pvyruafpflvemg8s33o8(gxougf9do^uqb2s'
@@ -48,23 +46,19 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'core.urls'
 
 JAZZMIN_SETTINGS = {
-    # Títulos y encabezados
     "site_title": "DL Parfums Admin",
     "site_header": "DL Parfums",
     "site_brand": "DL Parfums",
     "welcome_sign": "Gestión de Catálogo - DL Parfums",
     "copyright": "DL Parfums",
     
-    # Modelo para la barra de búsqueda global superior
     "search_model": ["catalogo.Perfume"],
 
-    # Menú lateral
     "show_sidebar": True,
     "navigation_expanded": True,
     "hide_apps": [],
     "hide_models": [],
 
-    # Iconos para las aplicaciones y modelos (FontAwesome)
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
@@ -74,13 +68,11 @@ JAZZMIN_SETTINGS = {
         "catalogo.Perfume": "fas fa-spray-can",
     },
     
-    # Cambiar la vista de los formularios a pestañas horizontales (muy útil si hay muchos datos)
     "changeform_format": "horizontal_tabs",
 }
 
-# Ajustes visuales (Colores y Tema)
 JAZZMIN_UI_TWEAKS = {
-    "theme": "pulse", # Tema moderno y limpio. Otras opciones: "darkly" (oscuro), "lux" (elegante)
+    "theme": "pulse", 
     "navbar": "navbar-white navbar-light",
     "sidebar": "sidebar-dark-primary",
     "sidebar_nav_child_indent": True,
@@ -92,7 +84,7 @@ JAZZMIN_UI_TWEAKS = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # ¡Añadimos esta línea!
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -155,14 +147,11 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
 }
 
-# Usamos exclusivamente STORAGES (Estándar moderno de Django)
 STORAGES = {
     "default": {
-        # Aquí le decimos que todo lo de /media/ va para Cloudinary
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        # Aquí usamos la versión tolerante a errores de WhiteNoise
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }

@@ -70,17 +70,13 @@ def contacto(request):
     return render(request, 'contacto.html')
 
 def lista_perfumes(request):
-    # 1. Traemos TODOS los perfumes por defecto
     perfumes = Perfume.objects.all()
-    
-    # 2. Capturamos si la URL trae un filtro (ej: ?genero=H)
+
     filtro_genero = request.GET.get('genero')
     
-    # 3. Si hay un filtro en la URL, aplicamos el filtro a la base de datos
     if filtro_genero:
         perfumes = perfumes.filter(genero=filtro_genero)
 
-    # 4. Enviamos los perfumes y el filtro actual al HTML
     contexto = {
         'perfumes': perfumes,
         'genero_actual': filtro_genero,
