@@ -89,3 +89,6 @@ def lista_perfumes(request):
 
 def politicas_envio(request):
     return render(request, 'politicas.html')
+
+def nosotros(request):
+    return render(request, 'nosotros.html')

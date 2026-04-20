@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+    .font-serif { font-family: 'Playfair Display', serif; }
+    .font-sans { font-family: 'Montserrat', sans-serif; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="relative pt-40 pb-20 bg-[#fbfbfb] text-center border-b border-gray-100">
+    <div class="relative z-10 px-4 max-w-3xl mx-auto">
+        <span class="text-xs tracking-[0.4em] text-gray-400 uppercase mb-4 block">Nuestra Historia</span>
+        <h1 class="text-4xl md:text-5xl font-serif text-gray-900 mb-8 tracking-wide">La Esencia Detrás de la Marca</h1>
+        <div class="w-12 h-[1px] bg-black mx-auto"></div>
+    </div>
+</section>
+
+<section class="py-24 px-4 md:px-8 max-w-[1200px] mx-auto font-sans bg-white">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+        
+        <div class="flex flex-col justify-center">
+            <h2 class="text-3xl font-serif text-gray-900 mb-6">Una dedicación profunda a la alta perfumería.</h2>
+            
+            <div class="space-y-6 text-gray-600 font-light leading-relaxed text-sm md:text-base">
+                <p>
+                    DL Parfums nace de una visión clara: elevar la experiencia de adquirir perfumería fina, transformando un simple proceso de compra en una verdadera asesoría olfativa. Entendemos que un perfume no es solo un aroma; es una carta de presentación, un recuerdo encapsulado y una firma personal invisible.
+                </p>
+                <p>
+                    A lo largo de nuestra trayectoria, nos hemos especializado en la curaduría de las fragancias más exclusivas de las casas de diseño más prestigiosas a nivel internacional. Cada producto que llega a nuestro catálogo ha pasado por un riguroso estándar de selección para garantizar su pureza, autenticidad y excelencia.
+                </p>
+                <p>
+                    Nuestro crecimiento como empresa se fundamenta en la confianza de nuestros clientes. Ofrecemos más que productos de lujo; brindamos una garantía de originalidad, envíos seguros y un trato humano y personalizado que las grandes tiendas departamentales no pueden igualar.
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-gray-900 p-12 md:p-16 flex flex-col justify-center h-full text-center relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 text-[150px] font-serif text-gray-800 opacity-30 leading-none">"</div>
+            <p class="font-serif text-xl md:text-2xl text-white font-light italic leading-relaxed mb-8 relative z-10">
+                "Curamos aromas para aquellos que entienden que la elegancia no hace ruido, pero siempre se hace notar."
+            </p>
+            <div class="relative z-10 flex flex-col items-center">
+                <div class="w-8 h-[1px] bg-gray-500 mb-4"></div>
+                <span class="text-xs uppercase tracking-[0.3em] text-gray-400">Dirección DL Parfums</span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<section class="py-20 bg-gray-50 border-t border-gray-100">
+    <div class="max-w-[1200px] mx-auto px-4 md:px-8">
+        <div class="text-center mb-16">
+            <h3 class="text-2xl font-serif text-gray-900 tracking-wide mb-4">Nuestros Pilares</h3>
+            <div class="w-12 h-[1px] bg-gray-400 mx-auto"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+            <div>
+                <span class="block text-3xl mb-4 text-gray-900">✧</span>
+                <h4 class="text-xs tracking-[0.2em] uppercase font-medium text-gray-900 mb-3">Autenticidad Absoluta</h4>
+                <p class="text-sm font-light text-gray-500 leading-relaxed">
+                    Garantizamos que cada fragancia en nuestro inventario es 100% original, importada y manejada con los más altos estándares de cuidado.
+                </p>
+            </div>
+            
+            <div>
+                <span class="block text-3xl mb-4 text-gray-900">♔</span>
+                <h4 class="text-xs tracking-[0.2em] uppercase font-medium text-gray-900 mb-3">Asesoría Experta</h4>
+                <p class="text-sm font-light text-gray-500 leading-relaxed">
+                    No vendemos por vender. Acompañamos a cada cliente a encontrar las notas olfativas que resuenen perfectamente con su estilo de vida.
+                </p>
+            </div>
+            
+            <div>
+                <span class="block text-3xl mb-4 text-gray-900">❖</span>
+                <h4 class="text-xs tracking-[0.2em] uppercase font-medium text-gray-900 mb-3">Servicio Discreto</h4>
+                <p class="text-sm font-light text-gray-500 leading-relaxed">
+                    Operamos con la eficiencia y discreción que requiere la logística de artículos de lujo, asegurando que tu experiencia sea impecable.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
