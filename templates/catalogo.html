@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+    .font-serif { font-family: 'Playfair Display', serif; }
+    .font-sans { font-family: 'Montserrat', sans-serif; }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="relative pt-32 pb-16 bg-gray-900 text-center">
+    <div class="relative z-10 px-4">
+        <span class="text-xs tracking-[0.4em] text-gray-400 uppercase mb-4 block">Explora nuestra colección</span>
+        <h1 class="text-4xl md:text-5xl font-serif text-white mb-4 tracking-wide">Catálogo Completo</h1>
+        <div class="w-12 h-[1px] bg-white/30 mx-auto"></div>
+    </div>
+</section>
+
+<section class="py-10 bg-white border-b border-gray-100">
+    <div class="max-w-[1400px] mx-auto px-4 md:px-8">
+        <div class="flex overflow-x-auto space-x-12 md:space-x-20 items-center justify-start md:justify-center no-scrollbar py-2">
+            <a href="?{% if genero_actual %}genero={{ genero_actual }}{% endif %}#productos" 
+               class="flex-shrink-0 text-xs tracking-widest uppercase {% if not marca_seleccionada_id %}text-black font-bold border-b border-black{% else %}text-gray-400 hover:text-black{% endif %} transition-all">
+                Todas las Casas
+            </a>
+
+            {% for marca in marcas %}
+            <a href="?marca={{ marca.id }}{% if genero_actual %}&genero={{ genero_actual }}{% endif %}#productos" 
+               class="flex-shrink-0 transition-all duration-500 
+               {% if marca_seleccionada_id == marca.id %} grayscale-0 opacity-100 scale-110 {% else %} grayscale opacity-40 hover:grayscale-0 hover:opacity-100 {% endif %}">
+                {% if marca.logo %}
+                    <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="h-8 md:h-10 object-contain">
+                {% else %}
+                    <span class="font-serif text-lg text-gray-800">{{ marca.nombre }}</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section id="productos" class="py-20 px-4 md:px-8 max-w-[1400px] mx-auto font-sans">
+    
+    <div class="flex justify-center flex-wrap gap-3 mb-16">
+        <a href="?{% if marca_seleccionada_id %}marca={{ marca_seleccionada_id }}{% endif %}#productos" 
+           class="px-8 py-2 border border-black rounded-full text-xs tracking-widest uppercase transition-all duration-300 
+           {% if not genero_actual %}bg-black text-white{% else %}bg-transparent text-black hover:bg-gray-100{% endif %}">
+           Todos
+        </a>
+        
+        <a href="?genero=F{% if marca_seleccionada_id %}&marca={{ marca_seleccionada_id }}{% endif %}#productos" 
+           class="px-8 py-2 border border-black rounded-full text-xs tracking-widest uppercase transition-all duration-300 
+           {% if genero_actual == 'F' %}bg-black text-white{% else %}bg-transparent text-black hover:bg-gray-100{% endif %}">
+           Mujer
+        </a>
+        
+        <a href="?genero=M{% if marca_seleccionada_id %}&marca={{ marca_seleccionada_id }}{% endif %}#productos" 
+           class="px-8 py-2 border border-black rounded-full text-xs tracking-widest uppercase transition-all duration-300 
+           {% if genero_actual == 'M' %}bg-black text-white{% else %}bg-transparent text-black hover:bg-gray-100{% endif %}">
+           Hombre
+        </a>
+        
+        <a href="?genero=U{% if marca_seleccionada_id %}&marca={{ marca_seleccionada_id }}{% endif %}#productos" 
+           class="px-8 py-2 border border-black rounded-full text-xs tracking-widest uppercase transition-all duration-300 
+           {% if genero_actual == 'U' %}bg-black text-white{% else %}bg-transparent text-black hover:bg-gray-100{% endif %}">
+           Unisex
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">
+        {% for perfume in perfumes %}
+        <div class="group flex flex-col bg-white">
+            <div class="relative w-full aspect-[4/5] bg-[#f8f8f8] overflow-hidden flex items-center justify-center mb-6">
+                {% if perfume.es_oferta %}
+                <div class="absolute top-4 left-4 z-10 bg-black text-white text-[10px] tracking-widest uppercase py-1 px-3">
+                    Oferta
+                </div>
+                {% endif %}
+
+                {% if perfume.imagen %}
+                    <img src="{{ perfume.imagen.url }}" alt="{{ perfume.nombre }}" 
+                         class="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-105">
+                {% else %}
+                    <span class="text-gray-300 font-light text-sm tracking-widest uppercase">Sin Imagen</span>
+                {% endif %}
+                
+                <div class="absolute bottom-0 left-0 w-full p-4 opacity-0 transform translate-y-4 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 flex justify-center">
+                    <a href="{% url 'perfume_detalle' perfume.id %}" class="bg-gray-900 text-white text-xs tracking-widest uppercase py-3 px-6 w-full hover:bg-black transition-colors block text-center">
+                        Detalles
+                    </a>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center text-center px-2">
+                <p class="text-[10px] tracking-[0.2em] text-gray-500 uppercase mb-2">{{ perfume.marca.nombre }}</p>
+                <h3 class="text-lg font-serif text-gray-900 mb-2">{{ perfume.nombre }}</h3>
+                
+                {% if perfume.es_oferta %}
+                    <div class="flex items-center gap-3">
+                        <p class="text-sm tracking-wider text-gray-400 line-through font-light">${{ perfume.precio }}</p>
+                        <p class="text-sm tracking-wider text-red-700 font-medium">${{ perfume.precio_oferta }}</p>
+                    </div>
+                {% else %}
+                    <p class="text-sm tracking-wider text-gray-900 font-light">${{ perfume.precio }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full py-32 text-center">
+            <p class="text-gray-400 font-serif text-xl italic">No se encontraron fragancias con estos filtros.</p>
+            <a href="?#productos" class="text-xs uppercase tracking-widest text-black border-b border-black mt-4 inline-block">Limpiar Filtros</a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

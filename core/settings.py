@@ -3,13 +3,16 @@ import os
 from pathlib import Path
 import mimetypes
 import dj_database_url
+import cloudinary
 from dotenv import load_dotenv
 
 mimetypes.add_type("text/css", ".css", True)
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+env_path = BASE_DIR / '.env'
+
+# 2. SEGUNDO le ordenamos a dotenv que lea exactamente esa ruta
+load_dotenv(dotenv_path=env_path)
 
 SECRET_KEY = 'django-insecure-28i(reybo8a0!#pvyruafpflvemg8s33o8(gxougf9do^uqb2s'
 
@@ -105,18 +108,13 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 if DATABASE_URL:
-    # Si existe la variable (estamos en Vercel/Neon)
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL)
     }
-    # Configuraciones específicas para Neon/Postgres
     DATABASES['default']['CONN_MAX_AGE'] = 600
     DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
 else:
-    # Si no existe (estamos en local)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

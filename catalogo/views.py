@@ -5,33 +5,34 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Perfume,Marca
 
 def home(request):
-    filtro_genero = request.GET.get('genero')
-    marca_id = request.GET.get('marca')
+    ofertas = Perfume.objects.filter(es_oferta=True, activo=True)[:4]
+    destacados = Perfume.objects.filter(destacado=True, activo=True, es_oferta=False)[:8]
     marcas = Marca.objects.all()
-    marca_seleccionada = None
 
-    # 1. Definimos la base: ¿Todos los de una marca, o los destacados?
-    if marca_id:
-        marca_seleccionada = get_object_or_404(Marca, id=marca_id)
-        perfumes = Perfume.objects.filter(marca=marca_seleccionada, activo=True)
-    else:
-        perfumes = Perfume.objects.filter(destacado=True, activo=True)
-    
-    # 2. Aplicamos el filtro de género por encima de la base elegida
-    if filtro_genero:
-        perfumes = perfumes.filter(genero=filtro_genero)
-    
-    # 3. AHORA SÍ, si estamos viendo la portada sin marca, limitamos a 8 resultados
-    if not marca_id:
-        perfumes = perfumes[:8]
-    
     context = {
+        'ofertas': ofertas,
+        'destacados': destacados,
         'marcas': marcas,
-        'perfumes_destacados': perfumes, # Mantenemos el nombre de variable que usa tu HTML
-        'marca_seleccionada': marca_seleccionada,
-        'genero_actual': filtro_genero,
     }
     return render(request, 'home.html', context)
+
+def catalogo(request):
+    perfumes = Perfume.objects.filter(activo=True)
+    
+    filtro_genero = request.GET.get('genero')
+    marca_id = request.GET.get('marca')
+    
+    if marca_id:
+        perfumes = perfumes.filter(marca_id=marca_id)
+    if filtro_genero:
+        perfumes = perfumes.filter(genero=filtro_genero)
+
+    return render(request, 'catalogo.html', {
+        'perfumes': perfumes,
+        'marcas': Marca.objects.all(),
+        'genero_actual': filtro_genero,
+        'marca_seleccionada_id': int(marca_id) if marca_id else None
+    })
 
 def perfume_detalle(request, perfume_id):
     perfume = get_object_or_404(Perfume, id=perfume_id, activo=True)
