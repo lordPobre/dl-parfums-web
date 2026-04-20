@@ -1,14 +1,31 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
+from django.http import HttpResponse
 from django.conf.urls.static import static
+from django.contrib.sitemaps.views import sitemap
+from catalogo.sitemaps import PerfumeSitemap, VistasEstaticasSitemap
+
+def robots_txt(request):
+    lineas = [
+        "User-Agent: *",
+        "Disallow: /admin/",
+        "Allow: /",
+    ]
+    return HttpResponse("\n".join(lineas), content_type="text/plain")
+
+sitemaps_dict = {
+    'estaticas': VistasEstaticasSitemap,
+    'perfumes': PerfumeSitemap,
+}
 
 urlpatterns = [
-    path('admin/', admin.site.urls), # ¡Aquí está la 's' que faltaba!
+    path('admin/', admin.site.urls),
     path('', include('catalogo.urls')), 
+    path('robots.txt', robots_txt),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name='django.contrib.sitemaps.views.sitemap'),
 ]
 
-# Configuración para servir archivos media en entorno de desarrollo
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
