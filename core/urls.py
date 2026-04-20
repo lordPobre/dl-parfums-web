@@ -20,7 +20,7 @@ sitemaps_dict = {
 }
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('perseus-access-x12/', admin.site.urls),
     path('', include('catalogo.urls')), 
     path('robots.txt', robots_txt),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name='django.contrib.sitemaps.views.sitemap'),
