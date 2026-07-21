@@ -44,3 +44,27 @@ class Perfume(models.Model):
 
     def __str__(self):
         return f"{self.marca.nombre} - {self.nombre}"
+    
+class ImagenPortada(models.Model):
+    """Diapositivas del carrusel de fondo del hero (home). Se gestionan desde el admin."""
+    titulo = models.CharField(
+        max_length=120, blank=True,
+        help_text="Referencia interna (no se muestra en la web)."
+    )
+    imagen = models.ImageField(
+        upload_to='portada/',
+        help_text="Imagen de fondo. Recomendado: horizontal, mínimo 1920px de ancho."
+    )
+    orden = models.PositiveIntegerField(
+        default=0,
+        help_text="Menor número aparece primero."
+    )
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['orden', 'id']
+        verbose_name = "Imagen de portada"
+        verbose_name_plural = "Imágenes de portada (carrusel)"
+
+    def __str__(self):
+        return self.titulo or f"Portada #{self.pk}"
