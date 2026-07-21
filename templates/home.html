@@ -72,7 +72,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {% for familia in familias %}
         <a href="{% url 'catalogo' %}?familia={{ familia.id }}#productos" class="group border border-gray-200 bg-[#fbfbfb] px-6 py-11 text-center transition-all duration-500 hover:border-gray-900 hover:bg-white hover:-translate-y-1 hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.25)]">
-            <div class="font-serif text-4xl text-gray-900 mb-3.5">{{ familia.nombre|first|upper }}</div>
+            {% include "partials/icono_familia.html" with familia=familia %}
             <h3 class="font-serif text-xl text-gray-900 mb-2">{{ familia.nombre }}</h3>
             <p class="text-[12.5px] font-light leading-relaxed text-gray-500">{{ familia.descripcion|default:"Descubre las fragancias de esta familia."|truncatewords:14 }}</p>
         </a>
@@ -133,8 +133,8 @@
     <div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-3">
         <div class="px-8 py-12 text-center border-t md:border-t-0 md:border-l border-gray-100">
             <div class="font-serif text-3xl text-gray-900 mb-3">&#10022;</div>
-            <h4 class="text-[12px] tracking-[0.18em] uppercase mb-2">100% Confiables</h4>
-            <p class="text-[12.5px] font-light text-gray-500 leading-relaxed">Calidad garantizada en cada fragancia.</p>
+            <h4 class="text-[12px] tracking-[0.18em] uppercase mb-2">100% Originales</h4>
+            <p class="text-[12.5px] font-light text-gray-500 leading-relaxed">Autenticidad garantizada en cada fragancia.</p>
         </div>
         <div class="px-8 py-12 text-center border-t md:border-t-0 md:border-l border-gray-100">
             <div class="font-serif text-3xl text-gray-900 mb-3">&#9993;</div>
