@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada
+from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion
 from django.utils.html import format_html
 
 @admin.register(ImagenPortada)
@@ -45,7 +45,23 @@ class PerfumeAdmin(admin.ModelAdmin):
     list_editable = ('precio', 'stock', 'activo', 'es_oferta', 'precio_oferta', 'destacado') 
 
 
+@admin.register(Promocion)
+class PromocionAdmin(admin.ModelAdmin):
+    list_display = ('miniatura', 'titulo', 'precio', 'etiqueta', 'orden', 'activo')
+    list_display_links = ('miniatura', 'titulo')
+    list_editable = ('precio', 'orden', 'activo')
+    list_filter = ('activo',)
+    filter_horizontal = ('perfumes',)
+    ordering = ('orden', 'id')
 
+    def miniatura(self, obj):
+        if obj.imagen:
+            return format_html(
+                '<img src="{}" style="height:44px;width:78px;object-fit:cover;border-radius:4px;" />',
+                obj.imagen.url
+            )
+        return "—"
+    miniatura.short_description = "Vista previa"
 
 
 # --- Opcional pero recomendado ---

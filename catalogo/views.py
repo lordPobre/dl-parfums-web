@@ -2,7 +2,7 @@ import os
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada
+from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion
 
 
 def home(request):
@@ -13,6 +13,8 @@ def home(request):
     familias = FamiliaOlfativa.objects.filter(perfume__activo=True).distinct()
     # Diapositivas del carrusel de portada (gestionadas desde el admin)
     portadas = ImagenPortada.objects.filter(activo=True)
+    # Promociones / combos activos (gestionados desde el admin)
+    promociones = Promocion.objects.filter(activo=True).prefetch_related('perfumes')
 
     context = {
         'ofertas': ofertas,
@@ -20,8 +22,10 @@ def home(request):
         'marcas': marcas,
         'familias': familias,
         'portadas': portadas,
+        'promociones': promociones,
     }
     return render(request, 'home.html', context)
+
 
 
 def catalogo(request):

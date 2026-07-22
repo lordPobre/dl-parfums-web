@@ -68,3 +68,41 @@ class ImagenPortada(models.Model):
 
     def __str__(self):
         return self.titulo or f"Portada #{self.pk}"
+
+class Promocion(models.Model):
+    """Promociones y combos gestionables desde el admin.
+    Ej: título="2 x $10.000", descripción="Llévate dos fragancias seleccionadas"."""
+    titulo = models.CharField(
+        max_length=120,
+        help_text="Ej: '2 Perfumes por $10.000' o 'Combo Pareja'."
+    )
+    descripcion = models.CharField(
+        max_length=255, blank=True,
+        help_text="Texto corto que explica la promoción."
+    )
+    precio = models.PositiveIntegerField(
+        help_text="Precio total de la promoción, ej: 10000."
+    )
+    etiqueta = models.CharField(
+        max_length=40, blank=True, default="Promoción",
+        help_text="Etiqueta que aparece sobre la tarjeta (ej: 'Oferta', '2x1')."
+    )
+    imagen = models.ImageField(
+        upload_to='promociones/', blank=True, null=True,
+        help_text="Imagen opcional para la promoción."
+    )
+    # Opcional: relaciona los perfumes incluidos (solo informativo/visual).
+    perfumes = models.ManyToManyField(
+        'Perfume', blank=True, related_name='promociones',
+        help_text="Perfumes incluidos en la promoción (opcional)."
+    )
+    orden = models.PositiveIntegerField(default=0, help_text="Menor número aparece primero.")
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['orden', 'id']
+        verbose_name = "Promoción"
+        verbose_name_plural = "Promociones"
+
+    def __str__(self):
+        return self.titulo
