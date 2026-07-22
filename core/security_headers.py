@@ -1,23 +1,3 @@
-# Cabeceras de seguridad para DL Parfums
-# ---------------------------------------
-# 1) Guarda este archivo como  core/security_headers.py  (junto a settings.py).
-# 2) En settings.py, agrega la ruta al MIDDLEWARE (al final de la lista):
-#
-#       MIDDLEWARE = [
-#           ...
-#           "core.security_headers.SecurityHeadersMiddleware",
-#       ]
-#
-# Ajustado a las fuentes que usa el sitio:
-#   - Tailwind CDN (cdn.tailwindcss.com)
-#   - Google Fonts (fonts.googleapis.com / fonts.gstatic.com)
-#   - Cloudinary (res.cloudinary.com)
-#   - WhatsApp (wa.me) en enlaces
-#
-# NOTA: Tailwind CDN y los estilos inline requieren 'unsafe-inline' / 'unsafe-eval'
-# en style/script. Es lo normal usando el CDN. Si algún día compilas Tailwind a un
-# .css estático, puedes endurecer la política quitando esos 'unsafe-*'.
-
 CSP = (
     "default-src 'self'; "
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; "
