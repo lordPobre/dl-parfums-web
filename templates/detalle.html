@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static cloudinary_wm %}
 
 {% block title %}{{ perfume.nombre }} | DL Parfums{% endblock %}
 {% block meta_description %}{{ perfume.descripcion|striptags|truncatewords:25 }}{% endblock %}
@@ -14,15 +14,33 @@
 
 <section class="max-w-[1300px] mx-auto px-5 md:px-10 py-10 md:py-12 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-start">
 
-    <!-- Imagen -->
+    <!-- Imagen / Galería -->
     <div class="md:sticky md:top-28">
         <div class="aspect-[4/5] bg-[#f8f8f8] flex items-center justify-center overflow-hidden">
             {% if perfume.imagen %}
-                <img src="{{ perfume.imagen.url }}" alt="{{ perfume.nombre }}" class="max-h-[84%] max-w-[84%] object-contain">
+                <img id="imagen-principal" src="{{ perfume.imagen.url|watermark }}" alt="{{ perfume.nombre }}" class="max-h-[84%] max-w-[84%] object-contain transition-opacity duration-300">
             {% else %}
                 <span class="text-gray-300 font-light tracking-widest uppercase">Imagen no disponible</span>
             {% endif %}
         </div>
+
+        {% if galeria %}
+        <div class="grid grid-cols-5 gap-3 mt-4">
+            {# Miniatura de la imagen principal #}
+            {% if perfume.imagen %}
+            <button type="button" data-src="{{ perfume.imagen.url|watermark }}"
+                    class="miniatura aspect-square bg-[#f8f8f8] border border-gray-900 overflow-hidden flex items-center justify-center transition-all hover:border-gray-900">
+                <img src="{{ perfume.imagen.url|watermark }}" alt="{{ perfume.nombre }}" class="max-h-[80%] max-w-[80%] object-contain">
+            </button>
+            {% endif %}
+            {% for img in galeria %}
+            <button type="button" data-src="{{ img.imagen.url|watermark }}"
+                    class="miniatura aspect-square bg-[#f8f8f8] border border-gray-200 overflow-hidden flex items-center justify-center transition-all hover:border-gray-900">
+                <img src="{{ img.imagen.url|watermark }}" alt="{{ perfume.nombre }} — vista {{ forloop.counter }}" class="max-h-[80%] max-w-[80%] object-contain">
+            </button>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- Info -->
@@ -99,6 +117,72 @@
     </div>
 </section>
 
+<!-- RESEÑAS -->
+<section id="resenas" class="border-t border-gray-100 py-20 md:py-24 px-5 md:px-10 max-w-[900px] mx-auto">
+    <div class="text-center mb-14">
+        <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Opiniones de clientes</span>
+        <h2 class="font-serif text-3xl md:text-4xl text-gray-900 mt-3.5">Reseñas</h2>
+        {% if total_resenas %}
+        <div class="flex items-center justify-center gap-3 mt-5">
+            <div class="flex text-gray-900">
+                {% for _ in "12345" %}
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="{% if forloop.counter <= promedio|floatformat:0|add:0 %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="1.2"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.5 6.7L12 17.8 5.9 20.6l1.5-6.7L2.3 9l6.9-.7z"/></svg>
+                {% endfor %}
+            </div>
+            <span class="text-sm text-gray-500 font-light">{{ promedio|floatformat:1 }} · {{ total_resenas }} reseña{{ total_resenas|pluralize }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if resenas %}
+    <div class="space-y-8 mb-16">
+        {% for resena in resenas %}
+        <div class="border-b border-gray-100 pb-8">
+            <div class="flex items-center justify-between mb-2.5">
+                <span class="font-serif text-lg text-gray-900">{{ resena.nombre }}</span>
+                <div class="flex text-gray-900">
+                    {% for _ in resena.estrellas_llenas %}
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.5 6.7L12 17.8 5.9 20.6l1.5-6.7L2.3 9l6.9-.7z"/></svg>
+                    {% endfor %}
+                    {% for _ in resena.estrellas_vacias %}
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.5 6.7L12 17.8 5.9 20.6l1.5-6.7L2.3 9l6.9-.7z"/></svg>
+                    {% endfor %}
+                </div>
+            </div>
+            <p class="text-[15px] font-light text-gray-600 leading-relaxed">{{ resena.comentario }}</p>
+            <p class="text-[11px] tracking-[0.14em] uppercase text-gray-400 mt-3">{{ resena.fecha|date:"d M Y" }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center text-gray-400 font-serif italic text-lg mb-12">Sé el primero en dejar una reseña de esta fragancia.</p>
+    {% endif %}
+
+    <!-- Formulario de reseña -->
+    <div class="bg-[#fbfbfb] border border-gray-100 p-8 md:p-10">
+        <h3 class="font-serif text-xl text-gray-900 mb-6 text-center">Deja tu reseña</h3>
+        <form method="post" action="{% url 'perfume_detalle' perfume.id %}#resenas" class="space-y-5">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <input type="text" name="nombre" required placeholder="Tu nombre"
+                       class="w-full bg-white border border-gray-200 px-4 py-3 text-sm font-light focus:outline-none focus:border-gray-900 transition-colors">
+                <select name="calificacion" required
+                        class="w-full bg-white border border-gray-200 px-4 py-3 text-sm font-light focus:outline-none focus:border-gray-900 transition-colors">
+                    <option value="5">5 estrellas — Excelente</option>
+                    <option value="4">4 estrellas — Muy bueno</option>
+                    <option value="3">3 estrellas — Bueno</option>
+                    <option value="2">2 estrellas — Regular</option>
+                    <option value="1">1 estrella — Malo</option>
+                </select>
+            </div>
+            <textarea name="comentario" required rows="4" placeholder="Cuéntanos tu experiencia con esta fragancia..."
+                      class="w-full bg-white border border-gray-200 px-4 py-3 text-sm font-light focus:outline-none focus:border-gray-900 transition-colors"></textarea>
+            <button type="submit" class="w-full bg-gray-900 text-white py-4 text-[11px] tracking-[0.22em] uppercase hover:bg-black transition-colors">Enviar Reseña</button>
+            <p class="text-center text-[12px] font-light text-gray-400">Tu reseña será publicada tras ser revisada.</p>
+        </form>
+    </div>
+</section>
+
 <!-- Relacionados -->
 {% if relacionados %}
 <section class="border-t border-gray-100 py-20 md:py-24 px-5 md:px-10 max-w-[1400px] mx-auto mt-10">
@@ -113,5 +197,26 @@
     </div>
 </section>
 {% endif %}
+
+<script>
+    // Visor de galería: al hacer clic en una miniatura, cambia la imagen principal
+    document.addEventListener("DOMContentLoaded", function () {
+        const principal = document.getElementById('imagen-principal');
+        const minis = document.querySelectorAll('.miniatura');
+        if (!principal || !minis.length) return;
+        minis.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                principal.style.opacity = '0';
+                setTimeout(function () {
+                    principal.src = btn.getAttribute('data-src');
+                    principal.style.opacity = '1';
+                }, 200);
+                minis.forEach(function (b) { b.classList.remove('border-gray-900'); b.classList.add('border-gray-200'); });
+                btn.classList.remove('border-gray-200');
+                btn.classList.add('border-gray-900');
+            });
+        });
+    });
+</script>
 
 {% endblock %}

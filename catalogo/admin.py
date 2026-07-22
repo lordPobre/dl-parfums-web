@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion
+from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena
 from django.utils.html import format_html
 
 @admin.register(ImagenPortada)
@@ -18,6 +18,41 @@ class ImagenPortadaAdmin(admin.ModelAdmin):
             )
         return "—"
     miniatura.short_description = "Vista previa"
+
+class ImagenPerfumeInline(admin.TabularInline):
+    model = ImagenPerfume
+    extra = 3               # 3 casillas vacías para subir imágenes de una vez
+    fields = ('imagen', 'orden')
+
+
+class ResenaInline(admin.TabularInline):
+    model = Resena
+    extra = 0
+    fields = ('nombre', 'calificacion', 'comentario', 'aprobado', 'fecha')
+    readonly_fields = ('fecha',)
+
+
+# --- OPCIÓN A (recomendada): añade los inlines a tu PerfumeAdmin existente ---
+# Si ya tienes un @admin.register(Perfume) class PerfumeAdmin, solo agrégale:
+#     inlines = [ImagenPerfumeInline, ResenaInline]
+#
+# --- OPCIÓN B: si NO tienes PerfumeAdmin propio, descomenta este bloque ---
+# admin.site.unregister(Perfume)  # solo si ya estaba registrado sin inlines
+# @admin.register(Perfume)
+# class PerfumeAdmin(admin.ModelAdmin):
+#     list_display = ('nombre', 'marca', 'familia', 'precio', 'es_oferta', 'stock', 'activo')
+#     list_filter = ('marca', 'familia', 'genero', 'es_oferta', 'activo')
+#     search_fields = ('nombre', 'marca__nombre')
+#     inlines = [ImagenPerfumeInline, ResenaInline]
+
+
+# También puedes moderar todas las reseñas en su propia sección:
+@admin.register(Resena)
+class ResenaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'perfume', 'calificacion', 'aprobado', 'fecha')
+    list_editable = ('aprobado',)
+    list_filter = ('aprobado', 'calificacion')
+    search_fields = ('nombre', 'perfume__nombre', 'comentario')
 
 @admin.register(Marca)
 class MarcaAdmin(admin.ModelAdmin):
@@ -43,6 +78,7 @@ class PerfumeAdmin(admin.ModelAdmin):
     list_filter = ('marca', 'familia', 'genero','es_oferta', 'activo', 'destacado')
     search_fields = ('nombre', 'marca__nombre')
     list_editable = ('precio', 'stock', 'activo', 'es_oferta', 'precio_oferta', 'destacado') 
+    inlines = [ImagenPerfumeInline, ResenaInline]
 
 
 @admin.register(Promocion)

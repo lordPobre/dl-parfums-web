@@ -41,6 +41,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.security_headers.SecurityHeadersMiddleware', 
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -163,6 +164,15 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+SECURE_SSL_REDIRECT = False               
+SESSION_COOKIE_SECURE = False              
+CSRF_COOKIE_SECURE = False                
+SECURE_HSTS_SECONDS = 31536000             
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SECURE_CONTENT_TYPE_NOSNIFF = False
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'

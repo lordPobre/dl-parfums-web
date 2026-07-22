@@ -106,3 +106,53 @@ class Promocion(models.Model):
 
     def __str__(self):
         return self.titulo
+
+class ImagenPerfume(models.Model):
+    """Imágenes adicionales de un perfume (galería). La imagen principal sigue
+    siendo el campo `imagen` del modelo Perfume; estas son las secundarias."""
+    perfume = models.ForeignKey(
+        'Perfume', on_delete=models.CASCADE, related_name='galeria'
+    )
+    imagen = models.ImageField(upload_to='perfumes/galeria/')
+    orden = models.PositiveIntegerField(default=0, help_text="Menor número aparece primero.")
+
+    class Meta:
+        ordering = ['orden', 'id']
+        verbose_name = "Imagen de galería"
+        verbose_name_plural = "Galería de imágenes"
+
+    def __str__(self):
+        return f"Imagen de {self.perfume.nombre}"
+
+
+class Resena(models.Model):
+    """Reseñas de clientes sobre un perfume. Se moderan desde el admin
+    con el campo `aprobado` (solo las aprobadas se muestran en la web)."""
+    perfume = models.ForeignKey(
+        'Perfume', on_delete=models.CASCADE, related_name='resenas'
+    )
+    nombre = models.CharField(max_length=80, help_text="Nombre del cliente.")
+    calificacion = models.PositiveSmallIntegerField(
+        default=5, choices=[(i, f"{i} estrellas") for i in range(1, 6)]
+    )
+    comentario = models.TextField()
+    aprobado = models.BooleanField(
+        default=False, help_text="Marca para que la reseña aparezca en la web."
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = "Reseña"
+        verbose_name_plural = "Reseñas"
+
+    def __str__(self):
+        return f"{self.nombre} — {self.perfume.nombre} ({self.calificacion}★)"
+
+    @property
+    def estrellas_llenas(self):
+        return range(self.calificacion)
+
+    @property
+    def estrellas_vacias(self):
+        return range(5 - self.calificacion)

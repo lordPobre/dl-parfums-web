@@ -2,7 +2,8 @@ import os
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion
+from django.db.models import Avg
+from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena
 
 
 def home(request):
@@ -53,7 +54,36 @@ def catalogo(request):
 
 
 def perfume_detalle(request, perfume_id):
-    perfume = get_object_or_404(Perfume, id=perfume_id, activo=True)
+    perfume = get_object_or_404(
+        Perfume.objects.prefetch_related('galeria', 'resenas'),
+        id=perfume_id, activo=True
+    )
+
+    # Envío de una nueva reseña (queda pendiente de aprobación en el admin)
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        comentario = request.POST.get('comentario', '').strip()
+        try:
+            calificacion = int(request.POST.get('calificacion', 5))
+        except (TypeError, ValueError):
+            calificacion = 5
+        calificacion = min(5, max(1, calificacion))
+        if nombre and comentario:
+            Resena.objects.create(
+                perfume=perfume, nombre=nombre,
+                calificacion=calificacion, comentario=comentario,
+                aprobado=False,
+            )
+            messages.success(request, 'Tu reseña fue enviada y será publicada tras ser revisada.')
+        else:
+            messages.error(request, 'Completa tu nombre y comentario para enviar la reseña.')
+        return redirect('perfume_detalle', perfume_id=perfume.id)
+
+    # Galería: imagen principal + imágenes secundarias (para el visor multi-imagen)
+    galeria = list(perfume.galeria.all())
+    # Reseñas aprobadas + promedio de calificación
+    resenas = perfume.resenas.filter(aprobado=True)
+    promedio = resenas.aggregate(prom=Avg('calificacion'))['prom']
 
     # Relacionados: misma familia; si no alcanza, se completa con la misma marca.
     relacionados = Perfume.objects.filter(activo=True).exclude(id=perfume.id).select_related('marca')
@@ -71,6 +101,10 @@ def perfume_detalle(request, perfume_id):
     context = {
         'perfume': perfume,
         'relacionados': relacionados,
+        'galeria': galeria,
+        'resenas': resenas,
+        'promedio': promedio,
+        'total_resenas': resenas.count(),
     }
     return render(request, 'detalle.html', context)
 

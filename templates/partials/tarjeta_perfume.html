@@ -1,3 +1,4 @@
+{% load cloudinary_wm %}
 {% comment %}Tarjeta de perfume reutilizable. Espera la variable `perfume`.{% endcomment %}
 <div class="group flex flex-col bg-white">
     <a href="{% url 'perfume_detalle' perfume.id %}" class="block">
@@ -6,7 +7,7 @@
             <span class="absolute top-4 left-4 z-10 bg-gray-900 text-white text-[9px] tracking-[0.24em] uppercase py-1.5 px-2.5">Oferta</span>
             {% endif %}
             {% if perfume.imagen %}
-                <img src="{{ perfume.imagen.url }}" alt="{{ perfume.nombre }}" class="max-h-[82%] max-w-[82%] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06]">
+                <img src="{{ perfume.imagen.url|watermark }}" alt="{{ perfume.nombre }}" class="max-h-[82%] max-w-[82%] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06]">
             {% else %}
                 <span class="text-gray-300 font-light text-sm tracking-widest uppercase">Próximamente</span>
             {% endif %}

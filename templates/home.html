@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static cloudinary_wm %}
 
 {% block content %}
 
@@ -86,7 +86,7 @@
         <div class="group relative flex flex-col bg-gray-900 text-white overflow-hidden">
             {% if promo.imagen %}
             <div class="aspect-[16/10] bg-gray-800 overflow-hidden">
-                <img src="{{ promo.imagen.url }}" alt="{{ promo.titulo }}" class="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105">
+                <img src="{{ promo.imagen.url|watermark }}" alt="{{ promo.titulo }}" class="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105">
             </div>
             {% endif %}
             <div class="flex flex-col flex-grow p-8">
@@ -144,7 +144,7 @@
     <div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 items-stretch">
         <div class="bg-[#f8f8f8] flex items-center justify-center p-12 md:p-16 min-h-[380px] md:min-h-[560px]">
             {% if destacada.imagen %}
-            <img src="{{ destacada.imagen.url }}" alt="{{ destacada.nombre }}" class="max-h-[300px] md:max-h-[440px] max-w-full object-contain">
+            <img src="{{ destacada.imagen.url|watermark }}" alt="{{ destacada.nombre }}" class="max-h-[300px] md:max-h-[440px] max-w-full object-contain">
             {% endif %}
         </div>
         <div class="bg-white px-8 py-14 md:px-16 md:py-20 flex flex-col justify-center">

@@ -35,6 +35,15 @@
         .marquee-track { animation: marquee-scroll var(--marquee-duration, 30s) linear infinite; }
         .marquee:hover .marquee-track { animation-play-state: paused; }
         @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
+
+        /* Protección básica de imágenes (disuasivo, no infalible) */
+        img {
+            -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
+            -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; -o-user-drag: none;
+            pointer-events: none; /* bloquea arrastrar y "guardar imagen" */
+        }
+        /* Los logos del carrusel son enlaces: reactivamos el clic en su contenedor <a> */
+        a img { pointer-events: none; }
     </style>
 
     {% block extra_head %}{% endblock %}
@@ -133,6 +142,14 @@
         window.addEventListener('load', function() {
             const preloader = document.getElementById('preloader');
             setTimeout(function() { preloader.classList.add('preloader-hidden'); }, 500);
+        });
+
+        // Disuasivos de descarga de imágenes
+        document.addEventListener('contextmenu', function (e) {
+            if (e.target && e.target.tagName === 'IMG') e.preventDefault();
+        });
+        document.addEventListener('dragstart', function (e) {
+            if (e.target && e.target.tagName === 'IMG') e.preventDefault();
         });
     </script>
 </body>
