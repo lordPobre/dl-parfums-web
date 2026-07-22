@@ -12,25 +12,55 @@
     <div class="w-12 h-[1px] bg-white/30 mx-auto mt-6"></div>
 </section>
 
-<!-- Filtro por casa -->
-<section class="py-8 bg-white border-b border-gray-100">
-    <div class="max-w-[1200px] mx-auto px-5 md:px-10 flex flex-wrap items-center justify-center gap-x-11 gap-y-6">
-        <a href="?{% if genero_actual %}genero={{ genero_actual }}{% endif %}{% if familia_actual %}{% if genero_actual %}&{% endif %}familia={{ familia_actual }}{% endif %}#productos"
-           class="text-[11px] tracking-[0.2em] uppercase pb-1.5 transition-all {% if not marca_seleccionada_id %}text-gray-900 border-b border-gray-900{% else %}text-gray-400 hover:text-gray-900{% endif %}">
-           Todas las Casas
-        </a>
-        {% for marca in marcas %}
-        <a href="?marca={{ marca.id }}{% if genero_actual %}&genero={{ genero_actual }}{% endif %}{% if familia_actual %}&familia={{ familia_actual }}{% endif %}#productos"
-           class="flex-shrink-0 transition-all duration-500 {% if marca_seleccionada_id == marca.id %}grayscale-0 opacity-100 scale-110{% else %}grayscale opacity-40 hover:grayscale-0 hover:opacity-100{% endif %}">
-            {% if marca.logo %}
-                <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="h-8 md:h-9 object-contain">
-            {% else %}
-                <span class="font-serif text-lg text-gray-800">{{ marca.nombre }}</span>
-            {% endif %}
-        </a>
-        {% endfor %}
+<!-- Filtro por casa (carrusel horizontal con flechas) -->
+<section class="py-10 bg-white border-b border-gray-100">
+    <div class="max-w-[1280px] mx-auto px-5 md:px-10">
+        <div class="flex justify-center mb-8">
+            <a href="?{% if genero_actual %}genero={{ genero_actual }}{% endif %}{% if familia_actual %}{% if genero_actual %}&{% endif %}familia={{ familia_actual }}{% endif %}#productos"
+               class="text-[11px] tracking-[0.24em] uppercase pb-1.5 transition-all {% if not marca_seleccionada_id %}text-gray-900 border-b border-gray-900{% else %}text-gray-400 hover:text-gray-900{% endif %}">
+               Todas las Casas
+            </a>
+        </div>
+        <div class="relative flex items-center">
+            <button type="button" id="marcas-prev" aria-label="Anterior"
+                    class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+            </button>
+
+            <div id="marcas-track" class="flex-1 mx-3 flex gap-3 overflow-x-auto scroll-smooth py-1"
+                 style="scrollbar-width: none; -ms-overflow-style: none;">
+                {% for marca in marcas %}
+                <a href="?marca={{ marca.id }}{% if genero_actual %}&genero={{ genero_actual }}{% endif %}{% if familia_actual %}&familia={{ familia_actual }}{% endif %}#productos"
+                   title="{{ marca.nombre }}"
+                   class="group flex-shrink-0 w-[130px] h-20 flex items-center justify-center px-3 border transition-all duration-300 {% if marca_seleccionada_id == marca.id %}border-gray-900 bg-gray-50{% else %}border-gray-100 hover:border-gray-300{% endif %}">
+                    {% if marca.logo %}
+                        <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="max-h-20 max-w-full object-contain transition-all duration-300 {% if marca_seleccionada_id == marca.id %}grayscale-0 opacity-100{% else %}grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100{% endif %}">
+                    {% else %}
+                        <span class="font-serif text-sm text-gray-800 text-center leading-tight">{{ marca.nombre }}</span>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+
+            <button type="button" id="marcas-next" aria-label="Siguiente"
+                    class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+            </button>
+        </div>
     </div>
 </section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const track = document.getElementById('marcas-track');
+        const prev = document.getElementById('marcas-prev');
+        const next = document.getElementById('marcas-next');
+        if (!track) return;
+        const paso = 420;
+        prev.addEventListener('click', function () { track.scrollBy({ left: -paso, behavior: 'smooth' }); });
+        next.addEventListener('click', function () { track.scrollBy({ left: paso, behavior: 'smooth' }); });
+    });
+</script>
 
 <section id="productos" class="pt-14 px-5 md:px-10 max-w-[1400px] mx-auto">
 

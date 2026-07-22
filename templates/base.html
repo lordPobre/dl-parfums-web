@@ -36,6 +36,9 @@
         .marquee:hover .marquee-track { animation-play-state: paused; }
         @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
 
+        /* Oculta la barra de scroll del carrusel de marcas (Chrome/Safari) */
+        #marcas-track::-webkit-scrollbar { display: none; }
+
         /* Protección básica de imágenes (disuasivo, no infalible) */
         img {
             -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
