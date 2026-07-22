@@ -114,6 +114,29 @@
         {% else %}
         <div class="w-full bg-gray-100 text-gray-400 py-5 text-center text-[12px] tracking-[0.22em] uppercase cursor-not-allowed">Agotado Temporalmente</div>
         {% endif %}
+
+        <!-- Compartir en redes -->
+        <div class="mt-8 pt-6 border-t border-gray-100">
+            <p class="text-[10px] tracking-[0.24em] uppercase text-gray-400 mb-4 text-center md:text-left">Compartir</p>
+            <div class="flex items-center gap-3 justify-center md:justify-start">
+                <a href="https://api.whatsapp.com/send?text={{ perfume.nombre|urlencode }}%20-%20{{ request.build_absolute_uri }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en WhatsApp"
+                   class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1 1 12 20z"></path></svg>
+                </a>
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en Facebook"
+                   class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M15 3h-3a5 5 0 0 0-5 5v3H4v4h3v6h4v-6h3l1-4h-4V8a1 1 0 0 1 1-1h3z"></path></svg>
+                </a>
+                <a href="https://x.com/intent/tweet?text={{ perfume.nombre|urlencode }}&url={{ request.build_absolute_uri }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en X"
+                   class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h3l-7 8 8 12h-6l-5-7-6 7H2l8-9L2 2h6l4 6zm-1 18h2L7 4H5z"></path></svg>
+                </a>
+                <a href="https://www.instagram.com/elmonolfativo" target="_blank" rel="noopener noreferrer nofollow" aria-label="Síguenos en Instagram"
+                   class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line></svg>
+                </a>
+            </div>
+        </div>
     </div>
 </section>
 

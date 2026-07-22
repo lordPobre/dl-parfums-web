@@ -34,7 +34,7 @@
 
     <div class="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center animate-rise">
         <span class="text-[11px] tracking-[0.5em] text-white/70 uppercase mb-7">Alta Perfumería</span>
-        <h1 class="text-5xl md:text-8xl font-serif text-white mb-6 leading-[1.05]">Descubre<br><em class="italic font-medium">tu esencia</em></h1>
+        <h1 class="text-5xl md:text-8xl font-serif text-white mb-6 leading-[1.05]">Descubre<br><em class="italic font-medium">tu esencia ideal</em></h1>
         <p class="text-base md:text-lg text-white/70 mb-10 font-light max-w-xl leading-relaxed">La colección más exclusiva para quienes buscan dejar una huella imborrable en cada encuentro.</p>
         <div class="flex flex-wrap gap-4 justify-center">
             <a href="{% url 'catalogo' %}" class="bg-white text-gray-900 px-10 py-4 uppercase tracking-[0.26em] text-[11px] font-medium hover:bg-gray-200 transition duration-300">Explorar Colección</a>
@@ -58,7 +58,7 @@
             {% for i in "12" %}
             {% for marca in marcas %}
             <a href="{% url 'catalogo' %}?marca={{ marca.id }}#productos"
-               aria-hidden="{% if i == '2' %}true{% else %}false{% endif %}"
+               rel="nofollow" aria-hidden="{% if i == '2' %}true{% else %}false{% endif %}"
                class="flex-shrink-0 mx-8 md:mx-12 flex items-center justify-center h-20 transition-all duration-500 grayscale opacity-60 hover:grayscale-0 hover:opacity-100">
                 {% if marca.logo %}
                     <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="h-16 md:h-20 max-w-[200px] object-contain">
@@ -127,7 +127,7 @@
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {% for familia in familias %}
-        <a href="{% url 'catalogo' %}?familia={{ familia.id }}#productos" class="group border border-gray-200 bg-[#fbfbfb] px-6 py-11 text-center transition-all duration-500 hover:border-gray-900 hover:bg-white hover:-translate-y-1 hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.25)]">
+        <a href="{% url 'catalogo' %}?familia={{ familia.id }}#productos" rel="nofollow" class="group border border-gray-200 bg-[#fbfbfb] px-6 py-11 text-center transition-all duration-500 hover:border-gray-900 hover:bg-white hover:-translate-y-1 hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.25)]">
             {% include "partials/icono_familia.html" with familia=familia %}
             <h3 class="font-serif text-xl text-gray-900 mb-2">{{ familia.nombre }}</h3>
             <p class="text-[12.5px] font-light leading-relaxed text-gray-500">{{ familia.descripcion|default:"Descubre las fragancias de esta familia."|truncatewords:14 }}</p>
