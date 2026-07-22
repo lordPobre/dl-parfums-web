@@ -43,22 +43,34 @@
     </div>
 </section>
 
-<!-- MARCAS -->
-<section class="py-14 bg-white border-b border-gray-100">
+<!-- MARCAS (carrusel automático) -->
+<section class="py-14 bg-white border-b border-gray-100 overflow-hidden">
     <div class="max-w-[1400px] mx-auto px-5 md:px-10">
-        <p class="text-center text-[11px] tracking-[0.34em] text-gray-400 uppercase mb-8">Nuestras Casas</p>
-        <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 md:gap-x-16">
+        <p class="text-center text-[11px] tracking-[0.34em] text-gray-400 uppercase mb-10">Nuestras Casas</p>
+    </div>
+    {% if marcas %}
+    <div class="marquee group relative w-full overflow-hidden"
+         style="--marquee-duration: {{ marcas.count|add:marcas.count }}s;
+                -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+                mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);">
+        <div class="marquee-track flex items-center w-max">
+            {# Se repite la lista dos veces para lograr el bucle continuo #}
+            {% for i in "12" %}
             {% for marca in marcas %}
-            <a href="{% url 'catalogo' %}?marca={{ marca.id }}#productos" class="flex-shrink-0 transition-all duration-500 grayscale opacity-60 hover:grayscale-0 hover:opacity-100">
+            <a href="{% url 'catalogo' %}?marca={{ marca.id }}#productos"
+               aria-hidden="{% if i == '2' %}true{% else %}false{% endif %}"
+               class="flex-shrink-0 mx-8 md:mx-12 flex items-center justify-center h-12 transition-all duration-500 grayscale opacity-60 hover:grayscale-0 hover:opacity-100">
                 {% if marca.logo %}
-                    <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="h-10 md:h-12 object-contain">
+                    <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="h-16 md:h-20 max-w-[200px] object-contain">
                 {% else %}
-                    <span class="font-serif text-xl md:text-2xl text-gray-800 tracking-widest">{{ marca.nombre }}</span>
+                    <span class="font-serif text-xl md:text-2xl text-gray-800 tracking-widest whitespace-nowrap">{{ marca.nombre }}</span>
                 {% endif %}
             </a>
             {% endfor %}
+            {% endfor %}
         </div>
     </div>
+    {% endif %}
 </section>
 
 <!-- FAMILIAS OLFATIVAS -->
