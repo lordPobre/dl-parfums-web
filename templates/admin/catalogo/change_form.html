@@ -1,0 +1,52 @@
+{% extends "admin/change_form.html" %}
+{# Inyecta botones Anterior/Siguiente clonando el estilo real de los botones del tema. #}
+{% block extrahead %}
+{{ block.super }}
+<script>
+(function () {
+    var PREV = "{{ prev_object_url|default:'' }}";
+    var NEXT = "{{ next_object_url|default:'' }}";
+    if (!PREV && !NEXT) return;
+
+    function inyectar() {
+        var row = document.querySelector(".submit-row") ||
+                  document.querySelector("#jazzy-actions") ||
+                  document.querySelector(".card-footer") ||
+                  document.querySelector("form .submit-row");
+        if (!row) return false;
+        if (row.querySelector("[data-nav-perfume]")) return true; // evita duplicar
+        var ref = row.querySelector("input[type=submit], button, a.button, .btn");
+
+        var cont = document.createElement("div");
+        cont.setAttribute("data-nav-perfume", "1");
+        cont.style.display = "flex";
+        cont.style.gap = "8px";
+        cont.style.marginTop = "12px";
+        cont.style.width = "100%";
+
+        function crear(url, texto) {
+            var a = document.createElement("a");
+            a.href = url;
+            a.textContent = texto;
+            if (ref) { a.className = ref.className; }
+            a.classList.add("button");
+            a.style.flex = "1";
+            a.style.textAlign = "center";
+            a.style.textDecoration = "none";
+            return a;
+        }
+        if (PREV) cont.appendChild(crear(PREV, "« Anterior"));
+        if (NEXT) cont.appendChild(crear(NEXT, "Siguiente »"));
+        row.appendChild(cont);
+        return true;
+    }
+
+    var intentos = 0;
+    var t = setInterval(function () {
+        intentos++;
+        if (inyectar() || intentos > 40) clearInterval(t);
+    }, 100);
+    if (document.readyState !== "loading") inyectar();
+})();
+</script>
+{% endblock %}

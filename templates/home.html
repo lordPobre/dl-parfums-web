@@ -38,7 +38,7 @@
         <p class="text-base md:text-lg text-white/70 mb-10 font-light max-w-xl leading-relaxed">La colección más exclusiva para quienes buscan dejar una huella imborrable en cada encuentro.</p>
         <div class="flex flex-wrap gap-4 justify-center">
             <a href="{% url 'catalogo' %}" class="bg-white text-gray-900 px-10 py-4 uppercase tracking-[0.26em] text-[11px] font-medium hover:bg-gray-200 transition duration-300">Explorar Colección</a>
-            <a href="{% url 'catalogo' %}#familias" class="border border-white/50 text-white px-10 py-4 uppercase tracking-[0.26em] text-[11px] hover:bg-white/10 transition duration-300">Test Olfativo</a>
+            <a href="{% url 'catalogo' %}#familias" data-abrir-test class="border border-white/50 text-white px-10 py-4 uppercase tracking-[0.26em] text-[11px] hover:bg-white/10 transition duration-300">Test Olfativo</a>
         </div>
     </div>
 </section>
@@ -120,10 +120,26 @@
 <!-- FAMILIAS OLFATIVAS -->
 {% if familias %}
 <section id="familias" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
+    <!-- Resultado permanente del test (se rellena por JS desde localStorage) -->
+    <div id="familia-resultado" class="hidden items-center justify-between flex-wrap gap-5 bg-gray-900 text-white px-8 py-6 mb-12">
+        <div class="flex items-center gap-4">
+            <span class="text-3xl font-serif" id="familia-resultado-icono">✦</span>
+            <div>
+                <span class="text-[10px] tracking-[0.28em] uppercase text-white/55">Tu familia olfativa</span>
+                <p class="font-serif text-2xl mt-1" id="familia-resultado-nombre"></p>
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <a id="familia-resultado-link" href="{% url 'catalogo' %}#productos" class="text-[11px] tracking-[0.2em] uppercase border-b border-white pb-0.5 hover:text-gray-300 transition-colors">Ver fragancias</a>
+            <button type="button" data-abrir-test class="text-[11px] tracking-[0.2em] uppercase text-white/60 hover:text-white transition-colors">Repetir test</button>
+        </div>
+    </div>
+
     <div class="text-center mb-14">
         <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Encuentra tu perfil</span>
         <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">Explora por familia olfativa</h2>
         <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
+        <button type="button" data-abrir-test class="mt-7 border border-gray-900 text-[11px] tracking-[0.22em] uppercase text-gray-900 px-9 py-3.5 hover:bg-gray-900 hover:text-white transition-all duration-300">Hacer el test olfativo</button>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {% for familia in familias %}
@@ -135,6 +151,217 @@
         {% endfor %}
     </div>
 </section>
+
+<!-- MODAL: Test olfativo -->
+<div id="test-olfativo" class="hidden fixed inset-0 z-[200] bg-gray-900/75 backdrop-blur-sm flex items-center justify-center p-6">
+    <div class="bg-white w-full max-w-[620px] max-h-[90vh] overflow-y-auto p-10 md:p-12" data-modal-caja>
+        <div class="flex justify-between items-center mb-8">
+            <span class="text-[11px] tracking-[0.34em] uppercase text-gray-400">Test olfativo</span>
+            <button type="button" data-cerrar-test aria-label="Cerrar" class="text-gray-400 hover:text-gray-900 transition-colors">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- Preguntas -->
+        <div data-test-preguntas>
+            <div class="h-[2px] bg-gray-100 mb-8"><div data-test-progreso class="h-[2px] bg-gray-900 transition-all duration-400" style="width:0%"></div></div>
+            <p data-test-paso class="text-[11px] tracking-[0.2em] uppercase text-gray-400 mb-3"></p>
+            <h3 data-test-pregunta class="font-serif text-2xl md:text-[27px] text-gray-900 leading-snug mb-8"></h3>
+            <div data-test-opciones class="flex flex-col gap-3"></div>
+        </div>
+
+        <!-- Resultado -->
+        <div data-test-resultado class="hidden text-center pt-2">
+            <div data-test-resultado-icono class="text-5xl font-serif text-gray-900 mb-4">✦</div>
+            <span class="text-[11px] tracking-[0.3em] uppercase text-gray-400">Tu familia olfativa es</span>
+            <h3 data-test-resultado-nombre class="font-serif text-4xl text-gray-900 mt-2.5 mb-4"></h3>
+            <p data-test-resultado-desc class="text-[14.5px] font-light leading-relaxed text-gray-500 max-w-[420px] mx-auto mb-8"></p>
+            <div class="flex gap-3.5 justify-center flex-wrap">
+                <a data-test-resultado-link href="{% url 'catalogo' %}#productos" class="px-9 py-3.5 bg-gray-900 text-white text-[11px] tracking-[0.24em] uppercase">Ver fragancias</a>
+                <button type="button" data-reiniciar-test class="px-9 py-3.5 border border-gray-900 text-gray-900 text-[11px] tracking-[0.24em] uppercase">Repetir test</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="familias-data" type="application/json">{{ familias_data|safe }}</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var CATALOGO = "{% url 'catalogo' %}";
+
+    // Familias reales del admin (id + nombre)
+    var FAMILIAS = [];
+    try { FAMILIAS = JSON.parse(document.getElementById("familias-data").textContent) || []; } catch (e) {}
+    if (!FAMILIAS.length) { return; }
+
+    // --- Facetas olfativas y su detección por el nombre de la familia ---
+    var FACET_KEYWORDS = {
+        citrica:   ["citr", "hesper"],
+        floral:    ["floral", "flor"],
+        frutal:    ["frutal", "afrutad", "afruad", "frut"],
+        especiada: ["especiad", "espaciad", "especi"],
+        oriental:  ["oriental", "ambar", "ámbar"],
+        amaderada: ["amaderad", "mader", "oud", "wood"],
+        verde:     ["verde"],
+        acuatica:  ["acuatic", "acuát", "marin", "agua"],
+        cuero:     ["cuero", "leather", "tabac", "piel"],
+        chipre:    ["chipre", "chypre", "musgo"],
+        aromatica: ["aromatic", "aromát", "fougere", "fougère", "lavand"]
+    };
+    var FACET_INFO = {
+        citrica:   { icon: "❂", desc: "Notas frescas y luminosas de cítricos. Vibrante y ligera, para quien irradia energía." },
+        floral:    { icon: "❀", desc: "Flores como rosa y jazmín. Romántica y elegante, para un carácter expresivo." },
+        frutal:    { icon: "❁", desc: "Frutas jugosas y dulces. Alegre y juvenil, llena de vitalidad." },
+        especiada: { icon: "✿", desc: "Especias cálidas y envolventes. Con carácter y un toque exótico." },
+        oriental:  { icon: "❋", desc: "Ámbar, vainilla y especias. Cálida e intensa, de presencia inolvidable." },
+        amaderada: { icon: "❦", desc: "Maderas nobles como sándalo y cedro. Profunda, elegante y atemporal." },
+        verde:     { icon: "❧", desc: "Notas verdes y herbales. Natural y fresca, evoca la naturaleza viva." },
+        acuatica:  { icon: "≈", desc: "Notas marinas y limpias. Fresca y despejada, como la brisa del mar." },
+        cuero:     { icon: "❖", desc: "Cuero y maderas ahumadas. Audaz y magnética, con fuerza y personalidad." },
+        chipre:    { icon: "✤", desc: "Musgo, bergamota y fondo terroso. Sofisticada y con carácter clásico." },
+        aromatica: { icon: "✦", desc: "Hierbas aromáticas y lavanda. Fresca y sobria, de elegancia natural." }
+    };
+
+    function normalizar(s) {
+        return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    // Vector de facetas de una familia según su nombre
+    function vectorFamilia(nombre) {
+        var n = normalizar(nombre), v = {};
+        for (var facet in FACET_KEYWORDS) {
+            for (var i = 0; i < FACET_KEYWORDS[facet].length; i++) {
+                if (n.indexOf(normalizar(FACET_KEYWORDS[facet][i])) !== -1) { v[facet] = (v[facet] || 0) + 1; break; }
+            }
+        }
+        return v;
+    }
+
+    // --- Preguntas: cada opción reparte peso entre facetas ---
+    var PREGUNTAS = [
+        { q: "¿Qué momento del día te define?", opts: [
+            ["Un amanecer fresco y cítrico", { citrica: 2, acuatica: 1 }],
+            ["Una mañana entre flores", { floral: 2 }],
+            ["Una tarde de frutas y sol", { frutal: 2, citrica: 1 }],
+            ["Una noche cálida y misteriosa", { oriental: 2, especiada: 1 }] ] },
+        { q: "Elige un paisaje que te atraiga", opts: [
+            ["El mar y la brisa salada", { acuatica: 2 }],
+            ["Un bosque de maderas y musgo", { amaderada: 2, chipre: 1 }],
+            ["Un jardín en plena floración", { floral: 2, verde: 1 }],
+            ["Un mercado de especias", { especiada: 2, oriental: 1 }] ] },
+        { q: "¿Qué textura te seduce más?", opts: [
+            ["Hierbas frescas y lavanda", { aromatica: 2, verde: 1 }],
+            ["Cuero suave y tabaco", { cuero: 2 }],
+            ["Pétalos y frutas dulces", { floral: 1, frutal: 2 }],
+            ["Madera noble y ámbar", { amaderada: 2, oriental: 1 }] ] },
+        { q: "¿Cómo quieres sentirte al usarlo?", opts: [
+            ["Fresco y despejado", { citrica: 1, acuatica: 2 }],
+            ["Romántico y delicado", { floral: 2 }],
+            ["Envuelto en calidez", { oriental: 2, especiada: 1 }],
+            ["Elegante y con carácter", { chipre: 1, cuero: 1, amaderada: 1 }] ] },
+        { q: "Tu plan perfecto", opts: [
+            ["Un paseo al aire libre", { verde: 2, aromatica: 1 }],
+            ["Una cita especial", { floral: 1, frutal: 1 }],
+            ["Una velada íntima", { oriental: 2 }],
+            ["Una noche sofisticada", { cuero: 1, chipre: 1, amaderada: 1 }] ] },
+        { q: "¿Cómo quieres que te recuerden?", opts: [
+            ["Vibrante y con energía", { citrica: 2, frutal: 1 }],
+            ["Expresivo y encantador", { floral: 2 }],
+            ["Intenso e inolvidable", { oriental: 2, cuero: 1 }],
+            ["Profundo y atemporal", { amaderada: 2, chipre: 1 }] ] }
+    ];
+
+    var modal = document.getElementById("test-olfativo");
+    if (!modal) return;
+    var qWrap = modal.querySelector("[data-test-preguntas]");
+    var rWrap = modal.querySelector("[data-test-resultado]");
+    var elPaso = modal.querySelector("[data-test-paso]");
+    var elPreg = modal.querySelector("[data-test-pregunta]");
+    var elOpts = modal.querySelector("[data-test-opciones]");
+    var elProg = modal.querySelector("[data-test-progreso]");
+    var paso = 0, userVec = {};
+
+    function pintarPregunta() {
+        qWrap.classList.remove("hidden");
+        rWrap.classList.add("hidden");
+        var p = PREGUNTAS[paso];
+        elPaso.textContent = "Pregunta " + (paso + 1) + " de " + PREGUNTAS.length;
+        elPreg.textContent = p.q;
+        elProg.style.width = Math.round((paso / PREGUNTAS.length) * 100) + "%";
+        elOpts.innerHTML = "";
+        p.opts.forEach(function (o) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "text-left bg-[#fbfbfb] border border-gray-200 text-[14.5px] font-light text-gray-700 px-5 py-4 hover:border-gray-900 hover:bg-white transition-all";
+            b.textContent = o[0];
+            b.addEventListener("click", function () { responder(o[1]); });
+            elOpts.appendChild(b);
+        });
+    }
+    function responder(pesos) {
+        for (var f in pesos) userVec[f] = (userVec[f] || 0) + pesos[f];
+        paso++;
+        if (paso >= PREGUNTAS.length) finalizar();
+        else pintarPregunta();
+    }
+    function facetDominante() {
+        var mejor = null, max = -1;
+        for (var f in userVec) if (userVec[f] > max) { max = userVec[f]; mejor = f; }
+        return mejor || "floral";
+    }
+    // Elige la familia real del admin que mejor coincide con el perfil
+    function mejorFamilia() {
+        var mejor = null, mejorScore = -1;
+        FAMILIAS.forEach(function (fam) {
+            var v = vectorFamilia(fam.nombre), score = 0;
+            for (var f in v) score += (userVec[f] || 0) * v[f];
+            // pequeño desempate: familias de nombre más corto (más "puras") pesan un poco más
+            score += 0.01 * (1 / Math.max(1, fam.nombre.length));
+            if (score > mejorScore) { mejorScore = score; mejor = fam; }
+        });
+        return mejor || FAMILIAS[0];
+    }
+    function finalizar() {
+        var fam = mejorFamilia();
+        var facet = facetDominante();
+        var data = { id: fam.id, nombre: fam.nombre, facet: facet };
+        try { localStorage.setItem("dlp_familia", JSON.stringify(data)); } catch (e) {}
+        mostrarResultado(data);
+        pintarBanner();
+    }
+    function infoFacet(facet) { return FACET_INFO[facet] || FACET_INFO.floral; }
+    function familiaLink(id) { return CATALOGO + "?familia=" + id + "#productos"; }
+
+    function mostrarResultado(data) {
+        var info = infoFacet(data.facet);
+        qWrap.classList.add("hidden");
+        rWrap.classList.remove("hidden");
+        modal.querySelector("[data-test-resultado-icono]").textContent = info.icon;
+        modal.querySelector("[data-test-resultado-nombre]").textContent = data.nombre;
+        modal.querySelector("[data-test-resultado-desc]").textContent = info.desc;
+        modal.querySelector("[data-test-resultado-link]").setAttribute("href", familiaLink(data.id));
+    }
+    function pintarBanner() {
+        var data; try { data = JSON.parse(localStorage.getItem("dlp_familia")); } catch (e) {}
+        var banner = document.getElementById("familia-resultado");
+        if (!data || !data.id || !banner) return;
+        var info = infoFacet(data.facet);
+        banner.querySelector("#familia-resultado-icono").textContent = info.icon;
+        banner.querySelector("#familia-resultado-nombre").textContent = data.nombre;
+        banner.querySelector("#familia-resultado-link").setAttribute("href", familiaLink(data.id));
+        banner.classList.remove("hidden");
+        banner.classList.add("flex");
+    }
+    function abrir() { paso = 0; userVec = {}; pintarPregunta(); modal.classList.remove("hidden"); modal.classList.add("flex"); }
+    function cerrar() { modal.classList.add("hidden"); modal.classList.remove("flex"); }
+
+    document.querySelectorAll("[data-abrir-test]").forEach(function (b) { b.addEventListener("click", function (e) { e.preventDefault(); abrir(); }); });
+    modal.querySelectorAll("[data-cerrar-test]").forEach(function (b) { b.addEventListener("click", cerrar); });
+    modal.querySelector("[data-reiniciar-test]").addEventListener("click", abrir);
+    modal.addEventListener("click", function (e) { if (e.target === modal) cerrar(); });
+
+    pintarBanner();
+});
+</script>
 {% endif %}
 
 <!-- OFERTA DESTACADA (editorial) -->

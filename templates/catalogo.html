@@ -59,6 +59,13 @@
         const paso = 420;
         prev.addEventListener('click', function () { track.scrollBy({ left: -paso, behavior: 'smooth' }); });
         next.addEventListener('click', function () { track.scrollBy({ left: paso, behavior: 'smooth' }); });
+
+        // Carrusel de familias olfativas
+        var famTrack = document.getElementById('fam-track');
+        if (famTrack) {
+            document.getElementById('fam-prev').addEventListener('click', function () { famTrack.scrollBy({ left: -360, behavior: 'smooth' }); });
+            document.getElementById('fam-next').addEventListener('click', function () { famTrack.scrollBy({ left: 360, behavior: 'smooth' }); });
+        }
     });
 </script>
 
@@ -76,15 +83,28 @@
            rel="nofollow" class="px-7 py-2 border border-gray-900 rounded-full text-[11px] tracking-[0.2em] uppercase transition-all duration-300 {% if genero_actual == 'U' %}bg-gray-900 text-white{% else %}text-gray-900 hover:bg-gray-100{% endif %}">Unisex</a>
     </div>
 
-    <!-- Filtro por familia olfativa -->
+    <!-- Filtro por familia olfativa (carrusel con flechas) -->
     {% if familias %}
-    <div class="flex justify-center flex-wrap gap-x-6 gap-y-2 mb-14 text-[11px] tracking-[0.18em] uppercase">
-        <a href="?{% if marca_seleccionada_id %}marca={{ marca_seleccionada_id }}{% endif %}{% if genero_actual %}{% if marca_seleccionada_id %}&{% endif %}genero={{ genero_actual }}{% endif %}#productos"
-           rel="nofollow" class="pb-1 transition-colors {% if not familia_actual %}text-gray-900 border-b border-gray-900{% else %}text-gray-400 hover:text-gray-900{% endif %}">Todas las familias</a>
-        {% for familia in familias %}
-        <a href="?familia={{ familia.id }}{% if marca_seleccionada_id %}&marca={{ marca_seleccionada_id }}{% endif %}{% if genero_actual %}&genero={{ genero_actual }}{% endif %}#productos"
-           rel="nofollow" class="pb-1 transition-colors {% if familia_actual == familia.id %}text-gray-900 border-b border-gray-900{% else %}text-gray-400 hover:text-gray-900{% endif %}">{{ familia.nombre }}</a>
-        {% endfor %}
+    <div class="mb-14">
+        <p class="text-center text-[10px] tracking-[0.34em] uppercase text-gray-400 mb-4">Familia olfativa</p>
+        <div class="relative flex items-center max-w-[1100px] mx-auto">
+            <button type="button" id="fam-prev" aria-label="Anterior"
+                    class="flex-shrink-0 w-9 h-9 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+            </button>
+            <div id="fam-track" class="flex-1 mx-3 flex gap-2.5 overflow-x-auto scroll-smooth py-1" style="scrollbar-width: none; -ms-overflow-style: none;">
+                <a href="?{% if marca_seleccionada_id %}marca={{ marca_seleccionada_id }}{% endif %}{% if genero_actual %}{% if marca_seleccionada_id %}&{% endif %}genero={{ genero_actual }}{% endif %}#productos"
+                   rel="nofollow" class="flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full border text-[10px] tracking-[0.16em] uppercase transition-all duration-300 {% if not familia_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-500 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todas</a>
+                {% for familia in familias %}
+                <a href="?familia={{ familia.id }}{% if marca_seleccionada_id %}&marca={{ marca_seleccionada_id }}{% endif %}{% if genero_actual %}&genero={{ genero_actual }}{% endif %}#productos"
+                   rel="nofollow" class="flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full border text-[10px] tracking-[0.16em] uppercase transition-all duration-300 {% if familia_actual == familia.id %}bg-gray-900 text-white border-gray-900{% else %}text-gray-500 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ familia.nombre }}</a>
+                {% endfor %}
+            </div>
+            <button type="button" id="fam-next" aria-label="Siguiente"
+                    class="flex-shrink-0 w-9 h-9 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+            </button>
+        </div>
     </div>
     {% endif %}
 

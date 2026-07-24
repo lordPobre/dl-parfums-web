@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.urls import reverse
 from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena
 from django.utils.html import format_html
 
@@ -72,8 +73,31 @@ class FamiliaOlfativaAdmin(admin.ModelAdmin):
         return obj.perfume_set.count()
     total_perfumes.short_description = "N.º de perfumes"
 
+class PrevNextAdminMixin:
+    """Agrega al contexto del formulario de edición las URLs del objeto anterior
+    y siguiente, según el orden del modelo (o por pk)."""
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        try:
+            obj = self.model.objects.get(pk=object_id)
+            qs = self.get_queryset(request)
+            ordering = self.get_ordering(request) or self.model._meta.ordering or ['pk']
+            qs = qs.order_by(*ordering)
+            ids = list(qs.values_list('pk', flat=True))
+            if obj.pk in ids:
+                i = ids.index(obj.pk)
+                info = (self.model._meta.app_label, self.model._meta.model_name)
+                if i > 0:
+                    extra_context['prev_object_url'] = reverse('admin:%s_%s_change' % info, args=[ids[i - 1]])
+                if i < len(ids) - 1:
+                    extra_context['next_object_url'] = reverse('admin:%s_%s_change' % info, args=[ids[i + 1]])
+        except Exception:
+            pass
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
+
 @admin.register(Perfume)
-class PerfumeAdmin(admin.ModelAdmin):
+class PerfumeAdmin(PrevNextAdminMixin, admin.ModelAdmin):
     list_display = ('nombre', 'marca', 'precio', 'genero', 'stock','es_oferta', 'precio_oferta', 'activo', 'destacado')
     list_filter = ('marca', 'familia', 'genero','es_oferta', 'activo', 'destacado')
     search_fields = ('nombre', 'marca__nombre')

@@ -16,17 +16,23 @@ def home(request):
     portadas = ImagenPortada.objects.filter(activo=True)
     # Promociones / combos activos (gestionados desde el admin)
     promociones = Promocion.objects.filter(activo=True).prefetch_related('perfumes')
+    # Familias en JSON para el test olfativo (id + nombre) — cubre todas las del admin
+    import json
+    familias_data = json.dumps(
+        [{'id': f.id, 'nombre': f.nombre} for f in familias],
+        ensure_ascii=False,
+    )
 
     context = {
         'ofertas': ofertas,
         'destacados': destacados,
         'marcas': marcas,
         'familias': familias,
+        'familias_data': familias_data,
         'portadas': portadas,
         'promociones': promociones,
     }
     return render(request, 'home.html', context)
-
 
 
 def catalogo(request):
@@ -35,6 +41,7 @@ def catalogo(request):
     filtro_genero = request.GET.get('genero')
     marca_id = request.GET.get('marca')
     familia_id = request.GET.get('familia')
+    familia_txt = request.GET.get('familia_txt')  # clave del test olfativo (ej: 'oriental')
 
     if marca_id:
         perfumes = perfumes.filter(marca_id=marca_id)
@@ -42,11 +49,31 @@ def catalogo(request):
         perfumes = perfumes.filter(genero=filtro_genero)
     if familia_id:
         perfumes = perfumes.filter(familia_id=familia_id)
+    elif familia_txt:
+        # El test olfativo manda una palabra clave; se busca la familia cuyo nombre
+        # la contenga, ignorando acentos y mayúsculas (ej: 'citrica' -> 'Cítrica').
+        import unicodedata
+
+        def _norm(s):
+            return ''.join(
+                c for c in unicodedata.normalize('NFD', (s or '').lower())
+                if unicodedata.category(c) != 'Mn'
+            )
+
+        clave = _norm(familia_txt)
+        fam = None
+        for f in FamiliaOlfativa.objects.all():
+            if clave in _norm(f.nombre):
+                fam = f
+                break
+        if fam:
+            perfumes = perfumes.filter(familia_id=fam.id)
+            familia_id = str(fam.id)
 
     return render(request, 'catalogo.html', {
         'perfumes': perfumes,
         'marcas': Marca.objects.all(),
-        'familias': FamiliaOlfativa.objects.filter(perfume__activo=True).distinct(),
+        'familias': FamiliaOlfativa.objects.filter(perfume__activo=True).distinct().order_by('nombre'),
         'genero_actual': filtro_genero,
         'marca_seleccionada_id': int(marca_id) if marca_id else None,
         'familia_actual': int(familia_id) if familia_id else None,
@@ -107,7 +134,6 @@ def perfume_detalle(request, perfume_id):
         'total_resenas': resenas.count(),
     }
     return render(request, 'detalle.html', context)
-
 
 def contacto(request):
     if request.method == 'POST':
