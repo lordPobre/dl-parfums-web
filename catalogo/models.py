@@ -5,6 +5,7 @@ class Marca(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     logo = models.ImageField(upload_to='marcas/', blank=True, null=True)
     descripcion = models.TextField(blank=True, verbose_name="Historia de la marca")
+    actualizado = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name_plural = "Marcas"

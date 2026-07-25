@@ -10,7 +10,7 @@ class PerfumeSitemap(Sitemap):
         return Perfume.objects.filter(activo=True)
 
     def lastmod(self, obj):
-        return obj.id 
+        return obj.actualizado
 
 class VistasEstaticasSitemap(Sitemap):
     priority = 1.0
