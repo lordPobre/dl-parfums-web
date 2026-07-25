@@ -27,7 +27,6 @@ class SecurityHeadersMiddleware:
         response = self.get_response(request)
         response.setdefault("Content-Security-Policy", CSP)
         response.setdefault("Permissions-Policy", PERMISSIONS_POLICY)
-        # Cabeceras extra recomendadas
         response.setdefault("X-Content-Type-Options", "nosniff")
         response.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.setdefault("X-Frame-Options", "SAMEORIGIN")

@@ -22,7 +22,7 @@ class ImagenPortadaAdmin(admin.ModelAdmin):
 
 class ImagenPerfumeInline(admin.TabularInline):
     model = ImagenPerfume
-    extra = 3               # 3 casillas vacías para subir imágenes de una vez
+    extra = 3              
     fields = ('imagen', 'orden')
 
 
@@ -32,22 +32,6 @@ class ResenaInline(admin.TabularInline):
     fields = ('nombre', 'calificacion', 'comentario', 'aprobado', 'fecha')
     readonly_fields = ('fecha',)
 
-
-# --- OPCIÓN A (recomendada): añade los inlines a tu PerfumeAdmin existente ---
-# Si ya tienes un @admin.register(Perfume) class PerfumeAdmin, solo agrégale:
-#     inlines = [ImagenPerfumeInline, ResenaInline]
-#
-# --- OPCIÓN B: si NO tienes PerfumeAdmin propio, descomenta este bloque ---
-# admin.site.unregister(Perfume)  # solo si ya estaba registrado sin inlines
-# @admin.register(Perfume)
-# class PerfumeAdmin(admin.ModelAdmin):
-#     list_display = ('nombre', 'marca', 'familia', 'precio', 'es_oferta', 'stock', 'activo')
-#     list_filter = ('marca', 'familia', 'genero', 'es_oferta', 'activo')
-#     search_fields = ('nombre', 'marca__nombre')
-#     inlines = [ImagenPerfumeInline, ResenaInline]
-
-
-# También puedes moderar todas las reseñas en su propia sección:
 @admin.register(Resena)
 class ResenaAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'perfume', 'calificacion', 'aprobado', 'fecha')
@@ -74,9 +58,6 @@ class FamiliaOlfativaAdmin(admin.ModelAdmin):
     total_perfumes.short_description = "N.º de perfumes"
 
 class PrevNextAdminMixin:
-    """Agrega al contexto del formulario de edición las URLs del objeto anterior
-    y siguiente, según el orden del modelo (o por pk)."""
-
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
         try:
@@ -122,15 +103,3 @@ class PromocionAdmin(admin.ModelAdmin):
             )
         return "—"
     miniatura.short_description = "Vista previa"
-
-
-# --- Opcional pero recomendado ---
-# Para asignar la familia (y las notas) al crear/editar cada perfume desde el admin,
-# asegúrate de que tu PerfumeAdmin incluya 'familia' en los campos. Ejemplo:
-#
-# @admin.register(Perfume)
-# class PerfumeAdmin(admin.ModelAdmin):
-#     list_display = ('nombre', 'marca', 'familia', 'precio', 'es_oferta', 'stock', 'activo')
-#     list_filter = ('marca', 'familia', 'genero', 'es_oferta', 'activo')
-#     list_editable = ('precio', 'es_oferta', 'activo')
-#     search_fields = ('nombre', 'marca__nombre')

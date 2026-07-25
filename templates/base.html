@@ -30,23 +30,20 @@
         @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
         .animate-rise { animation: rise 1s ease both; }
 
-        /* Carrusel de marcas (marquee continuo) */
         @keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .marquee-track { animation: marquee-scroll var(--marquee-duration, 30s) linear infinite; }
         .marquee:hover .marquee-track { animation-play-state: paused; }
         @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
 
-        /* Oculta la barra de scroll del carrusel de marcas (Chrome/Safari) */
         #marcas-track::-webkit-scrollbar { display: none; }
         #fam-track::-webkit-scrollbar { display: none; }
 
-        /* Protección básica de imágenes (disuasivo, no infalible) */
         img {
             -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
             -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; -o-user-drag: none;
-            pointer-events: none; /* bloquea arrastrar y "guardar imagen" */
+            pointer-events: none; 
         }
-        /* Los logos del carrusel son enlaces: reactivamos el clic en su contenedor <a> */
+
         a img { pointer-events: none; }
     </style>
 
@@ -63,7 +60,6 @@
         </div>
     </div>
 
-    <!-- Barra de anuncio -->
     <div class="bg-gray-900 text-white text-center py-2.5 px-4 text-[11px] tracking-[0.28em] uppercase">
         Envío gratis en compras sobre $50.000 &nbsp;·&nbsp; Asesoría personalizada por WhatsApp
     </div>
@@ -105,7 +101,6 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Botón flotante de WhatsApp -->
     <a href="https://wa.me/56962169898?text=Hola,%20quisiera%20asesor%C3%ADa%20personalizada%20para%20elegir%20un%20perfume."
        target="_blank" rel="noopener noreferrer" aria-label="Asesoría por WhatsApp"
        class="group fixed bottom-6 right-6 z-[300] flex items-center gap-3 bg-[#25D366] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 pl-4 pr-5 py-3.5 hover:-translate-y-0.5">
@@ -156,7 +151,6 @@
             setTimeout(function() { preloader.classList.add('preloader-hidden'); }, 500);
         });
 
-        // Disuasivos de descarga de imágenes
         document.addEventListener('contextmenu', function (e) {
             if (e.target && e.target.tagName === 'IMG') e.preventDefault();
         });

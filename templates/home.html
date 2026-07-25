@@ -3,9 +3,7 @@
 
 {% block content %}
 
-<!-- HERO -->
 <section class="relative w-full min-h-[88vh] flex items-center justify-center overflow-hidden bg-gray-900">
-    <!-- Carrusel de fondo (imágenes gestionadas desde el admin: Imágenes de portada) -->
     {% if portadas %}
     <div id="hero-carousel" class="absolute inset-0 z-0">
         {% for portada in portadas %}
@@ -22,7 +20,6 @@
     {% endif %}
     <div class="absolute inset-0 z-[1]" style="background: linear-gradient(180deg, rgba(31,41,55,0.55), rgba(0,0,0,0.85));"></div>
 
-    <!-- Puntos indicadores -->
     {% if portadas|length > 1 %}
     <div id="hero-dots" class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-2.5">
         {% for portada in portadas %}
@@ -43,7 +40,6 @@
     </div>
 </section>
 
-<!-- MARCAS (carrusel automático) -->
 <section class="py-14 bg-white border-b border-gray-100 overflow-hidden">
     <div class="max-w-[1400px] mx-auto px-5 md:px-10">
         <p class="text-center text-[11px] tracking-[0.34em] text-gray-400 uppercase mb-10">Nuestras Casas</p>
@@ -73,7 +69,6 @@
     {% endif %}
 </section>
 
-<!-- PROMOCIONES / COMBOS -->
 {% if promociones %}
 <section id="promociones" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
     <div class="text-center mb-14">
@@ -117,10 +112,8 @@
 </section>
 {% endif %}
 
-<!-- FAMILIAS OLFATIVAS -->
 {% if familias %}
 <section id="familias" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
-    <!-- Resultado permanente del test (se rellena por JS desde localStorage) -->
     <div id="familia-resultado" class="hidden items-center justify-between flex-wrap gap-5 bg-gray-900 text-white px-8 py-6 mb-12">
         <div class="flex items-center gap-4">
             <span class="text-3xl font-serif" id="familia-resultado-icono">✦</span>
@@ -152,7 +145,6 @@
     </div>
 </section>
 
-<!-- MODAL: Test olfativo -->
 <div id="test-olfativo" class="hidden fixed inset-0 z-[200] bg-gray-900/75 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="bg-white w-full max-w-[620px] max-h-[90vh] overflow-y-auto p-10 md:p-12" data-modal-caja>
         <div class="flex justify-between items-center mb-8">
@@ -162,7 +154,6 @@
             </button>
         </div>
 
-        <!-- Preguntas -->
         <div data-test-preguntas>
             <div class="h-[2px] bg-gray-100 mb-8"><div data-test-progreso class="h-[2px] bg-gray-900 transition-all duration-400" style="width:0%"></div></div>
             <p data-test-paso class="text-[11px] tracking-[0.2em] uppercase text-gray-400 mb-3"></p>
@@ -170,7 +161,6 @@
             <div data-test-opciones class="flex flex-col gap-3"></div>
         </div>
 
-        <!-- Resultado -->
         <div data-test-resultado class="hidden text-center pt-2">
             <div data-test-resultado-icono class="text-5xl font-serif text-gray-900 mb-4">✦</div>
             <span class="text-[11px] tracking-[0.3em] uppercase text-gray-400">Tu familia olfativa es</span>
@@ -188,13 +178,10 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     var CATALOGO = "{% url 'catalogo' %}";
-
-    // Familias reales del admin (id + nombre)
     var FAMILIAS = [];
     try { FAMILIAS = JSON.parse(document.getElementById("familias-data").textContent) || []; } catch (e) {}
     if (!FAMILIAS.length) { return; }
 
-    // --- Facetas olfativas y su detección por el nombre de la familia ---
     var FACET_KEYWORDS = {
         citrica:   ["citr", "hesper"],
         floral:    ["floral", "flor"],
@@ -225,7 +212,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function normalizar(s) {
         return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     }
-    // Vector de facetas de una familia según su nombre
     function vectorFamilia(nombre) {
         var n = normalizar(nombre), v = {};
         for (var facet in FACET_KEYWORDS) {
@@ -236,7 +222,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return v;
     }
 
-    // --- Preguntas: cada opción reparte peso entre facetas ---
     var PREGUNTAS = [
         { q: "¿Qué momento del día te define?", opts: [
             ["Un amanecer fresco y cítrico", { citrica: 2, acuatica: 1 }],
@@ -308,13 +293,11 @@ document.addEventListener("DOMContentLoaded", function () {
         for (var f in userVec) if (userVec[f] > max) { max = userVec[f]; mejor = f; }
         return mejor || "floral";
     }
-    // Elige la familia real del admin que mejor coincide con el perfil
     function mejorFamilia() {
         var mejor = null, mejorScore = -1;
         FAMILIAS.forEach(function (fam) {
             var v = vectorFamilia(fam.nombre), score = 0;
             for (var f in v) score += (userVec[f] || 0) * v[f];
-            // pequeño desempate: familias de nombre más corto (más "puras") pesan un poco más
             score += 0.01 * (1 / Math.max(1, fam.nombre.length));
             if (score > mejorScore) { mejorScore = score; mejor = fam; }
         });
@@ -364,7 +347,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 {% endif %}
 
-<!-- OFERTA DESTACADA (editorial) -->
 {% if ofertas %}
 {% with destacada=ofertas.0 %}
 <section class="bg-[#fbfbfb] border-y border-gray-100">
@@ -392,7 +374,6 @@ document.addEventListener("DOMContentLoaded", function () {
 {% endwith %}
 {% endif %}
 
-<!-- DESTACADAS -->
 {% if destacados %}
 <section id="destacados" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
     <div class="text-center mb-14">
@@ -411,7 +392,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </section>
 {% endif %}
 
-<!-- CONFIANZA -->
 <section class="border-y border-gray-100 bg-[#fbfbfb]">
     <div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-3">
         <div class="px-8 py-12 text-center border-t md:border-t-0 md:border-l border-gray-100">
@@ -433,7 +413,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </section>
 
 <script>
-    // Carrusel de fondo del hero (autoplay + puntos)
     document.addEventListener("DOMContentLoaded", function () {
         const slides = Array.from(document.querySelectorAll('#hero-carousel .hero-slide'));
         if (slides.length < 2) return;

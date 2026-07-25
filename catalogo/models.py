@@ -35,9 +35,9 @@ class Perfume(models.Model):
     es_oferta = models.BooleanField(default=False, verbose_name="¿Es oferta?")
     precio_oferta = models.DecimalField(max_digits=10, decimal_places=0, blank=True, null=True, verbose_name="Precio de oferta")
     imagen = models.ImageField(upload_to='perfumes/', verbose_name="Imagen Principal")
-    notas_salida = models.CharField(max_length=255, help_text="Lo que se siente al aplicar")
-    notas_corazon = models.CharField(max_length=255, help_text="El alma del perfume")
-    notas_fondo = models.CharField(max_length=255, help_text="Lo que perdura en la piel")
+    notas_salida  = models.CharField(max_length=255, blank=True)
+    notas_corazon = models.CharField(max_length=255, blank=True)
+    notas_fondo   = models.CharField(max_length=255, blank=True)
     activo = models.BooleanField(default=True)
     destacado = models.BooleanField(default=False, help_text="Mostrar en la página de inicio")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -91,7 +91,6 @@ class Promocion(models.Model):
         upload_to='promociones/', blank=True, null=True,
         help_text="Imagen opcional para la promoción."
     )
-    # Opcional: relaciona los perfumes incluidos (solo informativo/visual).
     perfumes = models.ManyToManyField(
         'Perfume', blank=True, related_name='promociones',
         help_text="Perfumes incluidos en la promoción (opcional)."
