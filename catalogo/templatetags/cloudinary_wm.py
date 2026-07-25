@@ -6,7 +6,7 @@ register = template.Library()
 # Ajusta el texto, opacidad (o_), posición (g_) y márgenes (x_,y_) a tu gusto.
 # Para usar un LOGO en vez de texto: sube tu logo a Cloudinary y reemplaza WM por,
 # por ejemplo: "l_dl_logo,o_45,g_center,w_0.5,fl_relative"
-WM = "l_text:Arial_45_bold:DL%20PARFUMS,co_white,o_35,g_south_east,x_20,y_20"
+WM = "l_text:Arial_45_bold:Instinto%20Olfativo,co_white,o_35,g_south_east,x_20,y_20"
 
 
 @register.filter

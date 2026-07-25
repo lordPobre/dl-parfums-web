@@ -9,8 +9,9 @@ from catalogo.sitemaps import PerfumeSitemap, VistasEstaticasSitemap
 def robots_txt(request):
     lineas = [
         "User-Agent: *",
-        "Disallow: /admin/",
+        "Disallow: /perseus-access-x12/",
         "Allow: /",
+        "Sitemap: https://dlparfums-web.vercel.app/sitemap.xml",
     ]
     return HttpResponse("\n".join(lineas), content_type="text/plain")
 

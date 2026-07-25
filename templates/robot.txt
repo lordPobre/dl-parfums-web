@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /perseus-access-x12/
+Allow: /
+Sitemap: https://dlparfums-web.vercel.app//sitemap.xml

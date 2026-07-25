@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static cloudinary_wm %}
 
-{% block title %}{{ perfume.nombre }} | DL Parfums{% endblock %}
+{% block title %}{{ perfume.nombre }} | Instinto Olfativo{% endblock %}
 {% block meta_description %}{{ perfume.descripcion|striptags|truncatewords:25 }}{% endblock %}
 {% block og_title %}{{ perfume.nombre }} — {{ perfume.marca.nombre }}{% endblock %}
 

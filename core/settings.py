@@ -47,11 +47,11 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'core.urls'
 
 JAZZMIN_SETTINGS = {
-    "site_title": "DL Parfums Admin",
-    "site_header": "DL Parfums",
-    "site_brand": "DL Parfums",
-    "welcome_sign": "Gestión de Catálogo - DL Parfums",
-    "copyright": "DL Parfums",
+    "site_title": "Instinto Olfativo Admin",
+    "site_header": "Instinto Olfativo",
+    "site_brand": "Instinto Olfativo",
+    "welcome_sign": "Gestión de Catálogo - Instinto Olfativo",
+    "copyright": "Instinto Olfativo",
     
     "search_model": ["catalogo.Perfume"],
 
