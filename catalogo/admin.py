@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import reverse
-from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena
+from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros
 from django.utils.html import format_html
 
 @admin.register(ImagenPortada)
@@ -103,3 +103,15 @@ class PromocionAdmin(admin.ModelAdmin):
             )
         return "—"
     miniatura.short_description = "Vista previa"
+
+@admin.register(PaginaNosotros)
+class PaginaNosotrosAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'titulo', 'actualizado')
+
+    def has_add_permission(self, request):
+        # Solo un registro: si ya existe, oculta el botón "Agregar"
+        return not PaginaNosotros.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # no permitir borrar el contenido
+

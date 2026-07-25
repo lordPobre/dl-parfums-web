@@ -156,3 +156,61 @@ class Resena(models.Model):
     @property
     def estrellas_vacias(self):
         return range(5 - self.calificacion)
+
+class PaginaNosotros(models.Model):
+    """Contenido editable de la sección Nosotros. Pensado como registro único
+    (singleton): edita siempre la misma entrada desde el admin."""
+    titulo = models.CharField(
+        max_length=150, default="Nuestra Historia",
+        help_text="Título principal de la sección."
+    )
+    subtitulo = models.CharField(
+        max_length=200, blank=True,
+        help_text="Frase corta bajo el título (opcional)."
+    )
+    contenido = models.TextField(
+        help_text="Texto principal. Puedes separar en varios párrafos con saltos de línea."
+    )
+    # Bloques adicionales con su propio subtítulo (opcionales)
+    subtitulo2 = models.CharField(max_length=200, blank=True, help_text="Segundo subtítulo (opcional).")
+    contenido2 = models.TextField(blank=True, help_text="Texto del segundo bloque (opcional).")
+    subtitulo3 = models.CharField(max_length=200, blank=True, help_text="Tercer subtítulo (opcional).")
+    contenido3 = models.TextField(blank=True, help_text="Texto del tercer bloque (opcional).")
+    imagen = models.ImageField(
+        upload_to='nosotros/', blank=True, null=True,
+        help_text="Imagen destacada de la sección (opcional)."
+    )
+    # Bloque de cierre / cita (opcional)
+    cita = models.CharField(
+        max_length=255, blank=True,
+        help_text="Frase destacada o cita al final (opcional)."
+    )
+    cita_autor = models.CharField(
+        max_length=120, blank=True, default="Dirección Instinto Olfativo",
+        help_text="Autor/firma de la cita."
+    )
+    # Pilares (3 bloques)
+    pilar1_titulo = models.CharField(max_length=80, blank=True, default="Autenticidad Absoluta")
+    pilar1_texto = models.TextField(blank=True)
+    pilar2_titulo = models.CharField(max_length=80, blank=True, default="Asesoría Experta")
+    pilar2_texto = models.TextField(blank=True)
+    pilar3_titulo = models.CharField(max_length=80, blank=True, default="Servicio Discreto")
+    pilar3_texto = models.TextField(blank=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Página Nosotros"
+        verbose_name_plural = "Página Nosotros"
+
+    def __str__(self):
+        return "Contenido de la página Nosotros"
+
+    def save(self, *args, **kwargs):
+        # Fuerza un único registro (siempre pk=1)
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def cargar(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

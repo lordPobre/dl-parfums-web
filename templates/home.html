@@ -112,8 +112,10 @@
 </section>
 {% endif %}
 
+<!-- FAMILIAS OLFATIVAS -->
 {% if familias %}
 <section id="familias" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
+    <!-- Resultado permanente del test (se rellena por JS desde localStorage) -->
     <div id="familia-resultado" class="hidden items-center justify-between flex-wrap gap-5 bg-gray-900 text-white px-8 py-6 mb-12">
         <div class="flex items-center gap-4">
             <span class="text-3xl font-serif" id="familia-resultado-icono">✦</span>
@@ -134,16 +136,35 @@
         <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
         <button type="button" data-abrir-test class="mt-7 border border-gray-900 text-[11px] tracking-[0.22em] uppercase text-gray-900 px-9 py-3.5 hover:bg-gray-900 hover:text-white transition-all duration-300">Hacer el test olfativo</button>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {% for familia in familias %}
-        <a href="{% url 'catalogo' %}?familia={{ familia.id }}#productos" rel="nofollow" class="group border border-gray-200 bg-[#fbfbfb] px-6 py-11 text-center transition-all duration-500 hover:border-gray-900 hover:bg-white hover:-translate-y-1 hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.25)]">
-            {% include "partials/icono_familia.html" with familia=familia %}
-            <h3 class="font-serif text-xl text-gray-900 mb-2">{{ familia.nombre }}</h3>
-            <p class="text-[12.5px] font-light leading-relaxed text-gray-500">{{ familia.descripcion|default:"Descubre las fragancias de esta familia."|truncatewords:14 }}</p>
-        </a>
-        {% endfor %}
+    <div class="relative flex items-center">
+        <button type="button" id="famhome-prev" aria-label="Anterior"
+                class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+        </button>
+        <div id="famhome-track" class="flex-1 mx-3 flex gap-5 overflow-x-auto scroll-smooth py-1" style="scrollbar-width: none; -ms-overflow-style: none;">
+            {% for familia in familias %}
+            <a href="{% url 'catalogo' %}?familia={{ familia.id }}#productos" rel="nofollow" class="group flex-shrink-0 w-[280px] border border-gray-200 bg-[#fbfbfb] px-6 py-11 text-center transition-all duration-500 hover:border-gray-900 hover:bg-white hover:-translate-y-1 hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.25)]">
+                {% include "partials/icono_familia.html" with familia=familia %}
+                <h3 class="font-serif text-xl text-gray-900 mb-2">{{ familia.nombre }}</h3>
+                <p class="text-[12.5px] font-light leading-relaxed text-gray-500">{{ familia.descripcion|default:"Descubre las fragancias de esta familia."|truncatewords:14 }}</p>
+            </a>
+            {% endfor %}
+        </div>
+        <button type="button" id="famhome-next" aria-label="Siguiente"
+                class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+        </button>
     </div>
 </section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var t = document.getElementById('famhome-track');
+    if (!t) return;
+    document.getElementById('famhome-prev').addEventListener('click', function () { t.scrollBy({ left: -300, behavior: 'smooth' }); });
+    document.getElementById('famhome-next').addEventListener('click', function () { t.scrollBy({ left: 300, behavior: 'smooth' }); });
+});
+</script>
 
 <div id="test-olfativo" class="hidden fixed inset-0 z-[200] bg-gray-900/75 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="bg-white w-full max-w-[620px] max-h-[90vh] overflow-y-auto p-10 md:p-12" data-modal-caja>
@@ -154,6 +175,7 @@
             </button>
         </div>
 
+        <!-- Preguntas -->
         <div data-test-preguntas>
             <div class="h-[2px] bg-gray-100 mb-8"><div data-test-progreso class="h-[2px] bg-gray-900 transition-all duration-400" style="width:0%"></div></div>
             <p data-test-paso class="text-[11px] tracking-[0.2em] uppercase text-gray-400 mb-3"></p>
@@ -161,6 +183,7 @@
             <div data-test-opciones class="flex flex-col gap-3"></div>
         </div>
 
+        <!-- Resultado -->
         <div data-test-resultado class="hidden text-center pt-2">
             <div data-test-resultado-icono class="text-5xl font-serif text-gray-900 mb-4">✦</div>
             <span class="text-[11px] tracking-[0.3em] uppercase text-gray-400">Tu familia olfativa es</span>
@@ -178,10 +201,13 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     var CATALOGO = "{% url 'catalogo' %}";
+
+    // Familias reales del admin (id + nombre)
     var FAMILIAS = [];
     try { FAMILIAS = JSON.parse(document.getElementById("familias-data").textContent) || []; } catch (e) {}
     if (!FAMILIAS.length) { return; }
 
+    // --- Facetas olfativas y su detección por el nombre de la familia ---
     var FACET_KEYWORDS = {
         citrica:   ["citr", "hesper"],
         floral:    ["floral", "flor"],
@@ -212,6 +238,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function normalizar(s) {
         return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     }
+    // Vector de facetas de una familia según su nombre
     function vectorFamilia(nombre) {
         var n = normalizar(nombre), v = {};
         for (var facet in FACET_KEYWORDS) {
@@ -222,6 +249,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return v;
     }
 
+    // --- Preguntas: cada opción reparte peso entre facetas ---
     var PREGUNTAS = [
         { q: "¿Qué momento del día te define?", opts: [
             ["Un amanecer fresco y cítrico", { citrica: 2, acuatica: 1 }],
@@ -293,11 +321,13 @@ document.addEventListener("DOMContentLoaded", function () {
         for (var f in userVec) if (userVec[f] > max) { max = userVec[f]; mejor = f; }
         return mejor || "floral";
     }
+    // Elige la familia real del admin que mejor coincide con el perfil
     function mejorFamilia() {
         var mejor = null, mejorScore = -1;
         FAMILIAS.forEach(function (fam) {
             var v = vectorFamilia(fam.nombre), score = 0;
             for (var f in v) score += (userVec[f] || 0) * v[f];
+            // pequeño desempate: familias de nombre más corto (más "puras") pesan un poco más
             score += 0.01 * (1 / Math.max(1, fam.nombre.length));
             if (score > mejorScore) { mejorScore = score; mejor = fam; }
         });
@@ -413,6 +443,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </section>
 
 <script>
+    // Carrusel de fondo del hero (autoplay + puntos)
     document.addEventListener("DOMContentLoaded", function () {
         const slides = Array.from(document.querySelectorAll('#hero-carousel .hero-slide'));
         if (slides.length < 2) return;
