@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 class Marca(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
@@ -42,8 +43,8 @@ class Perfume(models.Model):
     destacado = models.BooleanField(default=False, help_text="Mostrar en la página de inicio")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.marca.nombre} - {self.nombre}"
+    def get_absolute_url(self):
+        return reverse("perfume_detalle", args=[self.id])
     
 class ImagenPortada(models.Model):
     """Diapositivas del carrusel de fondo del hero (home). Se gestionan desde el admin."""
