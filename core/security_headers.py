@@ -8,6 +8,7 @@ CSP = (
     "frame-ancestors 'self'; "
     "base-uri 'self'; "
     "form-action 'self'; "
+    "frame-src https://www.google.com https://maps.google.com; "
     "object-src 'none'; "
     "upgrade-insecure-requests"
 )
