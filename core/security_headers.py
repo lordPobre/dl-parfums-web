@@ -1,10 +1,10 @@
 CSP = (
     "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; "
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'https://connect.facebook.net https://cdn.tailwindcss.com; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "
-    "img-src 'self' data: https://res.cloudinary.com; "
-    "connect-src 'self'; "
+    "img-src 'self' data: https://res.cloudinary.com https://www.facebook.com; "
+    "connect-src 'self'https://connect.facebook.net https://www.facebook.com; "
     "frame-ancestors 'self'; "
     "base-uri 'self'; "
     "form-action 'self'; "

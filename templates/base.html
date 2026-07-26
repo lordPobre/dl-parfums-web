@@ -11,7 +11,25 @@
     <meta property="og:type" content="website">
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
-
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '2651638791898163');
+    fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=2651638791898163&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+   
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -32,25 +50,21 @@
         @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
         .animate-rise { animation: rise 1s ease both; }
 
-        /* Carrusel de marcas (marquee continuo) */
         @keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .marquee-track { animation: marquee-scroll var(--marquee-duration, 30s) linear infinite; }
         .marquee:hover .marquee-track { animation-play-state: paused; }
         @media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
 
-        /* Oculta la barra de scroll del carrusel de marcas (Chrome/Safari) */
         #marcas-track::-webkit-scrollbar { display: none; }
         #fam-track::-webkit-scrollbar { display: none; }
         #famhome-track::-webkit-scrollbar { display: none; }
         #dest-track::-webkit-scrollbar { display: none; }
 
-        /* Protección básica de imágenes (disuasivo, no infalible) */
         img {
             -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;
             -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; -o-user-drag: none;
-            pointer-events: none; /* bloquea arrastrar y "guardar imagen" */
+            pointer-events: none; 
         }
-        /* Los logos del carrusel son enlaces: reactivamos el clic en su contenedor <a> */
         a img { pointer-events: none; }
     </style>
 
