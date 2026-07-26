@@ -4,7 +4,7 @@ CSP = (
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "
     "img-src 'self' data: https://res.cloudinary.com https://www.facebook.com https://analytics.tiktok.com; "
-    "connect-src 'self' https://connect.facebook.net https://www.facebook.com https://analytics.tiktok.com; "
+    "connect-src 'self' https://connect.facebook.net https://www.facebook.com https://analytics.tiktok.com https://analytics-ipv6.tiktokw.us https://*.tiktokw.us https://*.tiktok.com; "
     "frame-ancestors 'self'; "
     "base-uri 'self'; "
     "form-action 'self'; "
