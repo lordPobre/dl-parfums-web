@@ -32,7 +32,7 @@
     <div class="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center animate-rise">
         <span class="text-[11px] tracking-[0.5em] text-white/70 uppercase mb-7">Alta Perfumería</span>
         <h1 class="text-5xl md:text-8xl font-serif text-white mb-6 leading-[1.05]">Descubre<br><em class="italic font-medium">tu esencia ideal</em></h1>
-        <p class="text-base md:text-lg text-white/70 mb-10 font-light max-w-xl leading-relaxed">La colección más exclusiva para quienes buscan dejar una huella imborrable en cada encuentro.</p>
+        <p class="text-base md:text-lg text-white/70 mb-10 font-light max-w-xl leading-relaxed">La colección más variada para quienes buscan dejar una huella imborrable en cada encuentro.</p>
         <div class="flex flex-wrap gap-4 justify-center">
             <a href="{% url 'catalogo' %}" class="bg-white text-gray-900 px-10 py-4 uppercase tracking-[0.26em] text-[11px] font-medium hover:bg-gray-200 transition duration-300">Explorar Colección</a>
             <a href="{% url 'catalogo' %}#familias" data-abrir-test class="border border-white/50 text-white px-10 py-4 uppercase tracking-[0.26em] text-[11px] hover:bg-white/10 transition duration-300">Test Olfativo</a>
@@ -108,6 +108,51 @@
             </div>
         </div>
         {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if ofertas %}
+{% with destacada=ofertas.0 %}
+<section class="bg-[#fbfbfb] border-y border-gray-100">
+    <div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 items-stretch">
+        <div class="bg-[#f8f8f8] flex items-center justify-center p-12 md:p-16 min-h-[380px] md:min-h-[560px]">
+            {% if destacada.imagen %}
+            <img src="{{ destacada.imagen.url|watermark }}" alt="{{ destacada.nombre }}" class="max-h-[300px] md:max-h-[440px] max-w-full object-contain">
+            {% endif %}
+        </div>
+        <div class="bg-white px-8 py-14 md:px-16 md:py-20 flex flex-col justify-center">
+            <span class="text-[11px] tracking-[0.34em] text-red-700 uppercase mb-5">Oferta por tiempo limitado</span>
+            <p class="text-[11px] tracking-[0.22em] text-gray-400 uppercase mb-3">{{ destacada.marca.nombre }}</p>
+            <h2 class="font-serif text-3xl md:text-5xl text-gray-900 leading-tight mb-6">{{ destacada.nombre }}</h2>
+            <p class="font-light text-[15px] leading-relaxed text-gray-500 max-w-md mb-7">{{ destacada.descripcion|truncatewords:30 }}</p>
+            <div class="flex items-baseline gap-4 mb-9">
+                <span class="font-serif text-3xl md:text-4xl text-red-700">${{ destacada.precio_oferta }}</span>
+                <span class="text-lg text-gray-400 line-through">${{ destacada.precio }}</span>
+            </div>
+            <div>
+                <a href="{% url 'perfume_detalle' destacada.id %}" class="inline-block bg-gray-900 text-white px-11 py-4 text-[11px] tracking-[0.26em] uppercase font-medium hover:bg-black transition-colors">Ver Detalles</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endwith %}
+{% endif %}
+
+{% if destacados %}
+<section id="destacados" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
+    <div class="text-center mb-14">
+        <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Nuestra Selección</span>
+        <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">Fragancias Destacadas</h2>
+        <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7 gap-y-14">
+        {% for perfume in destacados %}
+        {% include "partials/tarjeta_perfume.html" with perfume=perfume %}
+        {% endfor %}
+    </div>
+    <div class="mt-16 text-center">
+        <a href="{% url 'catalogo' %}" class="inline-block border border-gray-900 text-gray-900 px-12 py-4 uppercase tracking-[0.26em] text-[11px] font-medium hover:bg-gray-900 hover:text-white transition duration-300">Ver Todo El Catálogo</a>
     </div>
 </section>
 {% endif %}
@@ -377,51 +422,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 {% endif %}
 
-{% if ofertas %}
-{% with destacada=ofertas.0 %}
-<section class="bg-[#fbfbfb] border-y border-gray-100">
-    <div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 items-stretch">
-        <div class="bg-[#f8f8f8] flex items-center justify-center p-12 md:p-16 min-h-[380px] md:min-h-[560px]">
-            {% if destacada.imagen %}
-            <img src="{{ destacada.imagen.url|watermark }}" alt="{{ destacada.nombre }}" class="max-h-[300px] md:max-h-[440px] max-w-full object-contain">
-            {% endif %}
-        </div>
-        <div class="bg-white px-8 py-14 md:px-16 md:py-20 flex flex-col justify-center">
-            <span class="text-[11px] tracking-[0.34em] text-red-700 uppercase mb-5">Oferta por tiempo limitado</span>
-            <p class="text-[11px] tracking-[0.22em] text-gray-400 uppercase mb-3">{{ destacada.marca.nombre }}</p>
-            <h2 class="font-serif text-3xl md:text-5xl text-gray-900 leading-tight mb-6">{{ destacada.nombre }}</h2>
-            <p class="font-light text-[15px] leading-relaxed text-gray-500 max-w-md mb-7">{{ destacada.descripcion|truncatewords:30 }}</p>
-            <div class="flex items-baseline gap-4 mb-9">
-                <span class="font-serif text-3xl md:text-4xl text-red-700">${{ destacada.precio_oferta }}</span>
-                <span class="text-lg text-gray-400 line-through">${{ destacada.precio }}</span>
-            </div>
-            <div>
-                <a href="{% url 'perfume_detalle' destacada.id %}" class="inline-block bg-gray-900 text-white px-11 py-4 text-[11px] tracking-[0.26em] uppercase font-medium hover:bg-black transition-colors">Ver Detalles</a>
-            </div>
-        </div>
-    </div>
-</section>
-{% endwith %}
-{% endif %}
-
-{% if destacados %}
-<section id="destacados" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
-    <div class="text-center mb-14">
-        <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Nuestra Selección</span>
-        <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">Fragancias Destacadas</h2>
-        <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7 gap-y-14">
-        {% for perfume in destacados %}
-        {% include "partials/tarjeta_perfume.html" with perfume=perfume %}
-        {% endfor %}
-    </div>
-    <div class="mt-16 text-center">
-        <a href="{% url 'catalogo' %}" class="inline-block border border-gray-900 text-gray-900 px-12 py-4 uppercase tracking-[0.26em] text-[11px] font-medium hover:bg-gray-900 hover:text-white transition duration-300">Ver Todo El Catálogo</a>
-    </div>
-</section>
-{% endif %}
-
 <section class="border-y border-gray-100 bg-[#fbfbfb]">
     <div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-3">
         <div class="px-8 py-12 text-center border-t md:border-t-0 md:border-l border-gray-100">
@@ -431,7 +431,7 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
         <div class="px-8 py-12 text-center border-t md:border-t-0 md:border-l border-gray-100">
             <div class="font-serif text-3xl text-gray-900 mb-3">&#9993;</div>
-            <h4 class="text-[12px] tracking-[0.18em] uppercase mb-2">Asesoría Experta</h4>
+            <h4 class="text-[12px] tracking-[0.18em] uppercase mb-2">Asesoría Personalizada</h4>
             <p class="text-[12.5px] font-light text-gray-500 leading-relaxed">Te ayudamos a encontrar tu esencia por WhatsApp.</p>
         </div>
         <div class="px-8 py-12 text-center border-t md:border-t-0 md:border-l border-gray-100">
