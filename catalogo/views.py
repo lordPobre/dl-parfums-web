@@ -142,7 +142,7 @@ def contacto(request):
         email_cliente = request.POST.get('email')
         mensaje = request.POST.get('mensaje')
 
-        asunto = f'Nuevo mensaje de contacto en DL Parfums de: {nombre}'
+        asunto = f'Nuevo mensaje de contacto en Instinto Olfativo de: {nombre}'
         cuerpo = f'Nombre: {nombre}\nCorreo de contacto: {email_cliente}\n\nMensaje:\n{mensaje}'
         mi_correo = os.environ.get('EMAIL_HOST_USER')
 

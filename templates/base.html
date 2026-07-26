@@ -42,6 +42,7 @@
         #marcas-track::-webkit-scrollbar { display: none; }
         #fam-track::-webkit-scrollbar { display: none; }
         #famhome-track::-webkit-scrollbar { display: none; }
+        #dest-track::-webkit-scrollbar { display: none; }
 
         /* Protección básica de imágenes (disuasivo, no infalible) */
         img {
@@ -122,7 +123,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left mb-14 pb-14 border-b border-gray-800">
                 <div class="flex flex-col items-center md:items-start">
                     <img src="{% static 'img/logo-instinto-oscuro.png' %}" alt="Instinto Olfativo" class="w-40 h-auto mb-5">
-                    <p class="text-gray-400 font-light text-sm max-w-xs leading-relaxed">La colección más exclusiva de alta perfumería. Encuentra la esencia que define tu personalidad y deja una huella imborrable.</p>
+                    <p class="text-gray-400 font-light text-sm max-w-xs leading-relaxed">La colección más variada de inspiraciones de alta perfumería. Encuentra la esencia que define tu personalidad y deja una huella imborrable.</p>
                 </div>
                 <div class="flex flex-col items-center md:items-start">
                     <h4 class="text-[11px] uppercase tracking-[0.3em] text-gray-500 mb-6">Explorar</h4>
@@ -144,12 +145,12 @@
             </div>
             <div class="flex flex-col md:flex-row justify-between items-center text-[11px] text-gray-500 font-light tracking-wider gap-3">
                 <p>&copy; {% now "Y" %} Instinto Olfativo. Todos los derechos reservados.</p>
-                <p class="uppercase tracking-[0.2em]">Diseñado con elegancia por <a href="https://perseustechnology.cl" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors underline underline-offset-2 decoration-gray-600 hover:decoration-white">Perseus Technology</a></p>
+                <p class="uppercase tracking-[0.2em]">Diseñado con elegancia por <a href="https://perseustechnology.dev" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors underline underline-offset-2 decoration-gray-600 hover:decoration-white">Perseus Technology</a></p>
             </div>
         </div>
     </footer>
 
-    <script>
+     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const btnMenu = document.getElementById('mobile-menu-button');
             const menuMovil = document.getElementById('mobile-menu');
@@ -160,6 +161,7 @@
             setTimeout(function() { preloader.classList.add('preloader-hidden'); }, 500);
         });
 
+        // Disuasivos de descarga de imágenes
         document.addEventListener('contextmenu', function (e) {
             if (e.target && e.target.tagName === 'IMG') e.preventDefault();
         });

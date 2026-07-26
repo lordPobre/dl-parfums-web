@@ -139,6 +139,7 @@
 {% endwith %}
 {% endif %}
 
+<!-- DESTACADAS -->
 {% if destacados %}
 <section id="destacados" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
     <div class="text-center mb-14">
@@ -146,15 +147,35 @@
         <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">Fragancias Destacadas</h2>
         <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7 gap-y-14">
-        {% for perfume in destacados %}
-        {% include "partials/tarjeta_perfume.html" with perfume=perfume %}
-        {% endfor %}
+    <div class="relative flex items-center">
+        <button type="button" onclick="document.getElementById('dest-track').scrollBy({left:-290,behavior:'smooth'})" aria-label="Anterior"
+                class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+        </button>
+        <div id="dest-track" class="flex-1 mx-3 flex gap-7 overflow-x-auto scroll-smooth py-1" style="scrollbar-width: none; -ms-overflow-style: none;">
+            {% for perfume in destacados %}
+            <div class="flex-shrink-0 w-[260px]">
+                {% include "partials/tarjeta_perfume.html" with perfume=perfume %}
+            </div>
+            {% endfor %}
+        </div>
+        <button type="button" onclick="document.getElementById('dest-track').scrollBy({left:290,behavior:'smooth'})" aria-label="Siguiente"
+                class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+        </button>
     </div>
     <div class="mt-16 text-center">
         <a href="{% url 'catalogo' %}" class="inline-block border border-gray-900 text-gray-900 px-12 py-4 uppercase tracking-[0.26em] text-[11px] font-medium hover:bg-gray-900 hover:text-white transition duration-300">Ver Todo El Catálogo</a>
     </div>
 </section>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var t = document.getElementById('dest-track');
+    if (!t) return;
+    document.getElementById('dest-prev').addEventListener('click', function () { t.scrollBy({ left: -290, behavior: 'smooth' }); });
+    document.getElementById('dest-next').addEventListener('click', function () { t.scrollBy({ left: 290, behavior: 'smooth' }); });
+});
+</script>
 {% endif %}
 
 <!-- FAMILIAS OLFATIVAS -->
