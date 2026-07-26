@@ -1,13 +1,15 @@
 {% load cloudinary_wm %}
 {% comment %}Tarjeta de perfume reutilizable. Espera la variable `perfume`.{% endcomment %}
-<div class="group flex flex-col bg-white">
+<div class="group flex flex-col bg-white {% if perfume.stock <= 0 %}opacity-60{% endif %}">
     <a href="{% url 'perfume_detalle' perfume.id %}" class="block">
         <div class="relative w-full aspect-[4/5] bg-[#f8f8f8] overflow-hidden flex items-center justify-center mb-6">
-            {% if perfume.es_oferta %}
+            {% if perfume.stock <= 0 %}
+            <span class="absolute top-4 left-4 z-10 bg-gray-400 text-white text-[9px] tracking-[0.24em] uppercase py-1.5 px-2.5">Agotado</span>
+            {% elif perfume.es_oferta %}
             <span class="absolute top-4 left-4 z-10 bg-gray-900 text-white text-[9px] tracking-[0.24em] uppercase py-1.5 px-2.5">Oferta</span>
             {% endif %}
             {% if perfume.imagen %}
-                <img src="{{ perfume.imagen.url|watermark }}" alt="{{ perfume.nombre }}" class="max-h-[82%] max-w-[82%] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06]">
+                <img src="{{ perfume.imagen.url|watermark }}" alt="{{ perfume.nombre }}" class="max-h-[82%] max-w-[82%] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06] {% if perfume.stock <= 0 %}grayscale{% endif %}">
             {% else %}
                 <span class="text-gray-300 font-light text-sm tracking-widest uppercase">Próximamente</span>
             {% endif %}
@@ -15,14 +17,17 @@
         <div class="flex flex-col items-center text-center px-2">
             <p class="text-[10px] tracking-[0.24em] text-gray-400 uppercase mb-2">{{ perfume.marca.nombre }}</p>
             <h3 class="text-lg font-serif text-gray-900 mb-2.5 leading-snug group-hover:text-gray-600 transition-colors">{{ perfume.nombre }}</h3>
-            {% if perfume.es_oferta and perfume.precio_oferta %}
-                <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3">
+                {% if perfume.es_oferta and perfume.precio_oferta %}
                     <span class="text-sm text-gray-400 line-through font-light">${{ perfume.precio }}</span>
                     <span class="text-sm text-red-700 font-medium">${{ perfume.precio_oferta }}</span>
-                </div>
-            {% else %}
-                <p class="text-sm tracking-wider text-gray-800 font-light">${{ perfume.precio }}</p>
-            {% endif %}
+                {% else %}
+                    <span class="text-sm tracking-wider text-gray-800 font-light">${{ perfume.precio }}</span>
+                {% endif %}
+                {% if perfume.stock <= 0 %}
+                    <span class="text-[10px] tracking-[0.18em] uppercase text-gray-400 border border-gray-300 px-2 py-0.5">Agotado</span>
+                {% endif %}
+            </div>
         </div>
     </a>
 </div>

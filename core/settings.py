@@ -70,6 +70,7 @@ JAZZMIN_SETTINGS = {
     },
     
     "changeform_format": "horizontal_tabs",
+
 }
 
 JAZZMIN_UI_TWEAKS = {

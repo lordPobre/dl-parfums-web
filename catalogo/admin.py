@@ -76,16 +76,34 @@ class PrevNextAdminMixin:
         except Exception:
             pass
         return super().change_view(request, object_id, form_url, extra_context=extra_context)
+    
 
 @admin.register(Perfume)
 class PerfumeAdmin(PrevNextAdminMixin, admin.ModelAdmin):
     list_display = ('nombre', 'marca', 'precio', 'genero', 'stock','es_oferta', 'precio_oferta', 'activo', 'destacado')
     list_filter = ('marca', 'familia', 'genero','es_oferta', 'activo', 'destacado')
     search_fields = ('nombre', 'marca__nombre')
-    list_editable = ('precio', 'stock', 'activo', 'es_oferta', 'precio_oferta', 'destacado') 
+    list_editable = ('precio', 'stock', 'activo', 'es_oferta', 'precio_oferta', 'destacado')
     inlines = [ImagenPerfumeInline, ResenaInline]
+    actions = ['marcar_destacado', 'quitar_destacado', 'marcar_activo', 'quitar_activo']
 
+    @admin.action(description="Marcar como DESTACADO")
+    def marcar_destacado(self, request, queryset):
+        queryset.update(destacado=True)
 
+    @admin.action(description="Quitar DESTACADO")
+    def quitar_destacado(self, request, queryset):
+        queryset.update(destacado=False)
+
+    @admin.action(description="Marcar como ACTIVO")
+    def marcar_activo(self, request, queryset):
+        queryset.update(activo=True)
+
+    @admin.action(description="Marcar como INACTIVO")
+    def quitar_activo(self, request, queryset):
+        queryset.update(activo=False)
+    
+    
 @admin.register(Promocion)
 class PromocionAdmin(admin.ModelAdmin):
     list_display = ('miniatura', 'titulo', 'precio', 'etiqueta', 'orden', 'activo')

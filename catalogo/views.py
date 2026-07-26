@@ -37,7 +37,6 @@ def home(request):
 
 def catalogo(request):
     perfumes = Perfume.objects.filter(activo=True).select_related('marca', 'familia')
-
     filtro_genero = request.GET.get('genero')
     marca_id = request.GET.get('marca')
     familia_id = request.GET.get('familia')
@@ -69,6 +68,12 @@ def catalogo(request):
         if fam:
             perfumes = perfumes.filter(familia_id=fam.id)
             familia_id = str(fam.id)
+
+    # Ordenar: primero con stock, agotados al final; luego por id
+    from django.db.models import Case, When, IntegerField
+    perfumes = perfumes.annotate(
+        sin_stock=Case(When(stock__lte=0, then=1), default=0, output_field=IntegerField())
+    ).order_by('sin_stock', '-id')
 
     return render(request, 'catalogo.html', {
         'perfumes': perfumes,

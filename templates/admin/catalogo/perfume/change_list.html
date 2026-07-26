@@ -1,0 +1,55 @@
+{% extends "admin/change_list.html" %}
+{% comment %}
+Agrega una casilla "marcar todos" en el encabezado de las columnas
+editables 'activo' y 'destacado' del listado de Perfumes.
+Al marcarla, activa/desactiva todas las casillas de esa columna hacia abajo.
+{% endcomment %}
+{% block extrahead %}
+{{ block.super }}
+<script>
+(function () {
+    function init() {
+        var table = document.getElementById('result_list');
+        if (!table) return;
+
+        // columnas objetivo (nombre del campo en el form inline de list_editable)
+        var COLUMNAS = ['activo', 'destacado'];
+
+        COLUMNAS.forEach(function (campo) {
+            // localizar el <th> de la columna por su clase "column-<campo>"
+            var th = table.querySelector('thead th.column-' + campo);
+            if (!th) return;
+            if (th.querySelector('.toggle-all')) return; // no duplicar
+
+            var master = document.createElement('input');
+            master.type = 'checkbox';
+            master.className = 'toggle-all';
+            master.title = 'Marcar/desmarcar todos';
+            master.style.marginLeft = '6px';
+            master.style.verticalAlign = 'middle';
+            master.style.cursor = 'pointer';
+
+            master.addEventListener('click', function () {
+                var casillas = table.querySelectorAll(
+                    'tbody input[type="checkbox"][name$="-' + campo + '"]'
+                );
+                casillas.forEach(function (c) {
+                    if (c.checked !== master.checked) {
+                        c.checked = master.checked;
+                        c.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            });
+
+            th.appendChild(master);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+{% endblock %}
