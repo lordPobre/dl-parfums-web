@@ -30,4 +30,15 @@
             </div>
         </div>
     </a>
+    {% if perfume.stock > 0 %}
+    <button type="button" data-add-cart
+            data-id="{{ perfume.id }}"
+            data-nombre="{{ perfume.nombre }}"
+            data-marca="{{ perfume.marca.nombre }}"
+            data-precio="{% if perfume.es_oferta and perfume.precio_oferta %}{{ perfume.precio_oferta }}{% else %}{{ perfume.precio }}{% endif %}"
+            data-img="{% if perfume.imagen %}{{ perfume.imagen.url }}{% endif %}"
+            class="mt-4 mx-auto w-full max-w-[220px] border border-gray-900 text-gray-900 py-2.5 text-[10px] tracking-[0.22em] uppercase hover:bg-gray-900 hover:text-white transition-colors">
+        Agregar
+    </button>
+    {% endif %}
 </div>

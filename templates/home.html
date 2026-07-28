@@ -69,8 +69,9 @@
     {% endif %}
 </section>
 
+<!-- PROMOCIONES / COMBOS -->
 {% if promociones %}
-<section id="promociones" class="pt-10 md:pt-12 pb-24 md:pb-28 px-5 md:px-10 max-w-[1400px] mx-auto">
+<section id="promociones" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
     <div class="text-center mb-14">
         <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Ofertas especiales</span>
         <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">Promociones</h2>
@@ -99,11 +100,20 @@
                     {% endfor %}
                 </ul>
                 {% endif %}
-                <div class="mt-auto pt-5 border-t border-gray-800 flex items-end justify-between">
+                <div class="mt-auto pt-5 border-t border-gray-800 flex items-end justify-between gap-3">
                     <span class="font-serif text-3xl">${{ promo.precio }}</span>
-                    <a href="https://wa.me/56962169898?text=Hola,%20me%20interesa%20la%20promoci%C3%B3n%20{{ promo.titulo|urlencode }}."
-                       target="_blank" rel="noopener noreferrer"
-                       class="text-[11px] tracking-[0.2em] uppercase border-b border-white pb-0.5 hover:text-gray-300 hover:border-gray-300 transition-colors">Lo quiero</a>
+                    <div class="flex items-center gap-4">
+                        <button type="button" data-add-cart
+                                data-id="promo-{{ promo.id }}"
+                                data-nombre="{{ promo.titulo }}"
+                                data-marca="Promoción"
+                                data-precio="{{ promo.precio }}"
+                                data-img="{% if promo.imagen %}{{ promo.imagen.url }}{% endif %}"
+                                class="text-[11px] tracking-[0.2em] uppercase border border-white/60 text-white px-3 py-1.5 hover:bg-white hover:text-gray-900 transition-colors">Agregar</button>
+                        <a href="https://wa.me/56962169898?text=Hola,%20me%20interesa%20la%20promoci%C3%B3n%20{{ promo.titulo|urlencode }}."
+                           target="_blank" rel="noopener noreferrer"
+                           class="text-[11px] tracking-[0.2em] uppercase border-b border-white pb-0.5 hover:text-gray-300 hover:border-gray-300 transition-colors">Lo quiero</a>
+                    </div>
                 </div>
             </div>
         </div>

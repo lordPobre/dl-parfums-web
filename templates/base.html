@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Instinto Olfativo | Perfumes Alternativos de Nicho{% endblock %}</title>
+    <title>{% block title %}Instinto Olfativo | Perfumes Alternativos de Nicho y Diseñador{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Descubre la mejor colección de perfumes alternativos inspirados en la alta perfumería. Encuentra tu esencia ideal con nuestra mejor selección.{% endblock %}">
-    <meta property="og:title" content="{% block og_title %}Instinto Olfativo | Perfumes Alternativos de Nicho{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Instinto Olfativo | Perfumes Alternativos de Nicho y diseñador{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Descubre la mejor colección de perfumes alternativos inspirados en la alta perfumería.{% endblock %}">
     <meta property="og:type" content="website">
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
@@ -95,7 +95,7 @@
     </div>
 
     <div class="bg-gray-900 text-white text-center py-2.5 px-4 text-[11px] tracking-[0.28em] uppercase">
-        Envío gratis en compras sobre $50.000 &nbsp;·&nbsp; Asesoría personalizada por WhatsApp
+        Envío gratis en compras sobre $50.000 a todas las regiones &nbsp;·&nbsp; Asesoría personalizada por WhatsApp
     </div>
 
     <header class="w-full bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all duration-300">
@@ -117,6 +117,11 @@
                 <div class="flex justify-end items-center space-x-5 md:space-x-6 w-1/3">
                     <a href="{% url 'nosotros' %}" class="text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 transition-colors hidden md:block">Nosotros</a>
                     <a href="{% url 'contacto' %}" class="text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 transition-colors hidden md:block">Contacto</a>
+
+                    <button id="cart-toggle" type="button" class="relative text-gray-800 hover:text-gray-900 transition-colors" aria-label="Ver carrito">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                        <span id="cart-badge" class="hidden absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-medium w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                    </button>
 
                     <button id="mobile-menu-button" class="md:hidden text-gray-900 focus:outline-none" aria-label="Menú">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -145,12 +150,47 @@
         <span class="text-[12px] font-medium tracking-wide whitespace-nowrap max-w-0 overflow-hidden opacity-0 group-hover:max-w-[180px] group-hover:opacity-100 transition-all duration-300">Asesoría personalizada</span>
     </a>
 
+     <!-- Panel del carrito (drawer) -->
+    <div id="cart-overlay" class="hidden fixed inset-0 z-[400] bg-gray-900/50 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
+    <aside id="cart-panel" class="fixed top-0 right-0 z-[401] h-full w-full max-w-[420px] bg-white shadow-2xl flex flex-col translate-x-full transition-transform duration-300">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+            <h3 class="font-serif text-xl text-gray-900">Tu selección</h3>
+            <button id="cart-close" type="button" aria-label="Cerrar" class="text-gray-400 hover:text-gray-900 transition-colors">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div id="cart-items" class="flex-1 overflow-y-auto px-6 py-4 space-y-5"></div>
+
+        <div id="cart-empty" class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+            <svg class="w-12 h-12 text-gray-200 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            <p class="font-serif text-lg text-gray-500 italic mb-2">Tu selección está vacía</p>
+            <p class="text-sm font-light text-gray-400 mb-6">Agrega fragancias para solicitarlas por WhatsApp.</p>
+            <a href="{% url 'catalogo' %}" class="text-[11px] tracking-[0.2em] uppercase text-gray-900 border-b border-gray-900 pb-0.5">Ver catálogo</a>
+        </div>
+
+        <div id="cart-footer" class="hidden border-t border-gray-100 px-6 py-5">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-[11px] tracking-[0.24em] uppercase text-gray-400">Total</span>
+                <span id="cart-total" class="font-serif text-2xl text-gray-900">$0</span>
+            </div>
+            <button id="cart-checkout" type="button" class="flex items-center justify-center gap-3 w-full bg-gray-900 text-white py-4 text-[12px] tracking-[0.22em] uppercase hover:bg-black transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1-.6.8-.8 1-.3.2-.5.1a6.5 6.5 0 0 1-1.9-1.2 7.3 7.3 0 0 1-1.3-1.7c-.1-.2 0-.4.1-.5l.4-.4.2-.4v-.4l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c2 .8 2 .5 2.4.5a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"></path></svg>
+                Solicitar por WhatsApp
+            </button>
+            <button id="cart-clear" type="button" class="w-full mt-3 text-[10px] tracking-[0.18em] uppercase text-gray-400 hover:text-gray-700 transition-colors">Vaciar selección</button>
+        </div>
+    </aside>
+
+    <!-- Aviso "agregado" -->
+    <div id="cart-toast" class="hidden fixed bottom-24 right-6 z-[402] bg-gray-900 text-white text-[12px] tracking-wide px-5 py-3 rounded shadow-lg transition-all duration-300 opacity-0 translate-y-2">Agregado a tu selección</div>
+
     <footer class="bg-gray-900 text-white pt-20 pb-10 mt-auto">
         <div class="max-w-[1400px] mx-auto px-5 md:px-10">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left mb-14 pb-14 border-b border-gray-800">
                 <div class="flex flex-col items-center md:items-start">
                     <img src="{% static 'img/logo-instinto-oscuro.png' %}" alt="Instinto Olfativo" class="w-40 h-auto mb-5">
-                    <p class="text-gray-400 font-light text-sm max-w-xs leading-relaxed">La colección más variada de inspiraciones de alta perfumería. Encuentra la esencia que define tu personalidad y deja una huella imborrable.</p>
+                    <p class="text-gray-400 font-light text-sm max-w-xs leading-relaxed">La colección más variada en inspiraciones de alta perfumería. Encuentra la esencia que define tu personalidad y deja una huella imborrable.</p>
                 </div>
                 <div class="flex flex-col items-center md:items-start">
                     <h4 class="text-[11px] uppercase tracking-[0.3em] text-gray-500 mb-6">Explorar</h4>
@@ -195,6 +235,114 @@
         document.addEventListener('dragstart', function (e) {
             if (e.target && e.target.tagName === 'IMG') e.preventDefault();
         });
+
+         /* ==================== CARRITO ==================== */
+        (function () {
+            var WHATSAPP = "56962169898";
+            var KEY = "io_cart";
+            var cart = [];
+            try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { cart = []; }
+
+            function guardar() { try { localStorage.setItem(KEY, JSON.stringify(cart)); } catch (e) {} }
+            function fmt(n) { return "$" + (n || 0).toLocaleString("es-CL"); }
+            function totalItems() { return cart.reduce(function (s, i) { return s + i.qty; }, 0); }
+            function totalPrecio() { return cart.reduce(function (s, i) { return s + i.precio * i.qty; }, 0); }
+
+            var panel = document.getElementById("cart-panel");
+            var overlay = document.getElementById("cart-overlay");
+            var badge = document.getElementById("cart-badge");
+            var cont = document.getElementById("cart-items");
+            var vacio = document.getElementById("cart-empty");
+            var pie = document.getElementById("cart-footer");
+            var elTotal = document.getElementById("cart-total");
+
+            function abrir() { overlay.classList.remove("hidden"); panel.classList.remove("translate-x-full"); requestAnimationFrame(function () { overlay.classList.remove("opacity-0"); }); document.body.style.overflow = "hidden"; }
+            function cerrar() { overlay.classList.add("opacity-0"); panel.classList.add("translate-x-full"); document.body.style.overflow = ""; setTimeout(function () { overlay.classList.add("hidden"); }, 300); }
+
+            function toast(msg) {
+                var t = document.getElementById("cart-toast");
+                t.textContent = msg; t.classList.remove("hidden");
+                requestAnimationFrame(function () { t.classList.remove("opacity-0", "translate-y-2"); });
+                clearTimeout(t._to);
+                t._to = setTimeout(function () { t.classList.add("opacity-0", "translate-y-2"); setTimeout(function () { t.classList.add("hidden"); }, 300); }, 1800);
+            }
+
+            function render() {
+                badge.textContent = totalItems();
+                badge.classList.toggle("hidden", totalItems() === 0);
+                if (!cart.length) {
+                    cont.innerHTML = ""; cont.classList.add("hidden");
+                    vacio.classList.remove("hidden"); pie.classList.add("hidden");
+                    return;
+                }
+                cont.classList.remove("hidden"); vacio.classList.add("hidden"); pie.classList.remove("hidden");
+                elTotal.textContent = fmt(totalPrecio());
+                cont.innerHTML = cart.map(function (i, idx) {
+                    return '<div class="flex gap-4 items-start">' +
+                        (i.img ? '<div class="w-16 h-20 bg-[#f8f8f8] flex-shrink-0 flex items-center justify-center overflow-hidden"><img src="' + i.img + '" alt="" class="max-h-[85%] max-w-[85%] object-contain"></div>' : '') +
+                        '<div class="flex-1 min-w-0">' +
+                            '<p class="text-[9px] tracking-[0.2em] uppercase text-gray-400">' + (i.marca || "") + '</p>' +
+                            '<h4 class="font-serif text-sm text-gray-900 leading-snug mb-1">' + i.nombre + '</h4>' +
+                            '<p class="text-[13px] text-gray-700 font-light">' + fmt(i.precio) + '</p>' +
+                            '<div class="flex items-center gap-2 mt-2">' +
+                                '<button data-menos="' + idx + '" class="w-6 h-6 border border-gray-200 text-gray-600 hover:border-gray-900 flex items-center justify-center text-sm">−</button>' +
+                                '<span class="text-sm w-6 text-center">' + i.qty + '</span>' +
+                                '<button data-mas="' + idx + '" class="w-6 h-6 border border-gray-200 text-gray-600 hover:border-gray-900 flex items-center justify-center text-sm">+</button>' +
+                                '<button data-quitar="' + idx + '" class="ml-auto text-[10px] tracking-[0.14em] uppercase text-gray-400 hover:text-red-700">Quitar</button>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                }).join("");
+            }
+
+            window.agregarAlCarrito = function (p) {
+                var ex = cart.find(function (i) { return i.id === p.id; });
+                if (ex) { ex.qty += 1; } else { cart.push({ id: p.id, nombre: p.nombre, marca: p.marca, precio: Number(p.precio) || 0, img: p.img || "", qty: 1 }); }
+                guardar(); render(); toast("Agregado a tu selección"); abrir();
+            };
+
+            cont.addEventListener("click", function (e) {
+                var t = e.target;
+                if (t.dataset.mas !== undefined) { cart[+t.dataset.mas].qty += 1; }
+                else if (t.dataset.menos !== undefined) { var i = +t.dataset.menos; cart[i].qty -= 1; if (cart[i].qty <= 0) cart.splice(i, 1); }
+                else if (t.dataset.quitar !== undefined) { cart.splice(+t.dataset.quitar, 1); }
+                else return;
+                guardar(); render();
+            });
+
+            document.getElementById("cart-toggle").addEventListener("click", function () { render(); abrir(); });
+            document.getElementById("cart-close").addEventListener("click", cerrar);
+            overlay.addEventListener("click", cerrar);
+            document.getElementById("cart-clear").addEventListener("click", function () { cart = []; guardar(); render(); });
+
+            document.getElementById("cart-checkout").addEventListener("click", function () {
+                if (!cart.length) return;
+                var lineas = ["Hola! Quiero solicitar los siguientes perfumes:", ""];
+                cart.forEach(function (i) {
+                    lineas.push("• " + i.nombre + (i.marca ? " (" + i.marca + ")" : "") + " — " + i.qty + " x " + fmt(i.precio) + " = " + fmt(i.precio * i.qty));
+                });
+                lineas.push("");
+                lineas.push("TOTAL: " + fmt(totalPrecio()));
+                var url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(lineas.join("\n"));
+                window.open(url, "_blank");
+            });
+
+            // Botones "Agregar al carrito" (delegación)
+            document.addEventListener("click", function (e) {
+                var btn = e.target.closest("[data-add-cart]");
+                if (!btn) return;
+                e.preventDefault();
+                agregarAlCarrito({
+                    id: btn.getAttribute("data-id"),
+                    nombre: btn.getAttribute("data-nombre"),
+                    marca: btn.getAttribute("data-marca"),
+                    precio: btn.getAttribute("data-precio"),
+                    img: btn.getAttribute("data-img")
+                });
+            });
+
+            render();
+        })();
     </script>
 </body>
 </html>

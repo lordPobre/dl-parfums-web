@@ -1,18 +1,20 @@
 {% extends 'base.html' %}
 {% load static cloudinary_wm %}
 
-{% block title %}{{ perfume.nombre }} | Instinto Olfativo{% endblock %}
+{% block title %}{{ perfume.nombre }} | DL Parfums{% endblock %}
 {% block meta_description %}{{ perfume.descripcion|striptags|truncatewords:25 }}{% endblock %}
 {% block og_title %}{{ perfume.nombre }} — {{ perfume.marca.nombre }}{% endblock %}
 
 {% block content %}
 
+<!-- Breadcrumb -->
 <div class="max-w-[1300px] mx-auto px-5 md:px-10 pt-8">
     <a href="{% url 'catalogo' %}" class="text-[11px] tracking-[0.2em] uppercase text-gray-400 hover:text-gray-900 transition-colors">&larr; Volver a la colección</a>
 </div>
 
 <section class="max-w-[1300px] mx-auto px-5 md:px-10 py-10 md:py-12 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-20 items-start">
 
+    <!-- Imagen / Galería -->
     <div class="md:sticky md:top-28">
         <div class="aspect-[4/5] bg-[#f8f8f8] flex items-center justify-center overflow-hidden">
             {% if perfume.imagen %}
@@ -41,6 +43,7 @@
         {% endif %}
     </div>
 
+    <!-- Info -->
     <div class="pt-2">
         {% if perfume.es_oferta %}
         <span class="inline-block text-[10px] tracking-[0.24em] uppercase text-white bg-gray-900 py-1.5 px-3 mb-5">Oferta</span>
@@ -61,6 +64,7 @@
 
         <div class="prose prose-sm text-gray-600 font-light leading-relaxed mb-6 max-w-none">{{ perfume.descripcion|linebreaks }}</div>
 
+        <!-- Etiquetas: familia + género -->
         <div class="flex flex-wrap gap-2.5 mb-7">
             {% if perfume.familia %}
             <a href="{% url 'catalogo' %}?familia={{ perfume.familia.id }}#productos" class="text-[10px] tracking-[0.18em] uppercase border border-gray-300 text-gray-600 px-3 py-1.5 hover:border-gray-900 hover:text-gray-900 transition-colors">{{ perfume.familia.nombre }}</a>
@@ -68,6 +72,7 @@
             <span class="text-[10px] tracking-[0.18em] uppercase border border-gray-300 text-gray-600 px-3 py-1.5">{{ perfume.get_genero_display }}</span>
         </div>
 
+        <!-- Stock -->
         {% if perfume.stock > 0 %}
         <div class="flex items-center gap-2.5 text-[12px] tracking-[0.14em] uppercase text-green-600 mb-7">
             <span class="w-2 h-2 rounded-full bg-green-600 inline-block"></span> En stock · Listo para despacho
@@ -78,6 +83,7 @@
         </div>
         {% endif %}
 
+        <!-- Pirámide olfativa -->
         <div class="bg-[#fbfbfb] border border-gray-100 p-8 mb-8">
             <h3 class="font-serif text-xl text-gray-900 mb-6 text-center">Pirámide Olfativa</h3>
             <div class="space-y-5">
@@ -96,18 +102,32 @@
             </div>
         </div>
 
+        <!-- CTA -->
         {% if perfume.stock > 0 %}
-        <a href="https://wa.me/56962169898?text=Hola,%20me%20interesa%20el%20perfume%20{{ perfume.nombre|urlencode }}%20de%20{{ perfume.marca.nombre|urlencode }}."
-           target="_blank" rel="noopener noreferrer"
-           class="flex items-center justify-center gap-3 w-full bg-gray-900 text-white py-5 text-[12px] tracking-[0.22em] uppercase hover:bg-black transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1-.6.8-.8 1-.3.2-.5.1a6.5 6.5 0 0 1-1.9-1.2 7.3 7.3 0 0 1-1.3-1.7c-.1-.2 0-.4.1-.5l.4-.4.2-.4v-.4l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c2 .8 2 .5 2.4.5a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"></path></svg>
-            Solicitar por WhatsApp
-        </a>
-        <p class="text-center text-[12px] font-light text-gray-400 mt-4">Respuesta y asesoría inmediata · 100% confiable</p>
+        <div class="flex flex-col gap-3">
+            <button type="button" data-add-cart
+                    data-id="{{ perfume.id }}"
+                    data-nombre="{{ perfume.nombre }}"
+                    data-marca="{{ perfume.marca.nombre }}"
+                    data-precio="{% if perfume.es_oferta and perfume.precio_oferta %}{{ perfume.precio_oferta }}{% else %}{{ perfume.precio }}{% endif %}"
+                    data-img="{% if perfume.imagen %}{{ perfume.imagen.url }}{% endif %}"
+                    class="flex items-center justify-center gap-3 w-full border border-gray-900 text-gray-900 py-5 text-[12px] tracking-[0.22em] uppercase hover:bg-gray-900 hover:text-white transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                Agregar a mi selección
+            </button>
+            <a href="https://wa.me/56962169898?text=Hola,%20me%20interesa%20el%20perfume%20{{ perfume.nombre|urlencode }}%20de%20{{ perfume.marca.nombre|urlencode }}."
+               target="_blank" rel="noopener noreferrer"
+               class="flex items-center justify-center gap-3 w-full bg-gray-900 text-white py-5 text-[12px] tracking-[0.22em] uppercase hover:bg-black transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1-.6.8-.8 1-.3.2-.5.1a6.5 6.5 0 0 1-1.9-1.2 7.3 7.3 0 0 1-1.3-1.7c-.1-.2 0-.4.1-.5l.4-.4.2-.4v-.4l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c2 .8 2 .5 2.4.5a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"></path></svg>
+                Solicitar por WhatsApp
+            </a>
+        </div>
+        <p class="text-center text-[12px] font-light text-gray-400 mt-4">Respuesta y asesoría inmediata · 100% original</p>
         {% else %}
         <div class="w-full bg-gray-100 text-gray-400 py-5 text-center text-[12px] tracking-[0.22em] uppercase cursor-not-allowed">Agotado Temporalmente</div>
         {% endif %}
 
+        <!-- Compartir en redes -->
         <div class="mt-8 pt-6 border-t border-gray-100">
             <p class="text-[10px] tracking-[0.24em] uppercase text-gray-400 mb-4 text-center md:text-left">Compartir</p>
             <div class="flex items-center gap-3 justify-center md:justify-start">
@@ -123,7 +143,7 @@
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h3l-7 8 8 12h-6l-5-7-6 7H2l8-9L2 2h6l4 6zm-1 18h2L7 4H5z"></path></svg>
                 </a>
-                <a href="https://www.instagram.com/monitidoparfums" target="_blank" rel="noopener noreferrer nofollow" aria-label="Síguenos en Instagram"
+                <a href="https://www.instagram.com/dlparfums" target="_blank" rel="noopener noreferrer nofollow" aria-label="Síguenos en Instagram"
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line></svg>
                 </a>
@@ -132,6 +152,7 @@
     </div>
 </section>
 
+<!-- RESEÑAS -->
 <section id="resenas" class="border-t border-gray-100 py-20 md:py-24 px-5 md:px-10 max-w-[900px] mx-auto">
     <div class="text-center mb-14">
         <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Opiniones de clientes</span>
@@ -172,6 +193,7 @@
     <p class="text-center text-gray-400 font-serif italic text-lg mb-12">Sé el primero en dejar una reseña de esta fragancia.</p>
     {% endif %}
 
+    <!-- Formulario de reseña -->
     <div class="bg-[#fbfbfb] border border-gray-100 p-8 md:p-10">
         <h3 class="font-serif text-xl text-gray-900 mb-6 text-center">Deja tu reseña</h3>
         <form method="post" action="{% url 'perfume_detalle' perfume.id %}#resenas" class="space-y-5">
@@ -196,6 +218,7 @@
     </div>
 </section>
 
+<!-- Relacionados -->
 {% if relacionados %}
 <section class="border-t border-gray-100 py-20 md:py-24 px-5 md:px-10 max-w-[1400px] mx-auto mt-10">
     <div class="text-center mb-12">
@@ -211,6 +234,7 @@
 {% endif %}
 
 <script>
+    // Visor de galería: al hacer clic en una miniatura, cambia la imagen principal
     document.addEventListener("DOMContentLoaded", function () {
         const principal = document.getElementById('imagen-principal');
         const minis = document.querySelectorAll('.miniatura');
