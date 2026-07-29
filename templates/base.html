@@ -190,14 +190,14 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left mb-14 pb-14 border-b border-gray-800">
                 <div class="flex flex-col items-center md:items-start">
                     <img src="{% static 'img/logo-instinto-oscuro.png' %}" alt="Instinto Olfativo" class="w-40 h-auto mb-5">
-                    <p class="text-gray-400 font-light text-sm max-w-xs leading-relaxed">La colección más variada en inspiraciones de alta perfumería. Encuentra la esencia que define tu personalidad y deja una huella imborrable.</p>
+                    <p class="text-gray-400 font-light text-sm max-w-xs leading-relaxed">La colección más exclusiva de alta perfumería. Encuentra la esencia que define tu personalidad y deja una huella imborrable.</p>
                 </div>
                 <div class="flex flex-col items-center md:items-start">
                     <h4 class="text-[11px] uppercase tracking-[0.3em] text-gray-500 mb-6">Explorar</h4>
                     <ul class="space-y-3.5 font-light text-sm text-gray-400">
                         <li><a href="{% url 'home' %}" class="hover:text-white transition-colors">Inicio</a></li>
                         <li><a href="{% url 'catalogo' %}" class="hover:text-white transition-colors">Nuestro Catálogo</a></li>
-                        <li><a href="{% url 'home' %}#familias" class="hover:text-white transition-colors">Familias Olfativas</a></li>
+                        <li><a href="{% url 'catalogo' %}#familias" class="hover:text-white transition-colors">Familias Olfativas</a></li>
                         <li><a href="{% url 'nosotros' %}" class="hover:text-white transition-colors">Nosotros</a></li>
                     </ul>
                 </div>
@@ -208,6 +208,20 @@
                         <li><a href="{% url 'politicas' %}" class="hover:text-white transition-colors">Políticas de Envío</a></li>
                         <li><span class="text-gray-400">Autenticidad garantizada</span></li>
                     </ul>
+                    <div class="flex items-center gap-3 mt-6">
+                        <a href="https://www.instagram.com/monitidoparfums/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                           class="w-9 h-9 flex items-center justify-center border border-gray-700 text-gray-400 hover:border-white hover:text-white transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line></svg>
+                        </a>
+                        <a href="https://www.tiktok.com/@monitido1" target="_blank" rel="noopener noreferrer" aria-label="TikTok"
+                           class="w-9 h-9 flex items-center justify-center border border-gray-700 text-gray-400 hover:border-white hover:text-white transition-colors">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 2h-3.2v13.6a2.9 2.9 0 1 1-2.1-2.8v-3.3a6.2 6.2 0 1 0 5.3 6.1V9.2a7.7 7.7 0 0 0 4.5 1.4V7.4a4.5 4.5 0 0 1-4.5-4.5z"></path></svg>
+                        </a>
+                        <a href="mailto:monitidoparfums@gmail.com" aria-label="Correo electrónico"
+                           class="w-9 h-9 flex items-center justify-center border border-gray-700 text-gray-400 hover:border-white hover:text-white transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M2 6l10 7 10-7"></path></svg>
+                        </a>
+                    </div>
                 </div>
             </div>
             <div class="flex flex-col md:flex-row justify-between items-center text-[11px] text-gray-500 font-light tracking-wider gap-3">
@@ -217,7 +231,7 @@
         </div>
     </footer>
 
-     <script>
+    <script>
         document.addEventListener("DOMContentLoaded", () => {
             const btnMenu = document.getElementById('mobile-menu-button');
             const menuMovil = document.getElementById('mobile-menu');
