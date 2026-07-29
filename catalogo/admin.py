@@ -1,6 +1,6 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.urls import reverse
-from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros
+from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros,Pedido, ItemPedido
 from django.utils.html import format_html
 
 @admin.register(ImagenPortada)
@@ -133,3 +133,70 @@ class PaginaNosotrosAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False  # no permitir borrar el contenido
 
+class ItemPedidoInline(admin.TabularInline):
+    model = ItemPedido
+    extra = 0
+    fields = ('perfume', 'nombre', 'precio', 'cantidad', 'subtotal')
+    readonly_fields = ('subtotal',)
+
+    def subtotal(self, obj):
+        return f"${obj.subtotal}" if obj.pk else "—"
+
+
+def _descontar_stock(pedido, request):
+    """Descuenta el stock de cada item una sola vez. Devuelve True si se aplicó."""
+    if pedido.stock_descontado:
+        return False
+    faltantes = []
+    for item in pedido.items.select_related('perfume'):
+        p = item.perfume
+        if not p:
+            continue
+        if p.stock is None:
+            continue
+        if p.stock < item.cantidad:
+            faltantes.append(f"{p.nombre} (stock {p.stock}, pedido {item.cantidad})")
+    if faltantes:
+        messages.error(request, "No hay stock suficiente para: " + "; ".join(faltantes))
+        return False
+    for item in pedido.items.select_related('perfume'):
+        p = item.perfume
+        if p and p.stock is not None:
+            p.stock = max(0, p.stock - item.cantidad)
+            p.save(update_fields=['stock'])
+    pedido.stock_descontado = True
+    pedido.save(update_fields=['stock_descontado'])
+    return True
+
+
+@admin.action(description="Aprobar venta y descontar stock")
+def aprobar_pedidos(modeladmin, request, queryset):
+    aprobados = 0
+    for pedido in queryset:
+        if _descontar_stock(pedido, request):
+            pedido.estado = 'aprobado'
+            pedido.save(update_fields=['estado'])
+            aprobados += 1
+    if aprobados:
+        messages.success(request, f"{aprobados} venta(s) aprobada(s) y stock descontado.")
+
+
+@admin.register(Pedido)
+class PedidoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'cliente', 'estado', 'total', 'stock_descontado', 'creado')
+    list_filter = ('estado', 'creado')
+    search_fields = ('cliente', 'telefono')
+    readonly_fields = ('total', 'stock_descontado', 'creado', 'actualizado')
+    inlines = [ItemPedidoInline]
+    actions = [aprobar_pedidos]
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
+        obj.recalcular_total()
+        obj.save(update_fields=['total'])
+        # Si se cambia el estado a "aprobado" desde el formulario, descontar stock.
+        if obj.estado == 'aprobado' and not obj.stock_descontado:
+            _descontar_stock(obj, request)
+            if obj.stock_descontado:
+                messages.success(request, "Stock descontado para esta venta.")

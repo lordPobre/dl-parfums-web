@@ -1,9 +1,12 @@
 import os
+import json
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg
-from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros
+from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido
 
 
 def home(request):
@@ -181,3 +184,38 @@ def politicas_envio(request):
 def nosotros(request):
     nosotros = PaginaNosotros.cargar()
     return render(request, 'nosotros.html', {'nosotros': nosotros})
+
+@require_POST
+def crear_pedido(request):
+    """Recibe el carrito (JSON) y crea un Pedido en estado 'pendiente'.
+    NO descuenta stock aquí: el descuento ocurre cuando el admin aprueba."""
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"ok": False, "error": "JSON inválido"}, status=400)
+
+    items = data.get("items", [])
+    if not items:
+        return JsonResponse({"ok": False, "error": "Carrito vacío"}, status=400)
+
+    pedido = Pedido.objects.create(
+        cliente=data.get("cliente", "")[:120],
+        telefono=data.get("telefono", "")[:40],
+        estado="pendiente",
+    )
+    for it in items:
+        pid = it.get("id")
+        perfume = None
+        # Los combos usan id "promo-N": no vinculan un perfume individual
+        if pid and str(pid).isdigit():
+            perfume = Perfume.objects.filter(pk=pid).first()
+        ItemPedido.objects.create(
+            pedido=pedido,
+            perfume=perfume,
+            nombre=(it.get("nombre") or "")[:200],
+            precio=int(it.get("precio") or 0),
+            cantidad=int(it.get("qty") or 1),
+        )
+    pedido.recalcular_total()
+    pedido.save(update_fields=["total"])
+    return JsonResponse({"ok": True, "pedido_id": pedido.id})

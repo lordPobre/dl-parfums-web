@@ -214,3 +214,48 @@ class PaginaNosotros(models.Model):
     def cargar(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+class Pedido(models.Model):
+    ESTADOS = [
+        ('pendiente', 'Pendiente'),
+        ('aprobado', 'Aprobado'),
+        ('rechazado', 'Rechazado'),
+    ]
+    cliente = models.CharField(max_length=120, blank=True, help_text="Nombre del cliente (opcional).")
+    telefono = models.CharField(max_length=40, blank=True)
+    estado = models.CharField(max_length=12, choices=ESTADOS, default='pendiente')
+    total = models.PositiveIntegerField(default=0, help_text="Total en CLP.")
+    stock_descontado = models.BooleanField(default=False, help_text="Marca interna: evita descontar stock dos veces.")
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-creado']
+        verbose_name = "Venta / Pedido"
+        verbose_name_plural = "Ventas / Pedidos"
+
+    def __str__(self):
+        return f"Pedido #{self.pk} — {self.get_estado_display()} — ${self.total}"
+
+    def recalcular_total(self):
+        self.total = sum(i.subtotal for i in self.items.all())
+        return self.total
+
+
+class ItemPedido(models.Model):
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='items')
+    perfume = models.ForeignKey('Perfume', on_delete=models.SET_NULL, null=True, related_name='ventas')
+    nombre = models.CharField(max_length=200, help_text="Nombre guardado (por si el perfume se elimina).")
+    precio = models.PositiveIntegerField(default=0)
+    cantidad = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        verbose_name = "Producto del pedido"
+        verbose_name_plural = "Productos del pedido"
+
+    def __str__(self):
+        return f"{self.cantidad}× {self.nombre}"
+
+    @property
+    def subtotal(self):
+        return self.precio * self.cantidad

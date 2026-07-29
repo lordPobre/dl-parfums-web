@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Instinto Olfativo | Perfumes Alternativos de Nicho y Diseñador{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}Descubre la mejor colección de perfumes alternativos inspirados en la alta perfumería. Encuentra tu esencia ideal con nuestra mejor selección.{% endblock %}">
-    <meta property="og:title" content="{% block og_title %}Instinto Olfativo | Perfumes Alternativos de Nicho y diseñador{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Instinto Olfativo | Perfumes Alternativos de Nicho y Diseñador{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Descubre la mejor colección de perfumes alternativos inspirados en la alta perfumería.{% endblock %}">
     <meta property="og:type" content="website">
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
@@ -95,7 +95,7 @@
     </div>
 
     <div class="bg-gray-900 text-white text-center py-2.5 px-4 text-[11px] tracking-[0.28em] uppercase">
-        Envío gratis en compras sobre $50.000 a todas las regiones &nbsp;·&nbsp; Asesoría personalizada por WhatsApp
+        Envío a regiones por compras sobre $50.000 &nbsp;·&nbsp; Asesoría personalizada por WhatsApp
     </div>
 
     <header class="w-full bg-white/90 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all duration-300">
@@ -150,7 +150,7 @@
         <span class="text-[12px] font-medium tracking-wide whitespace-nowrap max-w-0 overflow-hidden opacity-0 group-hover:max-w-[180px] group-hover:opacity-100 transition-all duration-300">Asesoría personalizada</span>
     </a>
 
-     <!-- Panel del carrito (drawer) -->
+  <!-- Panel del carrito (drawer) -->
     <div id="cart-overlay" class="hidden fixed inset-0 z-[400] bg-gray-900/50 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
     <aside id="cart-panel" class="fixed top-0 right-0 z-[401] h-full w-full max-w-[420px] bg-white shadow-2xl flex flex-col translate-x-full transition-transform duration-300">
         <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
@@ -182,7 +182,7 @@
         </div>
     </aside>
 
-    <!-- Aviso "agregado" -->
+     <!-- Aviso "agregado" -->
     <div id="cart-toast" class="hidden fixed bottom-24 right-6 z-[402] bg-gray-900 text-white text-[12px] tracking-wide px-5 py-3 rounded shadow-lg transition-all duration-300 opacity-0 translate-y-2">Agregado a tu selección</div>
 
     <footer class="bg-gray-900 text-white pt-20 pb-10 mt-auto">
@@ -236,7 +236,7 @@
             if (e.target && e.target.tagName === 'IMG') e.preventDefault();
         });
 
-         /* ==================== CARRITO ==================== */
+        /* ==================== CARRITO ==================== */
         (function () {
             var WHATSAPP = "56962169898";
             var KEY = "io_cart";
@@ -324,8 +324,22 @@
                 lineas.push("");
                 lineas.push("TOTAL: " + fmt(totalPrecio()));
                 var url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(lineas.join("\n"));
+                // Abrir WhatsApp de inmediato (evita bloqueo de pop-ups)
                 window.open(url, "_blank");
+                // Registrar el pedido en el admin (queda 'pendiente' para aprobar)
+                try {
+                    fetch("/api/pedido/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+                        body: JSON.stringify({ items: cart })
+                    });
+                } catch (e) {}
             });
+
+            function getCookie(name) {
+                var m = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+                return m ? m.pop() : "";
+            }
 
             // Botones "Agregar al carrito" (delegación)
             document.addEventListener("click", function (e) {
