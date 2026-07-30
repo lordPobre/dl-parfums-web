@@ -67,9 +67,21 @@ JAZZMIN_SETTINGS = {
         "catalogo.Marca": "fas fa-tag",
         "catalogo.FamiliaOlfativa": "fas fa-leaf",
         "catalogo.Perfume": "fas fa-spray-can",
+        "catalogo.ImagenPortada": "fas fa-images",
+        "catalogo.Promocion": "fas fa-percent",
+        "catalogo.PaginaNosotros": "fas fa-file-alt",
+        "catalogo.Resena": "fas fa-star",
+        "catalogo.Pedido": "fas fa-shopping-cart",
     },
     
     "changeform_format": "horizontal_tabs",
+    "custom_links": {
+        "catalogo": [{
+            "name": "Panel de Ventas",
+            "url": "admin:panel_ventas",
+            "icon": "fas fa-chart-line",
+        }],
+    },
 
 }
 

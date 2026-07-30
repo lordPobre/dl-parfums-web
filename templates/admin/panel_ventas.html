@@ -1,0 +1,87 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div style="max-width:1100px;">
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:28px;">
+    <div style="background:#111827; color:#fff; padding:22px 24px; border-radius:8px;">
+      <div style="font-size:11px; letter-spacing:.18em; text-transform:uppercase; opacity:.6;">Ventas de hoy</div>
+      <div style="font-size:30px; font-weight:600; margin-top:6px;">${{ total_dia }}</div>
+    </div>
+    <div style="background:#1f2937; color:#fff; padding:22px 24px; border-radius:8px;">
+      <div style="font-size:11px; letter-spacing:.18em; text-transform:uppercase; opacity:.6;">Este mes</div>
+      <div style="font-size:30px; font-weight:600; margin-top:6px;">${{ total_mes }}</div>
+    </div>
+    <div style="background:#374151; color:#fff; padding:22px 24px; border-radius:8px;">
+      <div style="font-size:11px; letter-spacing:.18em; text-transform:uppercase; opacity:.6;">Este año</div>
+      <div style="font-size:30px; font-weight:600; margin-top:6px;">${{ total_anio }}</div>
+    </div>
+    <div style="background:#4b5563; color:#fff; padding:22px 24px; border-radius:8px;">
+      <div style="font-size:11px; letter-spacing:.18em; text-transform:uppercase; opacity:.6;">Total histórico · {{ num_ventas }} ventas</div>
+      <div style="font-size:30px; font-weight:600; margin-top:6px;">${{ total_hist }}</div>
+    </div>
+    <div style="background:#6b7280; color:#fff; padding:22px 24px; border-radius:8px;">
+      <div style="font-size:11px; letter-spacing:.18em; text-transform:uppercase; opacity:.6;">Productos vendidos</div>
+      <div style="font-size:30px; font-weight:600; margin-top:6px;">{{ productos_vendidos }}</div>
+    </div>
+  </div>
+
+  <div style="background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:24px; color:#111827;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+      <h2 id="graficoTitulo" style="margin:0; font-size:15px; color:#111827 !important;">Ventas de los últimos 30 días</h2>
+      <div style="display:inline-flex; border:1px solid #d1d5db; border-radius:6px; overflow:hidden;">
+        <button type="button" data-rango="dia" class="btn-rango" style="border:none; background:#111827; color:#fff; padding:7px 18px; font-size:12px; cursor:pointer;">Día</button>
+        <button type="button" data-rango="mes" class="btn-rango" style="border:none; background:#fff; color:#111827; padding:7px 18px; font-size:12px; cursor:pointer; border-left:1px solid #d1d5db;">Mes</button>
+        <button type="button" data-rango="anio" class="btn-rango" style="border:none; background:#fff; color:#111827; padding:7px 18px; font-size:12px; cursor:pointer; border-left:1px solid #d1d5db;">Año</button>
+      </div>
+    </div>
+    <canvas id="graficoVentas" height="90"></canvas>
+  </div>
+  <p style="margin-top:14px; font-size:12px; color:#6b7280;">Solo se consideran pedidos en estado <strong>Aprobado</strong>.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var SERIES = {
+    dia:  { labels: {{ labels_dia|safe }},  valores: {{ valores_dia|safe }},  titulo: 'Ventas de los últimos 30 días' },
+    mes:  { labels: {{ labels_mes|safe }},  valores: {{ valores_mes|safe }},  titulo: 'Ventas de los últimos 12 meses' },
+    anio: { labels: {{ labels_anio|safe }}, valores: {{ valores_anio|safe }}, titulo: 'Ventas de los últimos 5 años' }
+  };
+  var ctx = document.getElementById('graficoVentas').getContext('2d');
+  var chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: SERIES.dia.labels,
+      datasets: [{
+        label: 'Ventas ($)',
+        data: SERIES.dia.valores,
+        borderColor: '#111827',
+        backgroundColor: 'rgba(17,24,39,0.08)',
+        borderWidth: 2, tension: 0.3, fill: true,
+        pointRadius: 2, pointBackgroundColor: '#111827'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: function (v) { return '$' + v; } } },
+        x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } }
+      }
+    }
+  });
+
+  var botones = document.querySelectorAll('.btn-rango');
+  botones.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var s = SERIES[b.getAttribute('data-rango')];
+      chart.data.labels = s.labels;
+      chart.data.datasets[0].data = s.valores;
+      chart.update();
+      document.getElementById('graficoTitulo').textContent = s.titulo;
+      botones.forEach(function (x) { x.style.background = '#fff'; x.style.color = '#111827'; });
+      b.style.background = '#111827'; b.style.color = '#fff';
+    });
+  });
+})();
+</script>
+{% endblock %}

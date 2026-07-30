@@ -1,7 +1,13 @@
 from django.contrib import admin, messages
-from django.urls import reverse
+from django.urls import reverse, path
 from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros,Pedido, ItemPedido
 from django.utils.html import format_html
+from datetime import date, timedelta
+from django.template.response import TemplateResponse
+from django.db.models import Sum
+from django.db.models.functions import TruncDate
+from .admin_ventas import registrar_panel_ventas
+
 
 @admin.register(ImagenPortada)
 class ImagenPortadaAdmin(admin.ModelAdmin):
@@ -200,3 +206,6 @@ class PedidoAdmin(admin.ModelAdmin):
             _descontar_stock(obj, request)
             if obj.stock_descontado:
                 messages.success(request, "Stock descontado para esta venta.")
+
+
+registrar_panel_ventas(admin.site)
