@@ -6,19 +6,19 @@ from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from catalogo.sitemaps import PerfumeSitemap, VistasEstaticasSitemap
 
+sitemaps_dict = {
+    'estaticas': VistasEstaticasSitemap,
+    'perfumes': PerfumeSitemap,
+}
+
 def robots_txt(request):
     lineas = [
         "User-Agent: *",
         "Disallow: /perseus-access-x12/",
         "Allow: /",
-        "Sitemap: https://dlparfums-web.vercel.app/sitemap.xml",
+        "Sitemap: https://www.instintoolfativo.cl/sitemap.xml",
     ]
     return HttpResponse("\n".join(lineas), content_type="text/plain")
-
-sitemaps_dict = {
-    'estaticas': VistasEstaticasSitemap,
-    'perfumes': PerfumeSitemap,
-}
 
 urlpatterns = [
     path('perseus-access-x12/', admin.site.urls),

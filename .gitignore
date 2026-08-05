@@ -13,3 +13,9 @@ ngrok.exe
 .env
 .idea/
 .vscode/
+
+node_modules
+package-lock.json
+package.json
+
+.claude

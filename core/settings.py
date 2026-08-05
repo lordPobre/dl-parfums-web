@@ -180,13 +180,13 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-SECURE_SSL_REDIRECT = False               
-SESSION_COOKIE_SECURE = False              
-CSRF_COOKIE_SECURE = False                
+SECURE_SSL_REDIRECT = True              
+SESSION_COOKIE_SECURE = True             
+CSRF_COOKIE_SECURE = True               
 SECURE_HSTS_SECONDS = 31536000             
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_HSTS_PRELOAD = False
-SECURE_CONTENT_TYPE_NOSNIFF = False
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True 
+SECURE_HSTS_PRELOAD = True 
+SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

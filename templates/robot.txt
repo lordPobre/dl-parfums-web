@@ -1,4 +1,10 @@
-User-agent: *
-Disallow: /perseus-access-x12/
-Allow: /
-Sitemap: https://dlparfums-web.vercel.app//sitemap.xml
+from django.http import HttpResponse
+
+def robots_txt(request):
+    lineas = [
+        "User-Agent: *",
+        "Allow: /",
+        "",
+        "Sitemap: https://www.instintoolfativo.cl/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lineas), content_type="text/plain")
