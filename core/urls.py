@@ -4,10 +4,10 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
-from catalogo.sitemaps import PerfumeSitemap, VistasEstaticasSitemap
+from catalogo.sitemaps import PerfumeSitemap, EstaticoSitemap
 
 sitemaps_dict = {
-    'estaticas': VistasEstaticasSitemap,
+    "estaticas": EstaticoSitemap,
     'perfumes': PerfumeSitemap,
 }
 
