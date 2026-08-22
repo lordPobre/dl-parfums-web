@@ -47,11 +47,11 @@ def catalogo(request):
 
     if buscar:
         from django.db.models import Q
-        perfumes = perfumes.filter(
-            Q(nombre__icontains=buscar)
-            | Q(marca__nombre__icontains=buscar)
-            | Q(inspirado_en__icontains=buscar)
-        )
+        cond = Q(nombre__icontains=buscar) | Q(marca__nombre__icontains=buscar)
+        # Incluye 'inspirado_en' solo si el campo existe en el modelo
+        if any(f.name == 'inspirado_en' for f in Perfume._meta.get_fields()):
+            cond |= Q(inspirado_en__icontains=buscar)
+        perfumes = perfumes.filter(cond)
 
     if marca_id:
         perfumes = perfumes.filter(marca_id=marca_id)
@@ -81,7 +81,7 @@ def catalogo(request):
             familia_id = str(fam.id)
 
     # Ordenar: primero con stock, agotados al final; luego por id
-    
+    from django.db.models import Case, When, IntegerField
     perfumes = perfumes.annotate(
         sin_stock=Case(When(stock__lte=0, then=1), default=0, output_field=IntegerField())
     ).order_by('sin_stock', '-id')
