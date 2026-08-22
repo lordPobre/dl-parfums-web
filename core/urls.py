@@ -14,8 +14,8 @@ sitemaps_dict = {
 def robots_txt(request):
     lineas = [
         "User-Agent: *",
-        "Disallow: /perseus-access-x12/",
         "Allow: /",
+        "",
         "Sitemap: https://www.instintoolfativo.cl/sitemap.xml",
     ]
     return HttpResponse("\n".join(lineas), content_type="text/plain")
