@@ -1,18 +1,43 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Catálogo | Instinto Olfativo{% endblock %}
+{% block title %}Catálogo de Perfumes | Instinto Olfativo{% endblock %}
 {% block meta_description %}Explora nuestro catálogo de perfumes alternativos de nicho y diseñador en Chile. Filtra por casa, género y familia olfativa. Envío a todo el país.{% endblock %}
 {% block og_title %}Catálogo de Perfumes | Instinto Olfativo{% endblock %}
 
 {% block content %}
 
+<!-- Encabezado -->
 <section class="bg-gray-900 text-center pt-24 pb-16 px-6">
     <span class="text-[11px] tracking-[0.44em] text-white/55 uppercase block mb-4">Explora nuestra colección</span>
     <h1 class="text-4xl md:text-5xl font-serif text-white">Catálogo Completo</h1>
     <div class="w-12 h-[1px] bg-white/30 mx-auto mt-6"></div>
 </section>
 
+<!-- Buscador -->
+<section class="pt-10 pb-2 bg-white">
+    <form method="get" action="#productos" class="max-w-[560px] mx-auto px-5 md:px-10">
+        <div class="flex items-center border border-gray-200 focus-within:border-gray-900 transition-colors">
+            <span class="pl-4 text-gray-400">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3" stroke-linecap="round"></path></svg>
+            </span>
+            <input type="search" name="q" value="{{ buscar }}" placeholder="Buscar por nombre o marca..."
+                   class="flex-1 px-3 py-3.5 text-sm font-light text-gray-900 placeholder-gray-400 outline-none bg-transparent">
+            {% if genero_actual %}<input type="hidden" name="genero" value="{{ genero_actual }}">{% endif %}
+            {% if marca_seleccionada_id %}<input type="hidden" name="marca" value="{{ marca_seleccionada_id }}">{% endif %}
+            {% if familia_actual %}<input type="hidden" name="familia" value="{{ familia_actual }}">{% endif %}
+            <button type="submit" class="px-6 py-3.5 bg-gray-900 text-white text-[11px] tracking-[0.2em] uppercase hover:bg-black transition-colors">Buscar</button>
+        </div>
+        {% if buscar %}
+        <p class="text-center text-[12px] font-light text-gray-500 mt-3">
+            Resultados para <span class="text-gray-900">"{{ buscar }}"</span> ·
+            <a href="?#productos" class="underline underline-offset-2 hover:text-gray-900">Limpiar búsqueda</a>
+        </p>
+        {% endif %}
+    </form>
+</section>
+
+<!-- Filtro por casa (carrusel horizontal con flechas) -->
 <section class="py-10 bg-white border-b border-gray-100">
     <div class="max-w-[1280px] mx-auto px-5 md:px-10">
         <div class="flex justify-center mb-8">
@@ -60,6 +85,7 @@
         prev.addEventListener('click', function () { track.scrollBy({ left: -paso, behavior: 'smooth' }); });
         next.addEventListener('click', function () { track.scrollBy({ left: paso, behavior: 'smooth' }); });
 
+        // Carrusel de familias olfativas
         var famTrack = document.getElementById('fam-track');
         if (famTrack) {
             document.getElementById('fam-prev').addEventListener('click', function () { famTrack.scrollBy({ left: -360, behavior: 'smooth' }); });
@@ -70,6 +96,7 @@
 
 <section id="productos" class="pt-14 px-5 md:px-10 max-w-[1400px] mx-auto">
 
+    <!-- Filtro por género -->
     <div class="flex justify-center flex-wrap gap-3 mb-6">
         <a href="?{% if marca_seleccionada_id %}marca={{ marca_seleccionada_id }}{% endif %}{% if familia_actual %}{% if marca_seleccionada_id %}&{% endif %}familia={{ familia_actual }}{% endif %}#productos"
            rel="nofollow" class="px-7 py-2 border border-gray-900 rounded-full text-[11px] tracking-[0.2em] uppercase transition-all duration-300 {% if not genero_actual %}bg-gray-900 text-white{% else %}text-gray-900 hover:bg-gray-100{% endif %}">Todos</a>
@@ -81,6 +108,7 @@
            rel="nofollow" class="px-7 py-2 border border-gray-900 rounded-full text-[11px] tracking-[0.2em] uppercase transition-all duration-300 {% if genero_actual == 'U' %}bg-gray-900 text-white{% else %}text-gray-900 hover:bg-gray-100{% endif %}">Unisex</a>
     </div>
 
+    <!-- Filtro por familia olfativa (carrusel con flechas) -->
     {% if familias %}
     <div class="mb-14">
         <p class="text-center text-[10px] tracking-[0.34em] uppercase text-gray-400 mb-4">Familia olfativa</p>
@@ -105,6 +133,7 @@
     </div>
     {% endif %}
 
+    <!-- Grilla -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7 gap-y-14 pb-24">
         {% for perfume in perfumes %}
             {% include "partials/tarjeta_perfume.html" with perfume=perfume %}

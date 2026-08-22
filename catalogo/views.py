@@ -5,7 +5,7 @@ from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Avg
+from django.db.models import Avg, Case, When, IntegerField
 from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido
 
 
@@ -20,7 +20,6 @@ def home(request):
     # Promociones / combos activos (gestionados desde el admin)
     promociones = Promocion.objects.filter(activo=True).prefetch_related('perfumes')
     # Familias en JSON para el test olfativo (id + nombre) — cubre todas las del admin
-    import json
     familias_data = json.dumps(
         [{'id': f.id, 'nombre': f.nombre} for f in familias],
         ensure_ascii=False,
@@ -44,6 +43,15 @@ def catalogo(request):
     marca_id = request.GET.get('marca')
     familia_id = request.GET.get('familia')
     familia_txt = request.GET.get('familia_txt')  # clave del test olfativo (ej: 'oriental')
+    buscar = (request.GET.get('q') or '').strip()
+
+    if buscar:
+        from django.db.models import Q
+        perfumes = perfumes.filter(
+            Q(nombre__icontains=buscar)
+            | Q(marca__nombre__icontains=buscar)
+            | Q(inspirado_en__icontains=buscar)
+        )
 
     if marca_id:
         perfumes = perfumes.filter(marca_id=marca_id)
@@ -73,13 +81,14 @@ def catalogo(request):
             familia_id = str(fam.id)
 
     # Ordenar: primero con stock, agotados al final; luego por id
-    from django.db.models import Case, When, IntegerField
+    
     perfumes = perfumes.annotate(
         sin_stock=Case(When(stock__lte=0, then=1), default=0, output_field=IntegerField())
     ).order_by('sin_stock', '-id')
 
     return render(request, 'catalogo.html', {
         'perfumes': perfumes,
+        'buscar': buscar,
         'marcas': Marca.objects.all(),
         'familias': FamiliaOlfativa.objects.filter(perfume__activo=True).distinct().order_by('nombre'),
         'genero_actual': filtro_genero,
