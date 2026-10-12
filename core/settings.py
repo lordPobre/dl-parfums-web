@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sitemaps',
+    'django.contrib.postgres',   # búsqueda sin tildes y con tolerancia a errores
     'catalogo',
     'axes',
 ]
@@ -198,7 +199,10 @@ STORAGES = {
     },
 }
 
+# django-cloudinary-storage 0.3.0 reemplaza el comando collectstatic y todavía lee este
+# ajuste, que Django eliminó en 5.1. Django 6 lo ignora (manda STORAGES); solo evita el error.
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 

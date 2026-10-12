@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('api/pedido/', views.crear_pedido, name='crear_pedido'),
     path('api/csrf/', views.csrf_api, name='csrf_api'),
+    path('api/buscar/', views.api_buscar, name='api_buscar'),
 
     # Catálogo y landings
     path('perfumes/', views.catalogo, name='catalogo'),

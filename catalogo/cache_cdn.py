@@ -4,7 +4,7 @@ from django.utils.cache import patch_cache_control
 
 # Parámetros con los que una página sigue siendo pública y cacheable.
 # Cualquier otro (?q=, ?resena=, ?familia_txt=...) se sirve siempre fresco desde Django.
-PARAMS_CACHEABLES = {"page", "genero", "marca", "familia"}
+PARAMS_CACHEABLES = {"page", "genero", "marca", "familia", "precio", "tamano", "stock", "orden"}
 
 
 def cache_cdn(segundos=300):

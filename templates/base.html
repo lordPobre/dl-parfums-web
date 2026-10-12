@@ -127,6 +127,10 @@
                     <a href="{% url 'nosotros' %}" class="text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 transition-colors hidden md:block">Nosotros</a>
                     <a href="{% url 'contacto' %}" class="text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 transition-colors hidden md:block">Contacto</a>
 
+                    <button id="buscar-toggle" type="button" class="w-11 h-11 -mr-2 flex items-center justify-center text-gray-800 hover:text-gray-900 transition-colors" aria-label="Buscar perfumes" aria-controls="buscador" aria-expanded="false">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+                    </button>
+
                     <button id="cart-toggle" type="button" class="relative text-gray-800 hover:text-gray-900 transition-colors" aria-label="Ver carrito">
                         <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                         <span id="cart-badge" class="hidden absolute -top-2 -right-2 bg-gray-900 text-white text-[10px] font-medium w-5 h-5 rounded-full flex items-center justify-center">0</span>
@@ -147,6 +151,25 @@
             <a href="{% url 'contacto' %}" class="block text-[11px] uppercase tracking-[0.2em] text-gray-600 hover:text-gray-900 py-3">Contacto</a>
         </div>
     </header>
+
+    <!-- Buscador (se abre con la lupa o con la tecla "/") -->
+    <div id="buscador" class="hidden fixed inset-0 z-[500]" role="dialog" aria-modal="true" aria-label="Buscar perfumes">
+        <div data-cerrar-buscador class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm"></div>
+        <div class="relative bg-white shadow-2xl">
+            <form action="{% url 'catalogo' %}" method="get" class="max-w-[760px] mx-auto px-5 md:px-10 pt-5 pb-3">
+                <div class="flex items-center gap-2 border-b border-gray-900">
+                    <svg class="w-5 h-5 flex-shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+                    <input id="buscador-input" type="search" name="q" autocomplete="off" enterkeyhint="search"
+                           placeholder="Nombre, perfume original o nota (ej. Sauvage, vainilla)"
+                           class="flex-1 min-w-0 px-2 py-4 text-base font-light text-gray-900 placeholder-gray-400 outline-none bg-transparent">
+                    <button type="button" data-cerrar-buscador aria-label="Cerrar buscador" class="w-11 h-11 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </form>
+            <div id="buscador-resultados" class="max-w-[760px] mx-auto px-5 md:px-10 pb-6 max-h-[70vh] overflow-y-auto" aria-live="polite"></div>
+        </div>
+    </div>
 
     <main class="flex-grow">
         {% block content %}{% endblock %}
@@ -267,6 +290,80 @@
                 .then(function (r) { return r.json(); })
                 .then(function (d) { return d.token; });
         };
+
+        /* ==================== BUSCADOR ==================== */
+        (function () {
+            var caja = document.getElementById("buscador");
+            var input = document.getElementById("buscador-input");
+            var lista = document.getElementById("buscador-resultados");
+            var boton = document.getElementById("buscar-toggle");
+            if (!caja || !input) return;
+            var espera, ultima = "";
+
+            function abrir() {
+                caja.classList.remove("hidden");
+                boton.setAttribute("aria-expanded", "true");
+                document.body.style.overflow = "hidden";
+                setTimeout(function () { input.focus(); }, 30);
+            }
+            function cerrar() {
+                caja.classList.add("hidden");
+                boton.setAttribute("aria-expanded", "false");
+                document.body.style.overflow = "";
+            }
+            function el(tag, clases, texto) {
+                var n = document.createElement(tag);
+                if (clases) n.className = clases;
+                if (texto) n.textContent = texto;
+                return n;
+            }
+            function pintar(data, texto) {
+                lista.innerHTML = "";
+                if (!data.resultados.length) {
+                    lista.appendChild(el("p", "py-6 text-center font-serif italic text-gray-400", "Sin resultados para \u201C" + texto + "\u201D. Prueba con el nombre del perfume original o una nota."));
+                    return;
+                }
+                var ul = el("ul", "divide-y divide-gray-100");
+                data.resultados.forEach(function (r) {
+                    var li = el("li");
+                    var a = el("a", "flex items-center gap-4 py-3 hover:bg-gray-50 transition-colors");
+                    a.href = r.url;
+                    var foto = el("div", "w-14 h-16 flex-shrink-0 bg-[#f8f8f8] flex items-center justify-center overflow-hidden");
+                    if (r.img) { var img = el("img", "max-h-[85%] max-w-[85%] object-contain"); img.src = r.img; img.alt = ""; img.width = 56; img.height = 64; foto.appendChild(img); }
+                    var info = el("div", "flex-1 min-w-0");
+                    info.appendChild(el("p", "text-[9px] tracking-[0.2em] uppercase text-gray-400", r.casa));
+                    info.appendChild(el("p", "font-serif text-[15px] text-gray-900 leading-snug truncate", r.nombre));
+                    if (r.inspirado_en) info.appendChild(el("p", "text-[12px] font-light text-gray-500 truncate", "Inspirado en " + r.inspirado_en));
+                    var precio = el("p", "text-[13px] whitespace-nowrap " + (r.agotado ? "text-gray-400" : "text-gray-800"), r.agotado ? "Agotado" : (r.desde ? "Desde " : "") + r.precio);
+                    a.appendChild(foto); a.appendChild(info); a.appendChild(precio);
+                    li.appendChild(a); ul.appendChild(li);
+                });
+                lista.appendChild(ul);
+                var todos = el("a", "mt-4 flex items-center justify-center h-11 border border-gray-900 text-[11px] tracking-[0.2em] uppercase text-gray-900 hover:bg-gray-900 hover:text-white transition-colors", "Ver todos los resultados");
+                todos.href = data.ver_todos;
+                lista.appendChild(todos);
+            }
+            input.addEventListener("input", function () {
+                var texto = input.value.trim();
+                clearTimeout(espera);
+                if (texto.length < 2) { lista.innerHTML = ""; ultima = ""; return; }
+                espera = setTimeout(function () {
+                    if (texto === ultima) return;
+                    ultima = texto;
+                    fetch("/api/buscar/?q=" + encodeURIComponent(texto))
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) { if (input.value.trim() === texto) pintar(d, texto); })
+                        .catch(function () {});
+                }, 200);
+            });
+            boton.addEventListener("click", abrir);
+            caja.addEventListener("click", function (e) { if (e.target.closest("[data-cerrar-buscador]")) cerrar(); });
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape" && !caja.classList.contains("hidden")) cerrar();
+                var escribiendo = /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || "");
+                if (e.key === "/" && !escribiendo && caja.classList.contains("hidden")) { e.preventDefault(); abrir(); }
+            });
+        })();
 
         /* ==================== CARRITO ==================== */
         (function () {

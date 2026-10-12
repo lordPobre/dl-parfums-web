@@ -3,7 +3,10 @@ import json
 from django.http import JsonResponse, Http404
 from django.urls import reverse
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
+from django.db.models.functions import Coalesce
+from django.utils.cache import patch_cache_control
+from urllib.parse import urlencode
 from django.middleware.csrf import get_token
 from django.views.decorators.cache import never_cache
 from django.utils.text import slugify
@@ -16,6 +19,9 @@ from django.db import transaction
 from django.core.cache import cache
 from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido, Presentacion, SlugAntiguo
 from .cache_cdn import cache_cdn
+from .busqueda import buscar_perfumes, sugerir
+from .filtros import url_filtros
+from .templatetags.cloudinary_wm import cl, clp
 
 
 def _ip(request):
@@ -77,44 +83,119 @@ def _entero(valor):
         return None
 
 
+PRECIOS = [
+    # (clave, etiqueta, mínimo exclusivo, máximo inclusivo)
+    ('hasta-10000', 'Hasta $10.000', None, 10000),
+    ('10000-20000', '$10.001 – $20.000', 10000, 20000),
+    ('desde-20000', 'Más de $20.000', 20000, None),
+]
+ORDENES = [
+    ('', 'Novedades'),
+    ('relevancia', 'Más relevantes'),
+    ('precio-asc', 'Precio: menor a mayor'),
+    ('precio-desc', 'Precio: mayor a menor'),
+    ('nombre', 'Nombre A–Z'),
+]
+GENEROS_TXT = {'F': 'Mujer', 'M': 'Hombre', 'U': 'Unisex'}
+
+
 def _catalogo(request, landing=None):
-    """Catálogo con filtros combinables. 'landing' fija un filtro desde la URL
-    (/perfumes/mujer/, /familia/<slug>/, /casa/<slug>/) y aporta título e introducción."""
+    """Catálogo con búsqueda, filtros combinables y orden. 'landing' fija un filtro desde
+    la URL (/perfumes/mujer/, /familia/<slug>/, /casa/<slug>/) y aporta título e introducción."""
     landing = landing or {}
     perfumes = Perfume.objects.filter(activo=True).select_related('marca', 'familia')
 
-    filtro_genero = landing.get('genero') or request.GET.get('genero')
-    if filtro_genero not in ('F', 'M', 'U'):
-        filtro_genero = None
+    genero = landing.get('genero') or request.GET.get('genero')
+    if genero not in GENEROS_TXT:
+        genero = None
     marca_id = landing.get('marca_id') or _entero(request.GET.get('marca'))
     familia_id = landing.get('familia_id') or _entero(request.GET.get('familia'))
     familia_txt = request.GET.get('familia_txt')  # clave del test olfativo (ej: 'oriental')
+    precio = request.GET.get('precio')
+    precio = precio if precio in {p[0] for p in PRECIOS} else None
+    tamano = _entero(request.GET.get('tamano'))
+    solo_stock = request.GET.get('stock') == '1'
     buscar = (request.GET.get('q') or '').strip()[:80]
+    orden_pedido = request.GET.get('orden') or ''
+    orden_pedido = orden_pedido if orden_pedido in dict(ORDENES) else ''
+    orden = orden_pedido or ('relevancia' if buscar else '')
 
-    if buscar:
-        perfumes = perfumes.filter(
-            Q(nombre__icontains=buscar) | Q(marca__nombre__icontains=buscar) | Q(inspirado_en__icontains=buscar)
-        )
     if marca_id:
         perfumes = perfumes.filter(marca_id=marca_id)
-    if filtro_genero:
-        perfumes = perfumes.filter(genero=filtro_genero)
+    if genero:
+        perfumes = perfumes.filter(genero=genero)
     if familia_id:
         perfumes = perfumes.filter(familia_id=familia_id)
-    elif familia_txt:
-        # 'citrica' encuentra el slug 'citrica' de "Cítrica" (el slug ya no tiene tildes)
+    elif familia_txt and slugify(familia_txt):
         fam = FamiliaOlfativa.objects.filter(slug__icontains=slugify(familia_txt)).first()
         if fam:
             perfumes = perfumes.filter(familia_id=fam.id)
             familia_id = fam.id
 
-    # Primero con stock, agotados al final; luego los más nuevos
+    # Precio y tamaño se filtran por presentación: basta con que UN tamaño cumpla
+    pres = Presentacion.objects.filter(perfume=OuterRef('pk'), activo=True)
+    if precio:
+        _, _, minimo, maximo = next(p for p in PRECIOS if p[0] == precio)
+        rango = pres.annotate(pv=Coalesce('precio_oferta', 'precio'))
+        if minimo:
+            rango = rango.filter(pv__gt=minimo)
+        if maximo:
+            rango = rango.filter(pv__lte=maximo)
+        perfumes = perfumes.filter(Exists(rango))
+    if tamano:
+        perfumes = perfumes.filter(Exists(pres.filter(ml=tamano)))
+    if solo_stock:
+        perfumes = perfumes.filter(stock__gt=0)
+    if buscar:
+        perfumes = buscar_perfumes(perfumes, buscar)
+
     perfumes = perfumes.annotate(
         sin_stock=Case(When(stock__lte=0, then=1), default=0, output_field=IntegerField())
-    ).order_by('sin_stock', '-id')
+    )
+    criterios = {
+        '': ('sin_stock', '-id'),
+        'relevancia': ('sin_stock', '-relevancia', '-id') if buscar else ('sin_stock', '-id'),
+        'precio-asc': ('sin_stock', 'precio', '-id'),
+        'precio-desc': ('sin_stock', '-precio', '-id'),
+        'nombre': ('nombre',),
+    }
+    perfumes = perfumes.order_by(*criterios[orden])
 
     paginator = Paginator(perfumes, POR_PAGINA)
     page_obj = paginator.get_page(request.GET.get('page'))
+
+    # Datos para los filtros
+    marcas = list(Marca.objects.filter(productos__activo=True).distinct().order_by('nombre'))
+    familias = list(FamiliaOlfativa.objects.filter(perfume__activo=True).distinct().order_by('nombre'))
+    tamanos = list(
+        Presentacion.objects.filter(activo=True, perfume__activo=True)
+        .values_list('ml', flat=True).distinct().order_by('ml')
+    )
+    estado = {
+        'q': buscar, 'genero': genero, 'marca': marca_id, 'familia': familia_id,
+        'tamano': tamano, 'precio': precio, 'stock': '1' if solo_stock else None, 'orden': orden_pedido,
+    }
+    estado = {k: v for k, v in estado.items() if v not in (None, '')}
+    slugs = {
+        'familia': {str(f.id): f.slug for f in familias},
+        'marca': {str(m.id): m.slug for m in marcas},
+    }
+
+    # Chips de "filtros activos", cada uno con su enlace para quitarlo
+    nombres_familia = {f.id: f.nombre for f in familias}
+    nombres_marca = {m.id: m.nombre for m in marcas}
+    etiquetas = {
+        'genero': GENEROS_TXT.get(genero),
+        'familia': nombres_familia.get(familia_id),
+        'marca': nombres_marca.get(marca_id),
+        'tamano': f"{tamano} ml" if tamano else None,
+        'precio': dict((p[0], p[1]) for p in PRECIOS).get(precio),
+        'stock': 'Solo disponibles' if solo_stock else None,
+    }
+    activos = [
+        {'etiqueta': texto, 'url': url_filtros(estado, slugs, **{clave: None})}
+        for clave, texto in etiquetas.items() if texto
+    ]
 
     return render(request, 'catalogo.html', {
         'perfumes': page_obj,
@@ -122,11 +203,25 @@ def _catalogo(request, landing=None):
         'rango_paginas': paginator.get_elided_page_range(page_obj.number, on_each_side=1, on_ends=1),
         'landing': landing,
         'buscar': buscar,
-        'marcas': Marca.objects.filter(productos__activo=True).distinct().order_by('nombre'),
-        'familias': FamiliaOlfativa.objects.filter(perfume__activo=True).distinct().order_by('nombre'),
-        'genero_actual': filtro_genero,
+        'sugerencias': sugerir(Perfume.objects.filter(activo=True), buscar) if buscar and not paginator.count else [],
+        'marcas': marcas,
+        'familias': familias,
+        'tamanos': tamanos,
+        'precios': PRECIOS,
+        'ordenes': [o for o in ORDENES if o[0] != 'relevancia' or buscar],
+        'genero_actual': genero,
         'marca_seleccionada_id': marca_id,
         'familia_actual': familia_id,
+        'tamano_actual': tamano,
+        'precio_actual': precio,
+        'solo_stock': solo_stock,
+        'orden_actual': orden,
+        'estado_filtros': estado,
+        'estado_sin_q': [(k, v) for k, v in estado.items() if k != 'q'],
+        'slugs_filtros': slugs,
+        'filtros_activos': activos,
+        'n_filtros': len(activos),
+        'n_mas_filtros': sum(bool(x) for x in (tamano, precio, solo_stock, orden_pedido)),
     })
 
 
@@ -287,6 +382,34 @@ def nosotros(request):
 MAX_QTY = 10      # unidades máximas por línea
 MAX_ITEMS = 30    # líneas máximas por pedido
 MAX_PEDIDOS = 5   # pedidos por IP cada 10 minutos
+
+
+def api_buscar(request):
+    """Resultados instantáneos para el buscador del encabezado (máx. 6)."""
+    texto = (request.GET.get('q') or '').strip()[:80]
+    resultados = []
+    if len(texto) >= 2:
+        qs = buscar_perfumes(Perfume.objects.filter(activo=True).select_related('marca'), texto)
+        qs = qs.annotate(
+            sin_stock=Case(When(stock__lte=0, then=1), default=0, output_field=IntegerField())
+        ).order_by('sin_stock', '-relevancia', '-id')[:6]
+        for p in qs:
+            resultados.append({
+                'nombre': p.nombre,
+                'inspirado_en': p.inspirado_en,
+                'casa': p.marca.nombre if p.marca_id else '',
+                'url': p.get_absolute_url(),
+                'img': cl(p.imagen.url, 120) if p.imagen else '',
+                'precio': clp(p.precio_vigente),
+                'desde': p.n_presentaciones > 1,
+                'agotado': p.stock <= 0,
+            })
+    resp = JsonResponse({
+        'resultados': resultados,
+        'ver_todos': reverse('catalogo') + '?' + urlencode({'q': texto}),
+    })
+    patch_cache_control(resp, public=True, max_age=60, s_maxage=300, stale_while_revalidate=3600)
+    return resp
 
 
 @never_cache

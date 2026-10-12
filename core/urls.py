@@ -20,6 +20,12 @@ def robots_txt(request):
         "User-Agent: *",
         "Allow: /",
         "Disallow: /api/",
+        # Combinaciones de filtros sin valor propio para Google (las landings sí se indexan)
+        "Disallow: /*?*orden=",
+        "Disallow: /*?*precio=",
+        "Disallow: /*?*tamano=",
+        "Disallow: /*?*stock=",
+        "Disallow: /*?*q=",
         "",
         "Sitemap: https://www.instintoolfativo.cl/sitemap.xml",
     ]
