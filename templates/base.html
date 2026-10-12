@@ -23,6 +23,13 @@
       "logo": "https://www.instintoolfativo.cl{% static 'img/logo-instinto-oscuro.png' %}",
       "description": "Tienda online chilena de perfumes alternativos de nicho y diseñador, con decants y fragancias inspiradas en la alta perfumería.",
       "areaServed": { "@type": "Country", "name": "Chile" },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "CL",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+        "merchantReturnDays": 10,
+        "merchantReturnLink": "https://www.instintoolfativo.cl{% url 'politicas' %}#cambios"
+      },
       "sameAs": [
         "https://www.instagram.com/monitidoparfums",
         "https://www.tiktok.com/@monitido1"
@@ -40,10 +47,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://res.cloudinary.com">
-    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
 
     <style>
         .font-serif { font-family: 'Playfair Display', serif; }
@@ -255,6 +261,13 @@
             if (e.target && e.target.tagName === 'IMG') e.preventDefault();
         });
 
+        /* Token CSRF bajo demanda: las páginas se cachean en el CDN y no traen token propio */
+        window.obtenerCsrf = function () {
+            return fetch("/api/csrf/", { credentials: "same-origin", cache: "no-store" })
+                .then(function (r) { return r.json(); })
+                .then(function (d) { return d.token; });
+        };
+
         /* ==================== CARRITO ==================== */
         (function () {
             var WHATSAPP = "56962169898";
@@ -360,10 +373,13 @@
                 // Si el servidor tarda más de 4 s, se envía igual sin número de pedido
                 var espera = setTimeout(function () { ir(mensaje(null, totalPrecio())); }, 4000);
 
-                fetch("/api/pedido/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
-                    body: JSON.stringify({ items: cart.map(function (i) { return { id: i.id, qty: i.qty }; }) })
+                window.obtenerCsrf().then(function (token) {
+                    return fetch("/api/pedido/", {
+                        method: "POST",
+                        credentials: "same-origin",
+                        headers: { "Content-Type": "application/json", "X-CSRFToken": token },
+                        body: JSON.stringify({ items: cart.map(function (i) { return { id: i.id, qty: i.qty }; }) })
+                    });
                 })
                 .then(function (r) { return r.ok ? r.json() : null; })
                 .then(function (d) {

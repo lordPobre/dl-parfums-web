@@ -1,6 +1,9 @@
 from django.contrib import admin, messages
+from django.db import transaction
+from django.db.models import F
 from django.urls import reverse, path
-from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros,Pedido, ItemPedido
+from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros,Pedido, ItemPedido, Presentacion
+from .fusion import fusionar
 from django.utils.html import format_html
 from datetime import date, timedelta
 from django.template.response import TemplateResponse
@@ -47,12 +50,14 @@ class ResenaAdmin(admin.ModelAdmin):
 
 @admin.register(Marca)
 class MarcaAdmin(admin.ModelAdmin):
-    list_display = ('nombre',)
+    list_display = ('nombre', 'slug')
     search_fields = ('nombre',)
+    prepopulated_fields = {'slug': ('nombre',)}
 
 @admin.register(FamiliaOlfativa)
 class FamiliaAdmin(admin.ModelAdmin):
-    list_display = ('nombre',)
+    list_display = ('nombre', 'slug')
+    prepopulated_fields = {'slug': ('nombre',)}
 
 class FamiliaOlfativaAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'total_perfumes')
@@ -62,6 +67,15 @@ class FamiliaOlfativaAdmin(admin.ModelAdmin):
     def total_perfumes(self, obj):
         return obj.perfume_set.count()
     total_perfumes.short_description = "N.º de perfumes"
+
+class PresentacionInline(admin.TabularInline):
+    model = Presentacion
+    extra = 1
+    fields = ('formato', 'ml', 'precio', 'precio_oferta', 'stock', 'activo', 'orden', 'sku')
+    readonly_fields = ('sku',)
+    verbose_name = "Presentación (tamaño)"
+    verbose_name_plural = "Presentaciones (tamaños, precios y stock)"
+
 
 class PrevNextAdminMixin:
     def change_view(self, request, object_id, form_url='', extra_context=None):
@@ -86,12 +100,25 @@ class PrevNextAdminMixin:
 
 @admin.register(Perfume)
 class PerfumeAdmin(PrevNextAdminMixin, admin.ModelAdmin):
-    list_display = ('nombre', 'marca', 'precio', 'genero', 'stock','es_oferta', 'precio_oferta', 'activo', 'destacado')
+    list_display = ('nombre', 'inspirado_en', 'marca', 'precio', 'stock', 'n_presentaciones', 'genero', 'es_oferta', 'activo', 'destacado')
     list_filter = ('marca', 'familia', 'genero','es_oferta', 'activo', 'destacado')
-    search_fields = ('nombre', 'marca__nombre')
-    list_editable = ('precio', 'stock', 'activo', 'es_oferta', 'precio_oferta', 'destacado')
-    inlines = [ImagenPerfumeInline, ResenaInline]
-    actions = ['marcar_destacado', 'quitar_destacado', 'marcar_activo', 'quitar_activo']
+    search_fields = ('nombre', 'marca__nombre', 'inspirado_en')
+    prepopulated_fields = {'slug': ('nombre',)}
+    list_editable = ('activo', 'destacado')
+    # Precio, stock y oferta se calculan desde las presentaciones (se editan abajo, en la ficha)
+    readonly_fields = ('precio', 'precio_oferta', 'es_oferta', 'stock', 'n_presentaciones', 'fusionado_en')
+    inlines = [PresentacionInline, ImagenPerfumeInline, ResenaInline]
+    actions = ['marcar_destacado', 'quitar_destacado', 'marcar_activo', 'quitar_activo', 'unir_como_presentaciones']
+
+    @admin.action(description="Unir en un solo perfume (como tamaños)")
+    def unir_como_presentaciones(self, request, queryset):
+        if queryset.count() < 2:
+            messages.error(request, "Selecciona al menos dos perfumes para unirlos.")
+            return
+        principal, avisos = fusionar(list(queryset))
+        for aviso in avisos:
+            messages.warning(request, aviso)
+        messages.success(request, f"Unidos en «{principal.nombre}». Las URLs de los demás redirigen a este.")
 
     @admin.action(description="Marcar como DESTACADO")
     def marcar_destacado(self, request, queryset):
@@ -142,70 +169,136 @@ class PaginaNosotrosAdmin(admin.ModelAdmin):
 class ItemPedidoInline(admin.TabularInline):
     model = ItemPedido
     extra = 0
-    fields = ('perfume', 'nombre', 'precio', 'cantidad', 'subtotal')
+    fields = ('perfume', 'presentacion', 'nombre', 'precio', 'cantidad', 'subtotal')
     readonly_fields = ('subtotal',)
 
     def subtotal(self, obj):
         return f"${obj.subtotal}" if obj.pk else "—"
 
 
-def _descontar_stock(pedido, request):
-    """Descuenta el stock de cada item una sola vez. Devuelve True si se aplicó."""
-    if pedido.stock_descontado:
-        return False
-    faltantes = []
-    for item in pedido.items.select_related('perfume'):
-        p = item.perfume
-        if not p:
-            continue
-        if p.stock is None:
-            continue
-        if p.stock < item.cantidad:
-            faltantes.append(f"{p.nombre} (stock {p.stock}, pedido {item.cantidad})")
-    if faltantes:
-        messages.error(request, "No hay stock suficiente para: " + "; ".join(faltantes))
-        return False
-    for item in pedido.items.select_related('perfume'):
-        p = item.perfume
-        if p and p.stock is not None:
-            p.stock = max(0, p.stock - item.cantidad)
-            p.save(update_fields=['stock'])
-    pedido.stock_descontado = True
-    pedido.save(update_fields=['stock_descontado'])
-    return True
+def _resolver_presentaciones(pedido):
+    """Pedidos creados antes de las presentaciones: asigna la presentación de su perfume."""
+    for item in pedido.items.filter(presentacion__isnull=True, perfume__isnull=False).select_related('perfume'):
+        destino = item.perfume.fusionado_en or item.perfume
+        v = destino.presentaciones.filter(activo=True).order_by('precio').first()
+        if v:
+            item.presentacion = v
+            item.save(update_fields=['presentacion'])
+
+
+def _cantidades(pedido):
+    necesita = {}
+    for item in pedido.items.all():
+        if item.presentacion_id:
+            necesita[item.presentacion_id] = necesita.get(item.presentacion_id, 0) + item.cantidad
+    return necesita
+
+
+def descontar_stock(pedido_id):
+    """Aprueba el pedido y descuenta stock por presentación en UNA transacción.
+    - select_for_update bloquea el pedido (no se aprueba dos veces) y las presentaciones
+      en orden de id (evita interbloqueos).
+    - La resta se hace en la base de datos con F().
+    Devuelve (ok, faltantes)."""
+    with transaction.atomic():
+        pedido = Pedido.objects.select_for_update().get(pk=pedido_id)
+        if pedido.stock_descontado:
+            if pedido.estado != 'aprobado':
+                Pedido.objects.filter(pk=pedido.pk).update(estado='aprobado')
+            return True, []
+        _resolver_presentaciones(pedido)
+        necesita = _cantidades(pedido)
+        pres = {
+            v.id: v for v in Presentacion.objects.select_for_update(of=('self',))
+            .select_related('perfume').filter(id__in=necesita).order_by('id')
+        }
+        faltan = [
+            f"{v.perfume.nombre} {v.etiqueta} (stock {v.stock}, pedido {necesita[vid]})"
+            for vid, v in pres.items() if v.stock < necesita[vid]
+        ]
+        if faltan:
+            return False, faltan
+        for vid in pres:
+            Presentacion.objects.filter(pk=vid).update(stock=F('stock') - necesita[vid])
+        Pedido.objects.filter(pk=pedido.pk).update(stock_descontado=True, estado='aprobado')
+        for perfume in {v.perfume for v in pres.values()}:
+            perfume.actualizar_resumen()
+        return True, []
+
+
+def devolver_stock(pedido_id):
+    """Rechaza el pedido; si ya se había descontado stock, lo repone (una sola vez)."""
+    with transaction.atomic():
+        pedido = Pedido.objects.select_for_update().get(pk=pedido_id)
+        if pedido.stock_descontado:
+            necesita = _cantidades(pedido)
+            for vid in sorted(necesita):
+                Presentacion.objects.filter(pk=vid).update(stock=F('stock') + necesita[vid])
+            for perfume in Perfume.objects.filter(presentaciones__id__in=necesita).distinct():
+                perfume.actualizar_resumen()
+        Pedido.objects.filter(pk=pedido.pk).update(stock_descontado=False, estado='rechazado')
 
 
 @admin.action(description="Aprobar venta y descontar stock")
 def aprobar_pedidos(modeladmin, request, queryset):
     aprobados = 0
-    for pedido in queryset:
-        if _descontar_stock(pedido, request):
-            pedido.estado = 'aprobado'
-            pedido.save(update_fields=['estado'])
+    for pid in queryset.values_list('pk', flat=True):
+        ok, faltan = descontar_stock(pid)
+        if ok:
             aprobados += 1
+        else:
+            messages.error(request, f"Pedido IO-{pid:06d}: no hay stock suficiente para " + "; ".join(faltan))
     if aprobados:
         messages.success(request, f"{aprobados} venta(s) aprobada(s) y stock descontado.")
 
 
+@admin.action(description="Rechazar venta (repone el stock si ya se había descontado)")
+def rechazar_pedidos(modeladmin, request, queryset):
+    n = 0
+    for pid in queryset.values_list('pk', flat=True):
+        devolver_stock(pid)
+        n += 1
+    messages.success(request, f"{n} venta(s) rechazada(s).")
+
+
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'cliente', 'estado', 'total', 'stock_descontado', 'creado')
+    list_display = ('codigo', 'cliente', 'telefono', 'estado', 'total', 'stock_descontado', 'creado')
     list_filter = ('estado', 'creado')
-    search_fields = ('cliente', 'telefono')
-    readonly_fields = ('total', 'stock_descontado', 'creado', 'actualizado')
+    search_fields = ('id', 'cliente', 'telefono')
+    readonly_fields = ('codigo', 'total', 'stock_descontado', 'creado', 'actualizado')
     inlines = [ItemPedidoInline]
-    actions = [aprobar_pedidos]
+    actions = [aprobar_pedidos, rechazar_pedidos]
+
+    @admin.display(description="Código", ordering='id')
+    def codigo(self, obj):
+        return obj.codigo
+
+    def save_model(self, request, obj, form, change):
+        # Aprobar o rechazar mueve stock: se aplica DESPUÉS de guardar los productos
+        # (save_related), con las funciones transaccionales. Mientras tanto se
+        # conserva el estado anterior para no dejar un "aprobado" sin descuento.
+        anterior = form.initial.get('estado', 'pendiente') if change else 'pendiente'
+        obj._estado_pedido = obj.estado if obj.estado != anterior else None
+        if obj._estado_pedido in ('aprobado', 'rechazado'):
+            obj.estado = anterior
+        super().save_model(request, obj, form, change)
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         obj.recalcular_total()
         obj.save(update_fields=['total'])
-        # Si se cambia el estado a "aprobado" desde el formulario, descontar stock.
-        if obj.estado == 'aprobado' and not obj.stock_descontado:
-            _descontar_stock(obj, request)
-            if obj.stock_descontado:
-                messages.success(request, "Stock descontado para esta venta.")
+        nuevo = getattr(obj, '_estado_pedido', None)
+        if nuevo == 'aprobado':
+            ok, faltan = descontar_stock(obj.pk)
+            if ok:
+                messages.success(request, f"{obj.codigo} aprobado y stock descontado.")
+            else:
+                messages.error(request, f"{obj.codigo} sigue pendiente: no hay stock suficiente para " + "; ".join(faltan))
+        elif nuevo == 'rechazado':
+            devolver_stock(obj.pk)
+            messages.success(request, f"{obj.codigo} rechazado.")
 
 
 registrar_panel_ventas(admin.site)

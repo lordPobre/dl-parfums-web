@@ -60,8 +60,8 @@
             {# Se repite la lista dos veces para lograr el bucle continuo #}
             {% for i in "12" %}
             {% for marca in marcas %}
-            <a href="{% url 'catalogo' %}?marca={{ marca.id }}#productos"
-               rel="nofollow" aria-hidden="{% if i == '2' %}true{% else %}false{% endif %}"
+            <a href="{{ marca.get_absolute_url }}"
+               {% if i == '2' %}tabindex="-1"{% endif %} aria-hidden="{% if i == '2' %}true{% else %}false{% endif %}"
                class="flex-shrink-0 mx-8 md:mx-12 flex items-center justify-center h-20 transition-all duration-500 grayscale opacity-60 hover:grayscale-0 hover:opacity-100">
                 {% if marca.logo %}
                     <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="h-16 md:h-20 max-w-[200px] object-contain">
@@ -148,7 +148,7 @@
                 <span class="text-lg text-gray-400 line-through">{{ destacada.precio|clp }}</span>
             </div>
             <div>
-                <a href="{% url 'perfume_detalle' destacada.id %}" class="inline-block bg-gray-900 text-white px-11 py-4 text-[11px] tracking-[0.26em] uppercase font-medium hover:bg-black transition-colors">Ver Detalles</a>
+                <a href="{{ destacada.get_absolute_url }}" class="inline-block bg-gray-900 text-white px-11 py-4 text-[11px] tracking-[0.26em] uppercase font-medium hover:bg-black transition-colors">Ver Detalles</a>
             </div>
         </div>
     </div>
@@ -218,7 +218,7 @@
         </button>
         <div id="famhome-track" class="flex-1 mx-3 flex gap-5 overflow-x-auto scroll-smooth py-1" style="scrollbar-width: none; -ms-overflow-style: none;">
             {% for familia in familias %}
-            <a href="{% url 'catalogo' %}?familia={{ familia.id }}#productos" rel="nofollow" class="group flex-shrink-0 w-[280px] border border-gray-200 bg-[#fbfbfb] px-6 py-11 text-center transition-all duration-500 hover:border-gray-900 hover:bg-white hover:-translate-y-1 hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.25)]">
+            <a href="{{ familia.get_absolute_url }}" class="group flex-shrink-0 w-[280px] border border-gray-200 bg-[#fbfbfb] px-6 py-11 text-center transition-all duration-500 hover:border-gray-900 hover:bg-white hover:-translate-y-1 hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.25)]">
                 {% include "partials/icono_familia.html" with familia=familia %}
                 <h3 class="font-serif text-xl text-gray-900 mb-2">{{ familia.nombre }}</h3>
                 <p class="text-[12.5px] font-light leading-relaxed text-gray-500">{{ familia.descripcion|default:"Descubre las fragancias de esta familia."|truncatewords:14 }}</p>

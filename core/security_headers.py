@@ -1,6 +1,8 @@
+# 'unsafe-eval' y cdn.tailwindcss.com ya no son necesarios: Tailwind se compila a static/css/app.css.
+# 'unsafe-inline' se mantiene por los scripts inline del sitio y de los píxeles de Facebook/TikTok.
 CSP = (
     "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://analytics.tiktok.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net; "
+    "script-src 'self' 'unsafe-inline' https://connect.facebook.net https://analytics.tiktok.com https://cdn.jsdelivr.net; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "
     "img-src 'self' data: https://res.cloudinary.com https://www.facebook.com https://analytics.tiktok.com; "

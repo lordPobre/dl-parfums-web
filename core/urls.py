@@ -4,25 +4,31 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
-from catalogo.sitemaps import PerfumeSitemap, EstaticoSitemap
+from catalogo.sitemaps import EstaticoSitemap, GeneroSitemap, FamiliaSitemap, CasaSitemap, PerfumeSitemap
 
 sitemaps_dict = {
     "estaticas": EstaticoSitemap,
-    'perfumes': PerfumeSitemap,
+    "generos": GeneroSitemap,
+    "familias": FamiliaSitemap,
+    "casas": CasaSitemap,
+    "perfumes": PerfumeSitemap,
 }
+
 
 def robots_txt(request):
     lineas = [
         "User-Agent: *",
         "Allow: /",
+        "Disallow: /api/",
         "",
         "Sitemap: https://www.instintoolfativo.cl/sitemap.xml",
     ]
     return HttpResponse("\n".join(lineas), content_type="text/plain")
 
+
 urlpatterns = [
     path('perseus-access-x12/', admin.site.urls),
-    path('', include('catalogo.urls')), 
+    path('', include('catalogo.urls')),
     path('robots.txt', robots_txt),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name='django.contrib.sitemaps.views.sitemap'),
 ]

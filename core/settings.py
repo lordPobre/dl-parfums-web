@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sitemaps',
     'catalogo',
+    'axes',
 ]
 
 MIDDLEWARE = [
@@ -48,9 +49,25 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.security_headers.SecurityHeadersMiddleware', 
+    # Debe ir al final: bloquea el login del admin tras varios intentos fallidos
+    'axes.middleware.AxesMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# django-axes: 5 intentos fallidos -> bloqueo de 1 hora para esa IP + usuario
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1
+AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
+# En Vercel la IP real del visitante llega en X-Forwarded-For
+AXES_IPWARE_PROXY_COUNT = 1 if EN_PRODUCCION else 0
+AXES_IPWARE_META_PRECEDENCE_ORDER = ["HTTP_X_FORWARDED_FOR", "REMOTE_ADDR"]
 
 JAZZMIN_SETTINGS = {
     "site_title": "Instinto Olfativo Admin",
@@ -181,6 +198,7 @@ STORAGES = {
     },
 }
 
+STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 

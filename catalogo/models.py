@@ -1,10 +1,33 @@
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.text import slugify
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+
+def slug_unico(modelo, texto, pk=None, largo=200):
+    """Genera un slug a partir de 'texto' que no exista en 'modelo' (agrega -2, -3...)."""
+    base = (slugify(texto) or "item")[: largo - 4]
+    slug, n = base, 2
+    while modelo.objects.filter(slug=slug).exclude(pk=pk).exists():
+        slug = f"{base}-{n}"
+        n += 1
+    return slug
 
 class Marca(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True, help_text="Parte de la URL: /casa/<slug>/. Se genera solo si lo dejas vacío.")
     logo = models.ImageField(upload_to='marcas/', blank=True, null=True)
-    descripcion = models.TextField(blank=True, verbose_name="Historia de la marca")
+    descripcion = models.TextField(blank=True, verbose_name="Historia de la marca", help_text="Se muestra como introducción en /casa/<slug>/.")
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slug_unico(Marca, self.nombre, self.pk, 120)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("catalogo_casa", args=[self.slug])
 
     class Meta:
         verbose_name_plural = "Marcas"
@@ -14,7 +37,16 @@ class Marca(models.Model):
 
 class FamiliaOlfativa(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
-    descripcion = models.TextField(blank=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True, help_text="Parte de la URL: /familia/<slug>/. Se genera solo si lo dejas vacío.")
+    descripcion = models.TextField(blank=True, help_text="Se muestra como introducción en /familia/<slug>/ (ideal 80–150 palabras).")
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slug_unico(FamiliaOlfativa, self.nombre, self.pk, 120)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("catalogo_familia", args=[self.slug])
 
     def __str__(self):
         return self.nombre
@@ -43,10 +75,126 @@ class Perfume(models.Model):
     destacado = models.BooleanField(default=False, help_text="Mostrar en la página de inicio")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(max_length=220, unique=True, blank=True, help_text="Parte de la URL: /perfume/<slug>/. Se genera solo si lo dejas vacío. Cambiarlo rompe enlaces existentes.")
+    inspirado_en = models.CharField(max_length=200, blank=True, help_text="Perfume original de referencia, ej: 'Sauvage de Dior'. Se muestra bajo el nombre y se usa en la búsqueda.")
+    meta_titulo = models.CharField(max_length=70, blank=True, help_text="Opcional. Título para Google (máx. 60–70 caracteres). Si lo dejas vacío se genera solo.")
+    meta_descripcion = models.CharField(max_length=160, blank=True, help_text="Opcional. Descripción para Google (140–155 caracteres). Si la dejas vacía se genera sola.")
+
+    CONCENTRACIONES = [
+        ('', '—'),
+        ('edt', 'Eau de Toilette'),
+        ('edp', 'Eau de Parfum'),
+        ('parfum', 'Parfum'),
+        ('extrait', 'Extrait de Parfum'),
+    ]
+    concentracion = models.CharField(max_length=10, choices=CONCENTRACIONES, blank=True)
+    fusionado_en = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='fusionados',
+        help_text="Si este perfume se unió a otro como presentación, su URL redirige allí.",
+    )
+    n_presentaciones = models.PositiveSmallIntegerField(default=1, editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slug_unico(Perfume, self.nombre, self.pk, 220)
+        elif self.pk:
+            # Si cambias el slug a mano, la URL anterior redirige (301) a la nueva
+            anterior = Perfume.objects.filter(pk=self.pk).values_list('slug', flat=True).first()
+            if anterior and anterior != self.slug:
+                SlugAntiguo.objects.update_or_create(slug=anterior, defaults={'perfume': self})
+        super().save(*args, **kwargs)
+
+    def actualizar_resumen(self):
+        """Copia en el perfume el precio 'desde', el stock total y si hay oferta, a partir
+        de sus presentaciones activas. Lo usan tarjetas, home, filtros y el orden del catálogo."""
+        pres = list(self.presentaciones.filter(activo=True))
+        disponibles = [p for p in pres if p.stock > 0] or pres
+        if disponibles:
+            base = min(disponibles, key=lambda p: p.precio_vigente)
+            datos = {
+                'precio': base.precio,
+                'precio_oferta': base.precio_oferta,
+                'es_oferta': any(p.precio_oferta for p in pres),
+                'stock': sum(p.stock for p in pres),
+                'n_presentaciones': len(pres),
+            }
+        else:
+            datos = {'stock': 0, 'n_presentaciones': 0, 'es_oferta': False, 'precio_oferta': None}
+        datos['actualizado'] = timezone.now()
+        Perfume.objects.filter(pk=self.pk).update(**datos)
+        for campo, valor in datos.items():
+            setattr(self, campo, valor)
 
     def get_absolute_url(self):
-        return reverse("perfume_detalle", args=[self.id])
+        return reverse("perfume_detalle", args=[self.slug])
+
+    @property
+    def precio_vigente(self):
+        return self.precio_oferta if (self.es_oferta and self.precio_oferta) else self.precio
+
+    def __str__(self):
+        return self.nombre
     
+class Presentacion(models.Model):
+    """Lo que realmente se vende: un tamaño de un perfume, con su propio precio y stock."""
+    FORMATOS = [('decant', 'Decant'), ('frasco', 'Frasco')]
+
+    perfume = models.ForeignKey(Perfume, on_delete=models.CASCADE, related_name='presentaciones')
+    formato = models.CharField(max_length=10, choices=FORMATOS, default='frasco')
+    ml = models.PositiveSmallIntegerField(help_text="Contenido en ml (5, 10, 30, 50...).")
+    sku = models.CharField(max_length=40, unique=True, blank=True, help_text="Se genera solo si lo dejas vacío.")
+    precio = models.PositiveIntegerField(help_text="Precio en CLP.")
+    precio_oferta = models.PositiveIntegerField(null=True, blank=True, help_text="Opcional. Debe ser menor que el precio.")
+    stock = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+    orden = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['orden', 'ml']
+        verbose_name = "Presentación"
+        verbose_name_plural = "Presentaciones"
+        constraints = [
+            models.UniqueConstraint(fields=['perfume', 'formato', 'ml'], name='presentacion_unica'),
+            models.CheckConstraint(
+                condition=models.Q(precio_oferta__isnull=True) | models.Q(precio_oferta__lt=models.F('precio')),
+                name='oferta_menor_que_precio',
+            ),
+        ]
+        indexes = [models.Index(fields=['perfume', 'activo'], name='catalogo_pr_perfume_activo_idx')]
+
+    def __str__(self):
+        return f"{self.perfume.nombre} · {self.etiqueta}"
+
+    @property
+    def etiqueta(self):
+        return f"{self.get_formato_display()} {self.ml} ml"
+
+    @property
+    def precio_vigente(self):
+        return self.precio_oferta or self.precio
+
+    def save(self, *args, **kwargs):
+        if not self.sku:
+            self.sku = f"IO-{self.perfume_id}-{self.ml}{self.formato[0].upper()}"
+        super().save(*args, **kwargs)
+
+
+class SlugAntiguo(models.Model):
+    """URLs anteriores de un perfume: /perfume/<slug-antiguo>/ redirige (301) a la actual."""
+    slug = models.SlugField(max_length=220, unique=True)
+    perfume = models.ForeignKey(Perfume, on_delete=models.CASCADE, related_name='slugs_antiguos')
+
+    def __str__(self):
+        return self.slug
+
+
+@receiver([post_save, post_delete], sender=Presentacion)
+def _actualizar_resumen_perfume(sender, instance, **kwargs):
+    perfume = Perfume.objects.filter(pk=instance.perfume_id).first()
+    if perfume:
+        perfume.actualizar_resumen()
+
+
 class ImagenPortada(models.Model):
     """Diapositivas del carrusel de fondo del hero (home). Se gestionan desde el admin."""
     titulo = models.CharField(
@@ -238,6 +386,10 @@ class Pedido(models.Model):
     def __str__(self):
         return f"Pedido #{self.pk} — {self.get_estado_display()} — ${self.total}"
 
+    @property
+    def codigo(self):
+        return f"IO-{self.pk:06d}" if self.pk else "—"
+
     def recalcular_total(self):
         self.total = sum(i.subtotal for i in self.items.all())
         return self.total
@@ -246,6 +398,7 @@ class Pedido(models.Model):
 class ItemPedido(models.Model):
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='items')
     perfume = models.ForeignKey('Perfume', on_delete=models.SET_NULL, null=True, related_name='ventas')
+    presentacion = models.ForeignKey('Presentacion', on_delete=models.SET_NULL, null=True, blank=True, related_name='ventas')
     nombre = models.CharField(max_length=200, help_text="Nombre guardado (por si el perfume se elimina).")
     precio = models.PositiveIntegerField(default=0)
     cantidad = models.PositiveIntegerField(default=1)
