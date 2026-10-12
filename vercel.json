@@ -9,14 +9,24 @@
       "use": "@vercel/python"
     },
     {
+      "src": "static/**",
+      "use": "@vercel/static"
+    },
+    {
       "src": "staticfiles/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
+      "src": "/static/(css|img)/(.*)",
+      "dest": "/static/$1/$2",
+      "headers": { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" }
+    },
+    {
       "src": "/static/(.*)",
-      "dest": "/staticfiles/$1"
+      "dest": "/staticfiles/$1",
+      "headers": { "Cache-Control": "public, max-age=86400" }
     },
     {
       "src": "/(.*)",
