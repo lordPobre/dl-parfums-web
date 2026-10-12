@@ -16,3 +16,34 @@ def watermark(url):
     if url and "/upload/" in url:
         return url.replace("/upload/", f"/upload/{WM}/", 1)
     return url
+
+
+def _transformar(url, ancho, con_marca):
+    if not url or "/upload/" not in url:
+        return url
+    t = f"f_auto,q_auto,c_limit,w_{int(ancho)}"
+    if con_marca:
+        t += f"/{WM}"
+    return url.replace("/upload/", f"/upload/{t}/", 1)
+
+
+@register.filter
+def cl(url, ancho=800):
+    """Imagen de producto optimizada (AVIF/WebP automático, ancho máximo) + marca de agua.
+    Uso: {{ perfume.imagen.url|cl:480 }}"""
+    return _transformar(url, ancho, True)
+
+
+@register.filter
+def clsin(url, ancho=1600):
+    """Igual que |cl pero SIN marca de agua (portadas del hero, logos de casas)."""
+    return _transformar(url, ancho, False)
+
+
+@register.filter
+def clp(valor):
+    """Formato de precio chileno: 15000 -> $15.000"""
+    try:
+        return "$" + f"{int(valor):,}".replace(",", ".")
+    except (TypeError, ValueError):
+        return valor

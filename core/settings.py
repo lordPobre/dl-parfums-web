@@ -14,9 +14,14 @@ load_dotenv(dotenv_path=env_path)
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-DEBUG = False
+# Vercel define VERCEL=1 en sus funciones. En tu PC no existe, así que se activa el modo local.
+EN_PRODUCCION = os.environ.get('VERCEL') == '1'
+DEBUG = os.environ.get('DEBUG', 'False' if EN_PRODUCCION else 'True') == 'True'
 
 ALLOWED_HOSTS = ['instintoolfativo.cl', 'www.instintoolfativo.cl', '.vercel.app', 'localhost', '127.0.0.1']
+
+# Dominio canónico: se usa en <link rel="canonical">, og:url, JSON-LD y la redirección de *.vercel.app
+SITE_URL = 'https://www.instintoolfativo.cl'
 
 INSTALLED_APPS = [
     'jazzmin',
@@ -34,6 +39,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.dominio.DominioCanonicoMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -106,6 +112,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'catalogo.context_processors.sitio',
             ],
         },
     },
@@ -119,7 +126,11 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL)
     }
-    DATABASES['default']['CONN_MAX_AGE'] = 600
+    # Serverless: sin conexiones persistentes entre invocaciones. Usa la URL con pooler
+    # de tu proveedor (Neon: host con '-pooler'; Supabase: puerto 6543).
+    DATABASES['default']['CONN_MAX_AGE'] = 0
+    DATABASES['default']['CONN_HEALTH_CHECKS'] = True
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
     DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
 else:
     DATABASES = {
@@ -178,12 +189,15 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-SECURE_SSL_REDIRECT = True              
-SESSION_COOKIE_SECURE = True             
-CSRF_COOKIE_SECURE = True               
-SECURE_HSTS_SECONDS = 31536000             
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True 
-SECURE_HSTS_PRELOAD = True 
+# HTTPS obligatorio solo en Vercel. En local, runserver solo habla HTTP: si esto queda
+# en True, Django redirige a https:// y el servidor recibe tráfico TLS que no entiende.
+SECURE_SSL_REDIRECT = EN_PRODUCCION
+SESSION_COOKIE_SECURE = EN_PRODUCCION
+CSRF_COOKIE_SECURE = EN_PRODUCCION
+SECURE_HSTS_SECONDS = 31536000 if EN_PRODUCCION else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = EN_PRODUCCION
+SECURE_HSTS_PRELOAD = EN_PRODUCCION
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 

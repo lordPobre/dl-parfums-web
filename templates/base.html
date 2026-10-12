@@ -9,8 +9,8 @@
     <meta property="og:title" content="{% block og_title %}Instinto Olfativo | Perfumes Alternativos de Nicho{% endblock %}">
     <meta property="og:description" content="{% block og_description %}Descubre la colección más exclusiva de alta perfumería.{% endblock %}">
     <meta property="og:type" content="website">
-    <link rel="canonical" href="{% block canonical %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
-    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <link rel="canonical" href="{% block canonical %}{{ SITE_URL }}{{ request.path }}{% endblock %}">
+    <meta property="og:url" content="{{ SITE_URL }}{{ request.path }}">
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
 
@@ -24,8 +24,8 @@
       "description": "Tienda online chilena de perfumes alternativos de nicho y diseñador, con decants y fragancias inspiradas en la alta perfumería.",
       "areaServed": { "@type": "Country", "name": "Chile" },
       "sameAs": [
-        "https://www.instagram.com/instintoolfativo",
-        "https://www.tiktok.com/@instintoolfativo"
+        "https://www.instagram.com/monitidoparfums",
+        "https://www.tiktok.com/@monitido1"
       ],
       "contactPoint": {
         "@type": "ContactPoint",
@@ -213,15 +213,15 @@
                         <li><span class="text-gray-400">Autenticidad garantizada</span></li>
                     </ul>
                     <div class="flex items-center gap-3 mt-6">
-                        <a href="https://www.instagram.com/instintoolfativo" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                        <a href="https://www.instagram.com/monitidoparfums" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
                            class="w-9 h-9 flex items-center justify-center border border-gray-700 text-gray-400 hover:border-white hover:text-white transition-colors">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line></svg>
                         </a>
-                        <a href="https://www.tiktok.com/@instintoolfativo" target="_blank" rel="noopener noreferrer" aria-label="TikTok"
+                        <a href="https://www.tiktok.com/@monitido1" target="_blank" rel="noopener noreferrer" aria-label="TikTok"
                            class="w-9 h-9 flex items-center justify-center border border-gray-700 text-gray-400 hover:border-white hover:text-white transition-colors">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 2h-3.2v13.6a2.9 2.9 0 1 1-2.1-2.8v-3.3a6.2 6.2 0 1 0 5.3 6.1V9.2a7.7 7.7 0 0 0 4.5 1.4V7.4a4.5 4.5 0 0 1-4.5-4.5z"></path></svg>
                         </a>
-                        <a href="mailto:contacto@instintoolfativo.cl" aria-label="Correo electrónico"
+                        <a href="mailto:monitidoparfums@gmail.com" aria-label="Correo electrónico"
                            class="w-9 h-9 flex items-center justify-center border border-gray-700 text-gray-400 hover:border-white hover:text-white transition-colors">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M2 6l10 7 10-7"></path></svg>
                         </a>
@@ -241,9 +241,10 @@
             const menuMovil = document.getElementById('mobile-menu');
             if (btnMenu) btnMenu.addEventListener('click', () => menuMovil.classList.toggle('hidden'));
         });
-        window.addEventListener('load', function() {
+        // El preloader se oculta apenas el HTML está listo (antes esperaba a que cargaran TODAS las imágenes + 0,5 s)
+        document.addEventListener('DOMContentLoaded', function() {
             const preloader = document.getElementById('preloader');
-            setTimeout(function() { preloader.classList.add('preloader-hidden'); }, 500);
+            if (preloader) preloader.classList.add('preloader-hidden');
         });
 
         // Disuasivos de descarga de imágenes
@@ -335,23 +336,41 @@
 
             document.getElementById("cart-checkout").addEventListener("click", function () {
                 if (!cart.length) return;
-                var lineas = ["Hola! Quiero solicitar los siguientes perfumes:", ""];
-                cart.forEach(function (i) {
-                    lineas.push("• " + i.nombre + (i.marca ? " (" + i.marca + ")" : "") + " — " + i.qty + " x " + fmt(i.precio) + " = " + fmt(i.precio * i.qty));
-                });
-                lineas.push("");
-                lineas.push("TOTAL: " + fmt(totalPrecio()));
-                var url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(lineas.join("\n"));
-                // Abrir WhatsApp de inmediato (evita bloqueo de pop-ups)
-                window.open(url, "_blank");
-                // Registrar el pedido en el admin (queda 'pendiente' para aprobar)
-                try {
-                    fetch("/api/pedido/", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
-                        body: JSON.stringify({ items: cart })
+                // Se abre la pestaña en el mismo clic (evita el bloqueo de pop-ups) y se completa
+                // con el mensaje cuando el servidor devuelve el N.º de pedido y el total validado.
+                var w = window.open("", "_blank");
+                var enviado = false;
+
+                function mensaje(codigo, total) {
+                    var lineas = ["Hola! Quiero solicitar los siguientes perfumes:", ""];
+                    cart.forEach(function (i) {
+                        lineas.push("• " + i.nombre + (i.marca ? " (" + i.marca + ")" : "") + " — " + i.qty + " x " + fmt(i.precio));
                     });
-                } catch (e) {}
+                    lineas.push("");
+                    lineas.push("TOTAL: " + fmt(total));
+                    if (codigo) lineas.push("N.º de pedido: " + codigo);
+                    return "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(lineas.join("\n"));
+                }
+                function ir(url) {
+                    if (enviado) return;
+                    enviado = true;
+                    if (w && !w.closed) { w.location.href = url; } else { window.location.href = url; }
+                }
+
+                // Si el servidor tarda más de 4 s, se envía igual sin número de pedido
+                var espera = setTimeout(function () { ir(mensaje(null, totalPrecio())); }, 4000);
+
+                fetch("/api/pedido/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+                    body: JSON.stringify({ items: cart.map(function (i) { return { id: i.id, qty: i.qty }; }) })
+                })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (d) {
+                    clearTimeout(espera);
+                    ir(d && d.ok ? mensaje(d.codigo, d.total) : mensaje(null, totalPrecio()));
+                })
+                .catch(function () { clearTimeout(espera); ir(mensaje(null, totalPrecio())); });
             });
 
             function getCookie(name) {

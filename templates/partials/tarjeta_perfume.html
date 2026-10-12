@@ -9,20 +9,24 @@
             <span class="absolute top-4 left-4 z-10 bg-gray-900 text-white text-[9px] tracking-[0.24em] uppercase py-1.5 px-2.5">Oferta</span>
             {% endif %}
             {% if perfume.imagen %}
-                <img src="{{ perfume.imagen.url|watermark }}" alt="{{ perfume.nombre }} — perfume {% if perfume.marca %}{{ perfume.marca.nombre }}{% endif %}" loading="lazy" decoding="async" class="max-h-[82%] max-w-[82%] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06] {% if perfume.stock <= 0 %}grayscale{% endif %}">
+                <img src="{{ perfume.imagen.url|cl:480 }}"
+                     srcset="{{ perfume.imagen.url|cl:320 }} 320w, {{ perfume.imagen.url|cl:480 }} 480w, {{ perfume.imagen.url|cl:720 }} 720w"
+                     sizes="(min-width:1280px) 300px, (min-width:1024px) 30vw, 45vw"
+                     width="480" height="600"
+                     alt="{{ perfume.nombre }} — perfume {% if perfume.familia %}{{ perfume.familia.nombre|lower }} {% endif %}{% if perfume.marca %}de {{ perfume.marca.nombre }}{% endif %}" loading="lazy" decoding="async" class="max-h-[82%] max-w-[82%] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06] {% if perfume.stock <= 0 %}grayscale{% endif %}">
             {% else %}
                 <span class="text-gray-300 font-light text-sm tracking-widest uppercase">Próximamente</span>
             {% endif %}
         </div>
         <div class="flex flex-col items-center text-center px-2">
             <p class="text-[10px] tracking-[0.24em] text-gray-400 uppercase mb-2">{{ perfume.marca.nombre }}</p>
-            <h3 class="text-lg font-serif text-gray-900 mb-2.5 leading-snug group-hover:text-gray-600 transition-colors">{{ perfume.nombre }}</h3>
+            <h3 class="text-base sm:text-lg font-serif text-gray-900 mb-2.5 leading-snug group-hover:text-gray-600 transition-colors">{{ perfume.nombre }}</h3>
             <div class="flex items-center gap-3">
                 {% if perfume.es_oferta and perfume.precio_oferta %}
-                    <span class="text-sm text-gray-400 line-through font-light">${{ perfume.precio }}</span>
-                    <span class="text-sm text-red-700 font-medium">${{ perfume.precio_oferta }}</span>
+                    <span class="text-sm text-gray-400 line-through font-light">{{ perfume.precio|clp }}</span>
+                    <span class="text-sm text-red-700 font-medium">{{ perfume.precio_oferta|clp }}</span>
                 {% else %}
-                    <span class="text-sm tracking-wider text-gray-800 font-light">${{ perfume.precio }}</span>
+                    <span class="text-sm tracking-wider text-gray-800 font-light">{{ perfume.precio|clp }}</span>
                 {% endif %}
                 {% if perfume.stock <= 0 %}
                     <span class="text-[10px] tracking-[0.18em] uppercase text-gray-400 border border-gray-300 px-2 py-0.5">Agotado</span>
@@ -36,8 +40,8 @@
             data-nombre="{{ perfume.nombre }}"
             data-marca="{{ perfume.marca.nombre }}"
             data-precio="{% if perfume.es_oferta and perfume.precio_oferta %}{{ perfume.precio_oferta }}{% else %}{{ perfume.precio }}{% endif %}"
-            data-img="{% if perfume.imagen %}{{ perfume.imagen.url }}{% endif %}"
-            class="mt-4 mx-auto w-full max-w-[220px] border border-gray-900 text-gray-900 py-2.5 text-[10px] tracking-[0.22em] uppercase hover:bg-gray-900 hover:text-white transition-colors">
+            data-img="{% if perfume.imagen %}{{ perfume.imagen.url|cl:160 }}{% endif %}"
+            class="mt-4 mx-auto w-full max-w-[220px] border border-gray-900 text-gray-900 py-3.5 text-[10px] tracking-[0.22em] uppercase hover:bg-gray-900 hover:text-white transition-colors">
         Agregar
     </button>
     {% endif %}

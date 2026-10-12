@@ -27,7 +27,7 @@ class Perfume(models.Model):
     ]
 
     nombre = models.CharField(max_length=200)
-    marca = models.ForeignKey(Marca, on_delete=models.CASCADE, related_name='productos')
+    marca = models.ForeignKey(Marca, on_delete=models.PROTECT, related_name='productos')
     familia = models.ForeignKey(FamiliaOlfativa, on_delete=models.SET_NULL, null=True, blank=True)
     genero = models.CharField(max_length=1, choices=GENERO_CHOICES, default='U')
     descripcion = models.TextField()
@@ -42,6 +42,7 @@ class Perfume(models.Model):
     activo = models.BooleanField(default=True)
     destacado = models.BooleanField(default=False, help_text="Mostrar en la página de inicio")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
 
     def get_absolute_url(self):
         return reverse("perfume_detalle", args=[self.id])

@@ -11,15 +11,15 @@
   "@context": "https://schema.org",
   "@type": "Product",
   "name": "{{ perfume.nombre|escapejs }}",
-  {% if perfume.imagen %}"image": ["{{ perfume.imagen.url }}"],{% endif %}
+  {% if perfume.imagen %}"image": ["{{ perfume.imagen.url|cl:1200 }}"],{% endif %}
   "description": "{{ perfume.descripcion|striptags|escapejs }}",
   "sku": "{{ perfume.id }}",
   "mpn": "{{ perfume.id }}",
   "brand": { "@type": "Brand", "name": "{{ perfume.marca.nombre|escapejs }}" },
-  "url": "{{ request.build_absolute_uri }}",
+  "url": "{{ SITE_URL }}{{ request.path }}",
   "offers": {
     "@type": "Offer",
-    "url": "{{ request.build_absolute_uri }}",
+    "url": "{{ SITE_URL }}{{ request.path }}",
     "priceCurrency": "CLP",
     "price": "{% if perfume.es_oferta and perfume.precio_oferta %}{{ perfume.precio_oferta }}{% else %}{{ perfume.precio }}{% endif %}",
     "itemCondition": "https://schema.org/NewCondition",
@@ -34,8 +34,8 @@
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'home' %}" },
-    { "@type": "ListItem", "position": 2, "name": "Catálogo", "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'catalogo' %}" },
+    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "{{ SITE_URL }}{% url 'home' %}" },
+    { "@type": "ListItem", "position": 2, "name": "Catálogo", "item": "{{ SITE_URL }}{% url 'catalogo' %}" },
     { "@type": "ListItem", "position": 3, "name": "{{ perfume.nombre|escapejs }}" }
   ]
 }
@@ -54,7 +54,12 @@
     <div class="md:sticky md:top-28">
         <div class="aspect-[4/5] bg-[#f8f8f8] flex items-center justify-center overflow-hidden">
             {% if perfume.imagen %}
-                <img id="imagen-principal" src="{{ perfume.imagen.url|watermark }}" alt="{{ perfume.nombre }}" class="max-h-[84%] max-w-[84%] object-contain transition-opacity duration-300">
+                <img id="imagen-principal" src="{{ perfume.imagen.url|cl:900 }}"
+                     srcset="{{ perfume.imagen.url|cl:600 }} 600w, {{ perfume.imagen.url|cl:900 }} 900w, {{ perfume.imagen.url|cl:1200 }} 1200w"
+                     sizes="(min-width:768px) 45vw, 90vw" width="900" height="1125"
+                     fetchpriority="high" decoding="async"
+                     alt="Frasco de {{ perfume.nombre }}{% if perfume.familia %}, perfume {{ perfume.familia.nombre|lower }}{% endif %} de {{ perfume.marca.nombre }}"
+                     class="max-h-[84%] max-w-[84%] object-contain transition-opacity duration-300">
             {% else %}
                 <span class="text-gray-300 font-light tracking-widest uppercase">Imagen no disponible</span>
             {% endif %}
@@ -64,15 +69,15 @@
         <div class="grid grid-cols-5 gap-3 mt-4">
             {# Miniatura de la imagen principal #}
             {% if perfume.imagen %}
-            <button type="button" data-src="{{ perfume.imagen.url|watermark }}"
+            <button type="button" data-src="{{ perfume.imagen.url|cl:900 }}"
                     class="miniatura aspect-square bg-[#f8f8f8] border border-gray-900 overflow-hidden flex items-center justify-center transition-all hover:border-gray-900">
-                <img src="{{ perfume.imagen.url|watermark }}" alt="{{ perfume.nombre }}" class="max-h-[80%] max-w-[80%] object-contain">
+                <img src="{{ perfume.imagen.url|cl:160 }}" width="160" height="160" loading="lazy" decoding="async" alt="{{ perfume.nombre }}" class="max-h-[80%] max-w-[80%] object-contain">
             </button>
             {% endif %}
             {% for img in galeria %}
-            <button type="button" data-src="{{ img.imagen.url|watermark }}"
+            <button type="button" data-src="{{ img.imagen.url|cl:900 }}"
                     class="miniatura aspect-square bg-[#f8f8f8] border border-gray-200 overflow-hidden flex items-center justify-center transition-all hover:border-gray-900">
-                <img src="{{ img.imagen.url|watermark }}" alt="{{ perfume.nombre }} — vista {{ forloop.counter }}" class="max-h-[80%] max-w-[80%] object-contain">
+                <img src="{{ img.imagen.url|cl:160 }}" width="160" height="160" loading="lazy" decoding="async" alt="{{ perfume.nombre }} — vista {{ forloop.counter }}" class="max-h-[80%] max-w-[80%] object-contain">
             </button>
             {% endfor %}
         </div>
@@ -89,10 +94,10 @@
 
         <div class="flex items-baseline gap-4 mb-7">
             {% if perfume.es_oferta and perfume.precio_oferta %}
-                <span class="font-serif text-3xl text-red-700">${{ perfume.precio_oferta }}</span>
-                <span class="text-lg text-gray-400 line-through">${{ perfume.precio }}</span>
+                <span class="font-serif text-3xl text-red-700">{{ perfume.precio_oferta|clp }}</span>
+                <span class="text-lg text-gray-400 line-through">{{ perfume.precio|clp }}</span>
             {% else %}
-                <span class="font-serif text-3xl text-gray-900">${{ perfume.precio }}</span>
+                <span class="font-serif text-3xl text-gray-900">{{ perfume.precio|clp }}</span>
             {% endif %}
         </div>
 
@@ -127,7 +132,7 @@
 
         <!-- Pirámide olfativa -->
         <div class="bg-[#fbfbfb] border border-gray-100 p-8 mb-8">
-            <h3 class="font-serif text-xl text-gray-900 mb-6 text-center">Pirámide Olfativa</h3>
+            <h2 class="font-serif text-xl text-gray-900 mb-6 text-center">Pirámide Olfativa</h2>
             <div class="space-y-5">
                 <div class="text-center">
                     <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-1.5">Notas de Salida</span>
@@ -152,7 +157,7 @@
                     data-nombre="{{ perfume.nombre }}"
                     data-marca="{{ perfume.marca.nombre }}"
                     data-precio="{% if perfume.es_oferta and perfume.precio_oferta %}{{ perfume.precio_oferta }}{% else %}{{ perfume.precio }}{% endif %}"
-                    data-img="{% if perfume.imagen %}{{ perfume.imagen.url }}{% endif %}"
+                    data-img="{% if perfume.imagen %}{{ perfume.imagen.url|cl:160 }}{% endif %}"
                     class="flex items-center justify-center gap-3 w-full border border-gray-900 text-gray-900 py-5 text-[12px] tracking-[0.22em] uppercase hover:bg-gray-900 hover:text-white transition-colors">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                 Agregar a mi selección
@@ -173,19 +178,19 @@
         <div class="mt-8 pt-6 border-t border-gray-100">
             <p class="text-[10px] tracking-[0.24em] uppercase text-gray-400 mb-4 text-center md:text-left">Compartir</p>
             <div class="flex items-center gap-3 justify-center md:justify-start">
-                <a href="https://api.whatsapp.com/send?text={{ perfume.nombre|urlencode }}%20-%20{{ request.build_absolute_uri }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en WhatsApp"
+                <a href="https://api.whatsapp.com/send?text={{ perfume.nombre|urlencode }}%20-%20{{ SITE_URL }}{{ request.path }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en WhatsApp"
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1 1 12 20z"></path></svg>
                 </a>
-                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en Facebook"
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ SITE_URL }}{{ request.path }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en Facebook"
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M15 3h-3a5 5 0 0 0-5 5v3H4v4h3v6h4v-6h3l1-4h-4V8a1 1 0 0 1 1-1h3z"></path></svg>
                 </a>
-                <a href="https://x.com/intent/tweet?text={{ perfume.nombre|urlencode }}&url={{ request.build_absolute_uri }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en X"
+                <a href="https://x.com/intent/tweet?text={{ perfume.nombre|urlencode }}&url={{ SITE_URL }}{{ request.path }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en X"
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h3l-7 8 8 12h-6l-5-7-6 7H2l8-9L2 2h6l4 6zm-1 18h2L7 4H5z"></path></svg>
                 </a>
-                <a href="https://www.instagram.com/monitidoparfums/" target="_blank" rel="noopener noreferrer nofollow" aria-label="Síguenos en Instagram"
+                <a href="https://www.instagram.com/monitidoparfums" target="_blank" rel="noopener noreferrer nofollow" aria-label="Síguenos en Instagram"
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line></svg>
                 </a>
@@ -267,7 +272,7 @@
         <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">También te podría gustar</span>
         <h2 class="font-serif text-3xl md:text-4xl text-gray-900 mt-3.5">Fragancias afines</h2>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7 gap-y-14">
+    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 sm:gap-x-7 gap-y-10 sm:gap-y-14">
         {% for perfume in relacionados %}
             {% include "partials/tarjeta_perfume.html" with perfume=perfume %}
         {% endfor %}

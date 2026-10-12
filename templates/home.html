@@ -4,6 +4,10 @@
 {% block title %}Instinto Olfativo | Perfumes Alternativos de Nicho y Diseñador en Chile{% endblock %}
 {% block meta_description %}Perfumes alternativos de nicho y diseñador en Chile. Fragancias inspiradas en la alta perfumería a precio accesible, con asesoría personalizada y envío a todo el país.{% endblock %}
 
+{% block extra_head %}
+{% if portadas %}<link rel="preload" as="image" href="{{ portadas.0.imagen.url|clsin:1600 }}" fetchpriority="high">{% endif %}
+{% endblock %}
+
 {% block content %}
 
 <section class="relative w-full min-h-[88vh] flex items-center justify-center overflow-hidden bg-gray-900">
@@ -11,13 +15,13 @@
     <div id="hero-carousel" class="absolute inset-0 z-0">
         {% for portada in portadas %}
         <div class="hero-slide absolute inset-0 bg-cover bg-center transition-opacity duration-[1400ms] ease-in-out {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %}"
-             style="background-image: url('{{ portada.imagen.url }}');"></div>
+             {% if forloop.first %}style="background-image: url('{{ portada.imagen.url|clsin:1600 }}');"{% else %}data-bg="{{ portada.imagen.url|clsin:1600 }}"{% endif %}></div>
         {% endfor %}
     </div>
     {% else %}
         {% with primera=ofertas.0|default:destacados.0 %}
             {% if primera and primera.imagen %}
-            <div class="absolute inset-0 z-0 bg-cover bg-center opacity-100" style="background-image: url('{{ primera.imagen.url }}');"></div>
+            <div class="absolute inset-0 z-0 bg-cover bg-center opacity-100" style="background-image: url('{{ primera.imagen.url|cl:1600 }}');"></div>
             {% endif %}
         {% endwith %}
     {% endif %}
@@ -85,7 +89,7 @@
         <div class="group relative flex flex-col bg-gray-900 text-white overflow-hidden">
             {% if promo.imagen %}
             <div class="aspect-[16/10] bg-gray-800 overflow-hidden">
-                <img src="{{ promo.imagen.url|watermark }}" alt="{{ promo.titulo }}" class="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105">
+                <img src="{{ promo.imagen.url|cl:720 }}" width="720" height="450" loading="lazy" decoding="async" alt="{{ promo.titulo }}" class="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105">
             </div>
             {% endif %}
             <div class="flex flex-col flex-grow p-8">
@@ -104,14 +108,14 @@
                 </ul>
                 {% endif %}
                 <div class="mt-auto pt-5 border-t border-gray-800 flex items-end justify-between gap-3">
-                    <span class="font-serif text-3xl">${{ promo.precio }}</span>
+                    <span class="font-serif text-3xl">{{ promo.precio|clp }}</span>
                     <div class="flex items-center gap-4">
                         <button type="button" data-add-cart
                                 data-id="promo-{{ promo.id }}"
                                 data-nombre="{{ promo.titulo }}"
                                 data-marca="Promoción"
                                 data-precio="{{ promo.precio }}"
-                                data-img="{% if promo.imagen %}{{ promo.imagen.url }}{% endif %}"
+                                data-img="{% if promo.imagen %}{{ promo.imagen.url|cl:160 }}{% endif %}"
                                 class="text-[11px] tracking-[0.2em] uppercase border border-white/60 text-white px-3 py-1.5 hover:bg-white hover:text-gray-900 transition-colors">Agregar</button>
                         <a href="https://wa.me/56962169898?text=Hola,%20me%20interesa%20la%20promoci%C3%B3n%20{{ promo.titulo|urlencode }}."
                            target="_blank" rel="noopener noreferrer"
@@ -131,7 +135,7 @@
     <div class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 items-stretch">
         <div class="bg-[#f8f8f8] flex items-center justify-center p-12 md:p-16 min-h-[380px] md:min-h-[560px]">
             {% if destacada.imagen %}
-            <img src="{{ destacada.imagen.url|watermark }}" alt="{{ destacada.nombre }}" class="max-h-[300px] md:max-h-[440px] max-w-full object-contain">
+            <img src="{{ destacada.imagen.url|cl:800 }}" width="800" height="1000" loading="lazy" decoding="async" alt="{{ destacada.nombre }}" class="max-h-[300px] md:max-h-[440px] max-w-full object-contain">
             {% endif %}
         </div>
         <div class="bg-white px-8 py-14 md:px-16 md:py-20 flex flex-col justify-center">
@@ -140,8 +144,8 @@
             <h2 class="font-serif text-3xl md:text-5xl text-gray-900 leading-tight mb-6">{{ destacada.nombre }}</h2>
             <p class="font-light text-[15px] leading-relaxed text-gray-500 max-w-md mb-7">{{ destacada.descripcion|truncatewords:30 }}</p>
             <div class="flex items-baseline gap-4 mb-9">
-                <span class="font-serif text-3xl md:text-4xl text-red-700">${{ destacada.precio_oferta }}</span>
-                <span class="text-lg text-gray-400 line-through">${{ destacada.precio }}</span>
+                <span class="font-serif text-3xl md:text-4xl text-red-700">{{ destacada.precio_oferta|clp }}</span>
+                <span class="text-lg text-gray-400 line-through">{{ destacada.precio|clp }}</span>
             </div>
             <div>
                 <a href="{% url 'perfume_detalle' destacada.id %}" class="inline-block bg-gray-900 text-white px-11 py-4 text-[11px] tracking-[0.26em] uppercase font-medium hover:bg-black transition-colors">Ver Detalles</a>
@@ -472,6 +476,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // Carrusel de fondo del hero (autoplay + puntos)
     document.addEventListener("DOMContentLoaded", function () {
         const slides = Array.from(document.querySelectorAll('#hero-carousel .hero-slide'));
+        // Las portadas 2..N se cargan después de la primera (no compiten con el LCP)
+        window.addEventListener('load', function () {
+            slides.forEach(function (s) { if (s.dataset.bg) s.style.backgroundImage = "url('" + s.dataset.bg + "')"; });
+        });
         if (slides.length < 2) return;
         const dots = Array.from(document.querySelectorAll('#hero-dots .hero-dot'));
         let actual = 0;

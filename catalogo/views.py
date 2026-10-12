@@ -6,6 +6,8 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg, Case, When, IntegerField
+from django.db import transaction
+from django.core.cache import cache
 from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido
 
 
@@ -89,7 +91,7 @@ def catalogo(request):
     return render(request, 'catalogo.html', {
         'perfumes': perfumes,
         'buscar': buscar,
-        'marcas': Marca.objects.all(),
+        'marcas': Marca.objects.filter(productos__activo=True).distinct(),
         'familias': FamiliaOlfativa.objects.filter(perfume__activo=True).distinct().order_by('nombre'),
         'genero_actual': filtro_genero,
         'marca_seleccionada_id': int(marca_id) if marca_id else None,
@@ -129,18 +131,14 @@ def perfume_detalle(request, perfume_id):
     resenas = perfume.resenas.filter(aprobado=True)
     promedio = resenas.aggregate(prom=Avg('calificacion'))['prom']
 
-    # Relacionados: misma familia; si no alcanza, se completa con la misma marca.
-    relacionados = Perfume.objects.filter(activo=True).exclude(id=perfume.id).select_related('marca')
-    if perfume.familia_id:
-        relacionados = relacionados.filter(familia_id=perfume.familia_id)[:4]
-    else:
-        relacionados = relacionados.filter(marca_id=perfume.marca_id)[:4]
-
-    # Fallback: si no hay suficientes, mostrar otras fragancias de la misma marca
-    if relacionados.count() < 4:
-        relacionados = Perfume.objects.filter(
-            activo=True, marca_id=perfume.marca_id
-        ).exclude(id=perfume.id).select_related('marca')[:4]
+    # Relacionados: primero la misma familia; si faltan, se completa con la misma marca.
+    base_rel = Perfume.objects.filter(activo=True).exclude(id=perfume.id).select_related('marca')
+    relacionados = list(base_rel.filter(familia_id=perfume.familia_id)[:4]) if perfume.familia_id else []
+    if len(relacionados) < 4:
+        ya = [p.id for p in relacionados]
+        relacionados += list(
+            base_rel.filter(marca_id=perfume.marca_id).exclude(id__in=ya)[: 4 - len(relacionados)]
+        )
 
     context = {
         'perfume': perfume,
@@ -173,19 +171,6 @@ def contacto(request):
     return render(request, 'contacto.html')
 
 
-def lista_perfumes(request):
-    perfumes = Perfume.objects.all()
-    filtro_genero = request.GET.get('genero')
-    if filtro_genero:
-        perfumes = perfumes.filter(genero=filtro_genero)
-
-    contexto = {
-        'perfumes': perfumes,
-        'genero_actual': filtro_genero,
-    }
-    return render(request, 'index.html', contexto)
-
-
 def politicas_envio(request):
     return render(request, 'politicas.html')
 
@@ -194,37 +179,85 @@ def nosotros(request):
     nosotros = PaginaNosotros.cargar()
     return render(request, 'nosotros.html', {'nosotros': nosotros})
 
+MAX_QTY = 10      # unidades máximas por línea
+MAX_ITEMS = 30    # líneas máximas por pedido
+MAX_PEDIDOS = 5   # pedidos por IP cada 10 minutos
+
+
+def _ip(request):
+    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    return (xff.split(",")[0].strip() if xff else request.META.get("REMOTE_ADDR", "")) or "anon"
+
+
 @require_POST
 def crear_pedido(request):
-    """Recibe el carrito (JSON) y crea un Pedido en estado 'pendiente'.
-    NO descuenta stock aquí: el descuento ocurre cuando el admin aprueba."""
+    """Recibe el carrito (JSON) y crea un Pedido 'pendiente'.
+    Los precios se leen SIEMPRE de la base de datos; los del navegador se ignoran.
+    No descuenta stock: eso ocurre cuando el admin aprueba."""
+    clave = f"pedido:{_ip(request)}"
+    intentos = cache.get(clave, 0)
+    if intentos >= MAX_PEDIDOS:
+        return JsonResponse({"ok": False, "error": "Demasiados pedidos seguidos. Intenta en unos minutos."}, status=429)
+    cache.set(clave, intentos + 1, 600)
+
     try:
         data = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return JsonResponse({"ok": False, "error": "JSON inválido"}, status=400)
+        items = data.get("items") or []
+        if not isinstance(items, list):
+            raise ValueError
+    except (ValueError, UnicodeDecodeError, AttributeError):
+        return JsonResponse({"ok": False, "error": "Datos inválidos"}, status=400)
 
-    items = data.get("items", [])
-    if not items:
-        return JsonResponse({"ok": False, "error": "Carrito vacío"}, status=400)
+    # Normaliza las líneas: (tipo, id, cantidad)
+    pedidas = []
+    for it in items[:MAX_ITEMS]:
+        if not isinstance(it, dict):
+            continue
+        try:
+            qty = max(1, min(MAX_QTY, int(it.get("qty") or 1)))
+        except (TypeError, ValueError):
+            continue
+        pid = str(it.get("id") or "")
+        if pid.isdigit():
+            pedidas.append(("perfume", int(pid), qty))
+        elif pid.startswith("promo-") and pid[6:].isdigit():
+            pedidas.append(("promo", int(pid[6:]), qty))
 
-    pedido = Pedido.objects.create(
-        cliente=data.get("cliente", "")[:120],
-        telefono=data.get("telefono", "")[:40],
-        estado="pendiente",
+    perfumes = Perfume.objects.filter(activo=True, stock__gt=0).in_bulk(
+        [i for t, i, _ in pedidas if t == "perfume"]
     )
-    for it in items:
-        pid = it.get("id")
-        perfume = None
-        # Los combos usan id "promo-N": no vinculan un perfume individual
-        if pid and str(pid).isdigit():
-            perfume = Perfume.objects.filter(pk=pid).first()
-        ItemPedido.objects.create(
-            pedido=pedido,
-            perfume=perfume,
-            nombre=(it.get("nombre") or "")[:200],
-            precio=int(it.get("precio") or 0),
-            cantidad=int(it.get("qty") or 1),
+    promos = Promocion.objects.filter(activo=True).in_bulk(
+        [i for t, i, _ in pedidas if t == "promo"]
+    )
+
+    lineas = []
+    for tipo, obj_id, qty in pedidas:
+        if tipo == "perfume" and obj_id in perfumes:
+            p = perfumes[obj_id]
+            precio = p.precio_oferta if (p.es_oferta and p.precio_oferta) else p.precio
+            lineas.append(ItemPedido(perfume=p, nombre=p.nombre[:200], precio=int(precio), cantidad=qty))
+        elif tipo == "promo" and obj_id in promos:
+            pr = promos[obj_id]
+            lineas.append(ItemPedido(perfume=None, nombre=f"Promoción: {pr.titulo}"[:200], precio=int(pr.precio), cantidad=qty))
+
+    if not lineas:
+        return JsonResponse({"ok": False, "error": "El carrito no tiene productos disponibles"}, status=400)
+
+    with transaction.atomic():
+        pedido = Pedido.objects.create(
+            cliente=str(data.get("cliente") or "")[:120],
+            telefono=str(data.get("telefono") or "")[:40],
+            estado="pendiente",
         )
-    pedido.recalcular_total()
-    pedido.save(update_fields=["total"])
-    return JsonResponse({"ok": True, "pedido_id": pedido.id})
+        for l in lineas:
+            l.pedido = pedido
+        ItemPedido.objects.bulk_create(lineas)
+        pedido.recalcular_total()
+        pedido.save(update_fields=["total"])
+
+    return JsonResponse({
+        "ok": True,
+        "pedido_id": pedido.id,
+        "codigo": f"IO-{pedido.id:06d}",
+        "total": pedido.total,
+    })
