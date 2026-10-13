@@ -191,24 +191,26 @@
         </div>
         {% endif %}
 
-        <!-- Pirámide olfativa -->
+        <!-- Pirámide olfativa (cada nota enlaza a su página /nota/<slug>/) -->
+        {% with piramide=perfume.piramide %}
         <div class="bg-[#fbfbfb] border border-gray-100 p-8 mb-8">
             <h2 class="font-serif text-xl text-gray-900 mb-6 text-center">Pirámide Olfativa</h2>
             <div class="space-y-5">
                 <div class="text-center">
                     <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-500 mb-1.5">Notas de Salida</span>
-                    <p class="font-serif text-base text-gray-900">{{ perfume.notas_salida|default:"—" }}</p>
+                    <p class="font-serif text-base text-gray-900">{% if piramide.salida %}{% for n in piramide.salida %}<a href="{{ n.get_absolute_url }}" class="underline decoration-gray-300 underline-offset-4 hover:decoration-gray-900 transition-colors">{{ n.nombre }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ perfume.notas_salida|default:"—" }}{% endif %}</p>
                 </div>
                 <div class="text-center">
                     <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-500 mb-1.5">Notas de Corazón</span>
-                    <p class="font-serif text-base text-gray-900">{{ perfume.notas_corazon|default:"—" }}</p>
+                    <p class="font-serif text-base text-gray-900">{% if piramide.corazon %}{% for n in piramide.corazon %}<a href="{{ n.get_absolute_url }}" class="underline decoration-gray-300 underline-offset-4 hover:decoration-gray-900 transition-colors">{{ n.nombre }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ perfume.notas_corazon|default:"—" }}{% endif %}</p>
                 </div>
                 <div class="text-center">
                     <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-500 mb-1.5">Notas de Fondo</span>
-                    <p class="font-serif text-base text-gray-900">{{ perfume.notas_fondo|default:"—" }}</p>
+                    <p class="font-serif text-base text-gray-900">{% if piramide.fondo %}{% for n in piramide.fondo %}<a href="{{ n.get_absolute_url }}" class="underline decoration-gray-300 underline-offset-4 hover:decoration-gray-900 transition-colors">{{ n.nombre }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}{{ perfume.notas_fondo|default:"—" }}{% endif %}</p>
                 </div>
             </div>
         </div>
+        {% endwith %}
 
         <!-- CTA -->
         {% if perfume.stock > 0 %}

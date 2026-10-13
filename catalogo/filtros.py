@@ -4,14 +4,14 @@ Una sola regla para todos los enlaces de filtros:
   - parte del estado actual (incluido el filtro que viene de una landing),
   - aplica los cambios (un valor igual al actual lo quita: los chips se encienden y apagan),
   - si queda UN solo filtro de género, familia o casa, devuelve la URL limpia de su landing
-    (/perfumes/mujer/, /familia/<slug>/, /casa/<slug>/), que es la que conviene para Google.
+    (/perfumes/mujer/, /familia/<slug>/, /casa/<slug>/, /nota/<slug>/), que es la que conviene para Google.
 """
 from urllib.parse import urlencode
 
 from django.urls import reverse
 
 GENERO_A_SLUG = {"F": "mujer", "M": "hombre", "U": "unisex"}
-ORDEN_PARAMS = ("q", "genero", "marca", "familia", "tamano", "precio", "stock", "orden")
+ORDEN_PARAMS = ("q", "genero", "marca", "familia", "nota", "tamano", "formato", "precio", "intensidad", "stock", "orden")
 
 
 def url_filtros(estado, slugs, alternar=True, **cambios):
@@ -31,6 +31,9 @@ def url_filtros(estado, slugs, alternar=True, **cambios):
         return reverse("catalogo_familia", args=[slugs["familia"][datos["familia"]]])
     if claves == {"marca"} and datos["marca"] in slugs.get("marca", {}):
         return reverse("catalogo_casa", args=[slugs["marca"][datos["marca"]]])
+
+    if claves == {"nota"} and datos["nota"] in slugs.get("nota", {}):
+        return reverse("catalogo_nota", args=[slugs["nota"][datos["nota"]]])
 
     pares = [(k, datos[k]) for k in ORDEN_PARAMS if k in datos]
     return reverse("catalogo") + ("?" + urlencode(pares) if pares else "")

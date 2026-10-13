@@ -14,6 +14,7 @@ urlpatterns = [
     path('perfumes/<str:genero>/', views.catalogo_genero, name='catalogo_genero'),
     path('familia/<slug:slug>/', views.catalogo_familia, name='catalogo_familia'),
     path('casa/<slug:slug>/', views.catalogo_casa, name='catalogo_casa'),
+    path('nota/<slug:slug>/', views.catalogo_nota, name='catalogo_nota'),
 
     # Ficha: la URL antigua con id redirige (301) a la nueva con slug
     path('perfume/<int:pk>/', views.redirigir_perfume_id),

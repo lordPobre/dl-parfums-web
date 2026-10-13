@@ -5,7 +5,7 @@
 {% block meta_description %}{% if landing.intro %}{{ landing.intro|striptags|truncatechars:155 }}{% else %}Explora nuestro catálogo de perfumes alternativos de nicho y diseñador en Chile. Filtra por familia olfativa, tamaño y precio. Envío a todo el país.{% endif %}{% endblock %}
 {% block og_title %}{% if landing.titulo %}{{ landing.titulo }}{% else %}Catálogo de perfumes{% endif %} | Instinto Olfativo{% endblock %}
 {% block canonical %}{{ SITE_URL }}{{ request.path }}{% if page_obj.number > 1 %}?page={{ page_obj.number }}{% endif %}{% endblock %}
-{% block extra_head %}{% if buscar %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+{% block extra_head %}{% if buscar or landing.noindex %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
 
 {% block content %}
 
@@ -133,6 +133,27 @@
                         {% for clave, etiqueta, minimo, maximo in precios %}<a href="{% filtro_url precio=clave %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if precio_actual == clave %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
                     </div>
                 </div>
+            {% if formatos|length > 1 %}<div class="flex flex-col gap-3">
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Formato</p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% filtro_url formato=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not formato_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
+                        {% for valor, etiqueta in formatos %}<a href="{% filtro_url formato=valor %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if formato_actual == valor %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
+                    </div>
+                </div>{% endif %}
+            {% if intensidades|length > 1 %}<div class="flex flex-col gap-3">
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Intensidad</p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% filtro_url intensidad=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not intensidad_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todas</a>
+                        {% for valor, etiqueta in intensidades %}<a href="{% filtro_url intensidad=valor %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if intensidad_actual == valor %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
+                    </div>
+                </div>{% endif %}
+            {% if notas_filtro %}<div class="flex flex-col gap-3">
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Notas</p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% filtro_url nota=None %}#productos" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not nota_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todas</a>
+                        {% for n in notas_filtro %}<a href="{% filtro_url nota=n.id %}#productos" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if nota_actual == n.id %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ n.nombre }}</a>{% endfor %}
+                    </div>
+                </div>{% endif %}
             <div class="flex flex-col gap-3">
                     <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Disponibilidad</p>
                     <div class="flex flex-wrap gap-2">
@@ -212,7 +233,28 @@
                         {% for clave, etiqueta, minimo, maximo in precios %}<a href="{% filtro_url precio=clave %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if precio_actual == clave %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
                     </div>
                 </div>
-                <div class="flex flex-col gap-3">
+                {% if formatos|length > 1 %}<div class="flex flex-col gap-3">
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Formato</p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% filtro_url formato=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not formato_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
+                        {% for valor, etiqueta in formatos %}<a href="{% filtro_url formato=valor %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if formato_actual == valor %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
+                    </div>
+                </div>{% endif %}
+            {% if intensidades|length > 1 %}<div class="flex flex-col gap-3">
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Intensidad</p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% filtro_url intensidad=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not intensidad_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todas</a>
+                        {% for valor, etiqueta in intensidades %}<a href="{% filtro_url intensidad=valor %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if intensidad_actual == valor %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
+                    </div>
+                </div>{% endif %}
+            {% if notas_filtro %}<div class="flex flex-col gap-3">
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Notas</p>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{% filtro_url nota=None %}#productos" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not nota_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todas</a>
+                        {% for n in notas_filtro %}<a href="{% filtro_url nota=n.id %}#productos" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if nota_actual == n.id %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ n.nombre }}</a>{% endfor %}
+                    </div>
+                </div>{% endif %}
+            <div class="flex flex-col gap-3">
                     <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Disponibilidad</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url stock=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not solo_stock %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
@@ -227,7 +269,7 @@
                 </div>
                 {% if n_mas_filtros %}
                 <div class="pt-5 border-t border-gray-100 flex justify-end">
-                    <a href="{% filtro_url tamano=None precio=None stock=None orden=None %}#productos" class="text-[11px] tracking-[0.18em] uppercase text-gray-500 underline underline-offset-4 hover:text-gray-900">Quitar estos filtros</a>
+                    <a href="{% filtro_url tamano=None formato=None precio=None intensidad=None nota=None stock=None orden=None %}#productos" class="text-[11px] tracking-[0.18em] uppercase text-gray-500 underline underline-offset-4 hover:text-gray-900">Quitar estos filtros</a>
                 </div>
                 {% endif %}
             </div>

@@ -1,8 +1,8 @@
 from django.contrib import admin, messages
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Count, Q
 from django.urls import reverse, path
-from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros,Pedido, ItemPedido, Presentacion
+from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros,Pedido, ItemPedido, Presentacion, Nota, PerfumeNota
 from .fusion import fusionar
 from django.utils.html import format_html
 from datetime import date, timedelta
@@ -77,6 +77,72 @@ class PresentacionInline(admin.TabularInline):
     verbose_name_plural = "Presentaciones (tamaños, precios y stock)"
 
 
+class PerfumeNotaInline(admin.TabularInline):
+    model = PerfumeNota
+    extra = 3
+    fields = ('nivel', 'nota', 'orden')
+    autocomplete_fields = ('nota',)
+    verbose_name = "Nota"
+    verbose_name_plural = "Notas olfativas (pirámide) — escribe para buscar; el + crea una nota nueva"
+
+
+@admin.register(Nota)
+class NotaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'total_perfumes', 'con_texto', 'slug')
+    search_fields = ('nombre',)
+    prepopulated_fields = {'slug': ('nombre',)}
+    actions = ['unir_notas']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _n=Count('en_perfumes__perfume', filter=Q(en_perfumes__perfume__activo=True), distinct=True)
+        )
+
+    @admin.display(description="Perfumes activos", ordering='_n')
+    def total_perfumes(self, obj):
+        return obj._n
+
+    @admin.display(description="Texto de la página", boolean=True)
+    def con_texto(self, obj):
+        return bool(obj.descripcion.strip())
+
+    @admin.action(description="Unir notas repetidas (se conserva la que tiene más perfumes)")
+    def unir_notas(self, request, queryset):
+        notas = sorted(queryset, key=lambda n: (-n._n, n.id))
+        if len(notas) < 2:
+            messages.error(request, "Selecciona al menos dos notas para unirlas.")
+            return
+        principal, resto = notas[0], notas[1:]
+        with transaction.atomic():
+            for nota in resto:
+                for pn in PerfumeNota.objects.filter(nota=nota):
+                    if PerfumeNota.objects.filter(perfume_id=pn.perfume_id, nivel=pn.nivel, nota=principal).exists():
+                        pn.delete()
+                    else:
+                        pn.nota = principal
+                        pn.save()
+                if not principal.descripcion and nota.descripcion:
+                    principal.descripcion = nota.descripcion
+                    principal.save(update_fields=['descripcion'])
+                nota.delete()
+        messages.success(request, f"Unidas en «{principal.nombre}»: " + ", ".join(n.nombre for n in resto) + ".")
+
+
+class SinNotasFilter(admin.SimpleListFilter):
+    title = "notas olfativas"
+    parameter_name = "notas"
+
+    def lookups(self, request, model_admin):
+        return [('sin', 'Sin notas'), ('con', 'Con notas')]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'sin':
+            return queryset.filter(notas_perfume__isnull=True)
+        if self.value() == 'con':
+            return queryset.filter(notas_perfume__isnull=False).distinct()
+        return queryset
+
+
 class PrevNextAdminMixin:
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = extra_context or {}
@@ -101,13 +167,15 @@ class PrevNextAdminMixin:
 @admin.register(Perfume)
 class PerfumeAdmin(PrevNextAdminMixin, admin.ModelAdmin):
     list_display = ('nombre', 'inspirado_en', 'marca', 'precio', 'stock', 'n_presentaciones', 'genero', 'es_oferta', 'activo', 'destacado')
-    list_filter = ('marca', 'familia', 'genero','es_oferta', 'activo', 'destacado')
+    list_filter = ('marca', 'familia', SinNotasFilter, 'concentracion', 'genero','es_oferta', 'activo', 'destacado')
     search_fields = ('nombre', 'marca__nombre', 'inspirado_en')
     prepopulated_fields = {'slug': ('nombre',)}
     list_editable = ('activo', 'destacado')
     # Precio, stock y oferta se calculan desde las presentaciones (se editan abajo, en la ficha)
-    readonly_fields = ('precio', 'precio_oferta', 'es_oferta', 'stock', 'n_presentaciones', 'fusionado_en')
-    inlines = [PresentacionInline, ImagenPerfumeInline, ResenaInline]
+    # Las notas de texto se generan desde "Notas olfativas (pirámide)"
+    readonly_fields = ('precio', 'precio_oferta', 'es_oferta', 'stock', 'n_presentaciones', 'fusionado_en',
+                       'notas_salida', 'notas_corazon', 'notas_fondo')
+    inlines = [PresentacionInline, PerfumeNotaInline, ImagenPerfumeInline, ResenaInline]
     actions = ['marcar_destacado', 'quitar_destacado', 'marcar_activo', 'quitar_activo', 'unir_como_presentaciones']
 
     @admin.action(description="Unir en un solo perfume (como tamaños)")

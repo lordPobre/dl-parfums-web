@@ -51,6 +51,29 @@ class FamiliaOlfativa(models.Model):
     def __str__(self):
         return self.nombre
 
+class Nota(models.Model):
+    """Nota olfativa (vainilla, bergamota, oud...). Tiene su propia página /nota/<slug>/."""
+    nombre = models.CharField(max_length=80, unique=True)
+    slug = models.SlugField(max_length=100, unique=True, blank=True, help_text="Parte de la URL: /nota/<slug>/. Se genera solo si lo dejas vacío.")
+    descripcion = models.TextField(blank=True, help_text="Introducción de /nota/<slug>/ (ideal 60–120 palabras): cómo huele, en qué perfumes destaca.")
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Nota olfativa"
+        verbose_name_plural = "Notas olfativas"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slug_unico(Nota, self.nombre, self.pk, 100)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("catalogo_nota", args=[self.slug])
+
+    def __str__(self):
+        return self.nombre
+
+
 class Perfume(models.Model):
     GENERO_CHOICES = [
         ('M', 'Masculino'),
@@ -71,6 +94,9 @@ class Perfume(models.Model):
     notas_salida  = models.CharField(max_length=255, blank=True)
     notas_corazon = models.CharField(max_length=255, blank=True)
     notas_fondo   = models.CharField(max_length=255, blank=True)
+    # Las notas se editan en "Notas olfativas (pirámide)"; los 3 campos de texto de arriba
+    # se rellenan solos desde ahí (los usan la búsqueda y como respaldo en la ficha).
+    notas = models.ManyToManyField('Nota', through='PerfumeNota', related_name='perfumes', blank=True)
     activo = models.BooleanField(default=True)
     destacado = models.BooleanField(default=False, help_text="Mostrar en la página de inicio")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -124,6 +150,23 @@ class Perfume(models.Model):
         Perfume.objects.filter(pk=self.pk).update(**datos)
         for campo, valor in datos.items():
             setattr(self, campo, valor)
+
+    @property
+    def piramide(self):
+        """{'salida': [Nota...], 'corazon': [...], 'fondo': [...]} (usa el prefetch si existe)."""
+        p = {'salida': [], 'corazon': [], 'fondo': []}
+        for pn in self.notas_perfume.all():
+            p[pn.nivel].append(pn.nota)
+        return p
+
+    def sincronizar_notas(self):
+        """Copia las notas del modelo a notas_salida / notas_corazon / notas_fondo."""
+        p = {'salida': [], 'corazon': [], 'fondo': []}
+        for pn in PerfumeNota.objects.filter(perfume_id=self.pk).select_related('nota'):
+            p[pn.nivel].append(pn.nota.nombre)
+        datos = {f'notas_{nivel}': ', '.join(nombres)[:255] for nivel, nombres in p.items()}
+        datos['actualizado'] = timezone.now()
+        Perfume.objects.filter(pk=self.pk).update(**datos)
 
     def get_absolute_url(self):
         return reverse("perfume_detalle", args=[self.slug])
@@ -193,6 +236,35 @@ def _actualizar_resumen_perfume(sender, instance, **kwargs):
     perfume = Perfume.objects.filter(pk=instance.perfume_id).first()
     if perfume:
         perfume.actualizar_resumen()
+
+
+class PerfumeNota(models.Model):
+    """Una nota dentro de la pirámide de un perfume."""
+    NIVELES = [('salida', 'Salida'), ('corazon', 'Corazón'), ('fondo', 'Fondo')]
+
+    perfume = models.ForeignKey(Perfume, on_delete=models.CASCADE, related_name='notas_perfume')
+    nota = models.ForeignKey(Nota, on_delete=models.PROTECT, related_name='en_perfumes')
+    nivel = models.CharField(max_length=8, choices=NIVELES, default='corazon')
+    orden = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['orden', 'id']
+        verbose_name = "Nota del perfume"
+        verbose_name_plural = "Notas olfativas (pirámide)"
+        constraints = [
+            models.UniqueConstraint(fields=['perfume', 'nota', 'nivel'], name='nota_unica_por_nivel'),
+        ]
+        indexes = [models.Index(fields=['nota', 'perfume'], name='catalogo_pn_nota_perfume_idx')]
+
+    def __str__(self):
+        return f"{self.nota.nombre} ({self.get_nivel_display()})"
+
+
+@receiver([post_save, post_delete], sender=PerfumeNota)
+def _sincronizar_notas_perfume(sender, instance, **kwargs):
+    perfume = Perfume.objects.filter(pk=instance.perfume_id).first()
+    if perfume:
+        perfume.sincronizar_notas()
 
 
 class ImagenPortada(models.Model):

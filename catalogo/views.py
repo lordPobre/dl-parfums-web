@@ -14,10 +14,10 @@ from django.views.decorators.http import require_POST
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Avg, Case, When, IntegerField
+from django.db.models import Avg, Case, When, IntegerField, Count
 from django.db import transaction
 from django.core.cache import cache
-from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido, Presentacion, SlugAntiguo
+from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido, Presentacion, SlugAntiguo, Nota, PerfumeNota
 from .cache_cdn import cache_cdn
 from .busqueda import buscar_perfumes, sugerir
 from .filtros import url_filtros
@@ -97,6 +97,15 @@ ORDENES = [
     ('nombre', 'Nombre A–Z'),
 ]
 GENEROS_TXT = {'F': 'Mujer', 'M': 'Hombre', 'U': 'Unisex'}
+FORMATOS_TXT = dict(Presentacion.FORMATOS)
+INTENSIDADES = [
+    # (clave, etiqueta, concentraciones)
+    ('ligera', 'Ligera (EDT)', ('edt',)),
+    ('intensa', 'Intensa (EDP)', ('edp',)),
+    ('muy-intensa', 'Muy intensa (Parfum)', ('parfum', 'extrait')),
+]
+MIN_PERFUMES_NOTA = 3   # bajo esto, /nota/<slug>/ lleva noindex y no va al sitemap
+MAX_NOTAS_FILTRO = 24
 
 
 def _catalogo(request, landing=None):
@@ -114,6 +123,11 @@ def _catalogo(request, landing=None):
     precio = request.GET.get('precio')
     precio = precio if precio in {p[0] for p in PRECIOS} else None
     tamano = _entero(request.GET.get('tamano'))
+    formato = request.GET.get('formato')
+    formato = formato if formato in FORMATOS_TXT else None
+    intensidad = request.GET.get('intensidad')
+    intensidad = intensidad if intensidad in {i[0] for i in INTENSIDADES} else None
+    nota_id = landing.get('nota_id') or _entero(request.GET.get('nota'))
     solo_stock = request.GET.get('stock') == '1'
     buscar = (request.GET.get('q') or '').strip()[:80]
     orden_pedido = request.GET.get('orden') or ''
@@ -132,18 +146,26 @@ def _catalogo(request, landing=None):
             perfumes = perfumes.filter(familia_id=fam.id)
             familia_id = fam.id
 
-    # Precio y tamaño se filtran por presentación: basta con que UN tamaño cumpla
-    pres = Presentacion.objects.filter(perfume=OuterRef('pk'), activo=True)
-    if precio:
-        _, _, minimo, maximo = next(p for p in PRECIOS if p[0] == precio)
-        rango = pres.annotate(pv=Coalesce('precio_oferta', 'precio'))
-        if minimo:
-            rango = rango.filter(pv__gt=minimo)
-        if maximo:
-            rango = rango.filter(pv__lte=maximo)
-        perfumes = perfumes.filter(Exists(rango))
-    if tamano:
-        perfumes = perfumes.filter(Exists(pres.filter(ml=tamano)))
+    # Precio, tamaño y formato se filtran por presentación: UNA misma presentación
+    # debe cumplirlos todos (ej. "decant de hasta $10.000").
+    if precio or tamano or formato:
+        pres = Presentacion.objects.filter(perfume=OuterRef('pk'), activo=True)
+        if precio:
+            _, _, minimo, maximo = next(p for p in PRECIOS if p[0] == precio)
+            pres = pres.annotate(pv=Coalesce('precio_oferta', 'precio'))
+            if minimo:
+                pres = pres.filter(pv__gt=minimo)
+            if maximo:
+                pres = pres.filter(pv__lte=maximo)
+        if tamano:
+            pres = pres.filter(ml=tamano)
+        if formato:
+            pres = pres.filter(formato=formato)
+        perfumes = perfumes.filter(Exists(pres))
+    if intensidad:
+        perfumes = perfumes.filter(concentracion__in=next(i[2] for i in INTENSIDADES if i[0] == intensidad))
+    if nota_id:
+        perfumes = perfumes.filter(Exists(PerfumeNota.objects.filter(perfume=OuterRef('pk'), nota_id=nota_id)))
     if solo_stock:
         perfumes = perfumes.filter(stock__gt=0)
     if buscar:
@@ -171,14 +193,32 @@ def _catalogo(request, landing=None):
         Presentacion.objects.filter(activo=True, perfume__activo=True)
         .values_list('ml', flat=True).distinct().order_by('ml')
     )
+    formatos = [
+        (f, FORMATOS_TXT[f]) for f in FORMATOS_TXT
+        if Presentacion.objects.filter(activo=True, perfume__activo=True, formato=f).exists()
+    ]
+    concentraciones = set(
+        Perfume.objects.filter(activo=True).exclude(concentracion='').values_list('concentracion', flat=True)
+    )
+    intensidades = [(c, e) for c, e, codigos in INTENSIDADES if concentraciones & set(codigos)]
+    notas_filtro = list(
+        Nota.objects.annotate(n=Count('en_perfumes__perfume', filter=Q(en_perfumes__perfume__activo=True), distinct=True))
+        .filter(n__gte=2).order_by('-n', 'nombre')[:MAX_NOTAS_FILTRO]
+    )
+    if nota_id and nota_id not in {n.id for n in notas_filtro}:
+        notas_filtro += list(Nota.objects.filter(pk=nota_id))
+    notas_filtro.sort(key=lambda n: n.nombre)
+
     estado = {
-        'q': buscar, 'genero': genero, 'marca': marca_id, 'familia': familia_id,
-        'tamano': tamano, 'precio': precio, 'stock': '1' if solo_stock else None, 'orden': orden_pedido,
+        'q': buscar, 'genero': genero, 'marca': marca_id, 'familia': familia_id, 'nota': nota_id,
+        'tamano': tamano, 'formato': formato, 'precio': precio, 'intensidad': intensidad,
+        'stock': '1' if solo_stock else None, 'orden': orden_pedido,
     }
     estado = {k: v for k, v in estado.items() if v not in (None, '')}
     slugs = {
         'familia': {str(f.id): f.slug for f in familias},
         'marca': {str(m.id): m.slug for m in marcas},
+        'nota': {str(n.id): n.slug for n in notas_filtro},
     }
 
     # Chips de "filtros activos", cada uno con su enlace para quitarlo
@@ -188,7 +228,10 @@ def _catalogo(request, landing=None):
         'genero': GENEROS_TXT.get(genero),
         'familia': nombres_familia.get(familia_id),
         'marca': nombres_marca.get(marca_id),
+        'nota': next((f"Nota: {n.nombre}" for n in notas_filtro if n.id == nota_id), None),
         'tamano': f"{tamano} ml" if tamano else None,
+        'formato': FORMATOS_TXT.get(formato),
+        'intensidad': dict((i[0], i[1]) for i in INTENSIDADES).get(intensidad),
         'precio': dict((p[0], p[1]) for p in PRECIOS).get(precio),
         'stock': 'Solo disponibles' if solo_stock else None,
     }
@@ -207,12 +250,18 @@ def _catalogo(request, landing=None):
         'marcas': marcas,
         'familias': familias,
         'tamanos': tamanos,
+        'formatos': formatos,
+        'intensidades': intensidades,
+        'notas_filtro': notas_filtro,
         'precios': PRECIOS,
         'ordenes': [o for o in ORDENES if o[0] != 'relevancia' or buscar],
         'genero_actual': genero,
         'marca_seleccionada_id': marca_id,
         'familia_actual': familia_id,
         'tamano_actual': tamano,
+        'formato_actual': formato,
+        'intensidad_actual': intensidad,
+        'nota_actual': nota_id,
         'precio_actual': precio,
         'solo_stock': solo_stock,
         'orden_actual': orden,
@@ -221,7 +270,7 @@ def _catalogo(request, landing=None):
         'slugs_filtros': slugs,
         'filtros_activos': activos,
         'n_filtros': len(activos),
-        'n_mas_filtros': sum(bool(x) for x in (tamano, precio, solo_stock, orden_pedido)),
+        'n_mas_filtros': sum(bool(x) for x in (tamano, formato, precio, intensidad, nota_id, solo_stock, orden_pedido)),
     })
 
 
@@ -258,6 +307,18 @@ def catalogo_casa(request, slug):
     })
 
 
+@cache_cdn()
+def catalogo_nota(request, slug):
+    nota = get_object_or_404(Nota, slug=slug)
+    n = nota.en_perfumes.filter(perfume__activo=True).values('perfume').distinct().count()
+    return _catalogo(request, {
+        'nota_id': nota.id,
+        'titulo': f"Perfumes con notas de {nota.nombre.lower()}",
+        'intro': nota.descripcion,
+        'noindex': n < MIN_PERFUMES_NOTA,
+    })
+
+
 def redirigir_perfume_id(request, pk):
     """301 desde las URLs antiguas /perfume/<id>/ a /perfume/<slug>/."""
     perfume = Perfume.objects.filter(pk=pk).first()
@@ -273,7 +334,7 @@ def redirigir_perfume_id(request, pk):
 def perfume_detalle(request, slug):
     perfume = (
         Perfume.objects.select_related('marca', 'familia', 'fusionado_en')
-        .prefetch_related('galeria', 'resenas', 'presentaciones')
+        .prefetch_related('galeria', 'resenas', 'presentaciones', 'notas_perfume__nota')
         .filter(slug=slug).first()
     )
     if perfume is None:

@@ -1,9 +1,9 @@
 from django.contrib.sitemaps import Sitemap
-from django.db.models import Max
+from django.db.models import Count, Max, Q
 from django.urls import reverse
 
-from .models import FamiliaOlfativa, Marca, Perfume
-from .views import GENEROS_URL
+from .models import FamiliaOlfativa, Marca, Nota, Perfume
+from .views import GENEROS_URL, MIN_PERFUMES_NOTA
 
 
 class EstaticoSitemap(Sitemap):
@@ -52,6 +52,22 @@ class CasaSitemap(Sitemap):
         return Marca.objects.filter(productos__activo=True).annotate(
             ultima=Max("productos__actualizado")
         ).distinct().order_by("nombre")
+
+    def lastmod(self, obj):
+        return obj.ultima
+
+
+class NotaSitemap(Sitemap):
+    """Solo notas con al menos MIN_PERFUMES_NOTA perfumes activos (las demás llevan noindex)."""
+    changefreq = "weekly"
+    priority = 0.6
+
+    def items(self):
+        activos = Q(en_perfumes__perfume__activo=True)
+        return Nota.objects.annotate(
+            n=Count("en_perfumes__perfume", filter=activos, distinct=True),
+            ultima=Max("en_perfumes__perfume__actualizado", filter=activos),
+        ).filter(n__gte=MIN_PERFUMES_NOTA).order_by("nombre")
 
     def lastmod(self, obj):
         return obj.ultima

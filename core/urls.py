@@ -4,13 +4,14 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
-from catalogo.sitemaps import EstaticoSitemap, GeneroSitemap, FamiliaSitemap, CasaSitemap, PerfumeSitemap
+from catalogo.sitemaps import EstaticoSitemap, GeneroSitemap, FamiliaSitemap, CasaSitemap, NotaSitemap, PerfumeSitemap
 
 sitemaps_dict = {
     "estaticas": EstaticoSitemap,
     "generos": GeneroSitemap,
     "familias": FamiliaSitemap,
     "casas": CasaSitemap,
+    "notas": NotaSitemap,
     "perfumes": PerfumeSitemap,
 }
 
@@ -24,6 +25,8 @@ def robots_txt(request):
         "Disallow: /*?*orden=",
         "Disallow: /*?*precio=",
         "Disallow: /*?*tamano=",
+        "Disallow: /*?*formato=",
+        "Disallow: /*?*intensidad=",
         "Disallow: /*?*stock=",
         "Disallow: /*?*q=",
         "",
