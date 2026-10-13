@@ -2,7 +2,7 @@
 {% comment %}Tarjeta de perfume reutilizable. Espera la variable `perfume`.
 Opcionales: `indice` (posición en la grilla; las 4 primeras cargan sin espera y la 1.ª con prioridad alta)
 y `sin_lazy` (carruseles horizontales, donde lazy retrasa las imágenes fuera de pantalla).
-Alturas fijas por bloque (marca 1 línea, nombre 2 líneas, precio 2 líneas en móvil) y botón anclado abajo:
+Alturas fijas por bloque (marca 1 línea, nombre 2 líneas, "Inspirado en" 2 líneas en móvil / 1 en escritorio, precio 2 líneas en móvil) y botón anclado abajo:
 así todas las tarjetas de una fila miden lo mismo y los botones quedan alineados.{% endcomment %}
 <div class="group h-full flex flex-col bg-white {% if perfume.stock <= 0 %}opacity-60{% endif %}">
     <a href="{{ perfume.get_absolute_url }}" class="flex-1 flex flex-col">
@@ -27,6 +27,7 @@ así todas las tarjetas de una fila miden lo mismo y los botones quedan alineado
         <div class="flex flex-col items-center text-center px-1 sm:px-2">
             <p class="w-full truncate text-[10px] tracking-[0.18em] sm:tracking-[0.24em] text-gray-500 uppercase mb-1.5 sm:mb-2">{{ perfume.marca.nombre }}</p>
             <h3 class="w-full line-clamp-2 min-h-[2.75em] text-[15px] sm:text-lg font-serif text-gray-900 mb-2 sm:mb-2.5 leading-snug group-hover:text-gray-600 transition-colors" title="{{ perfume.nombre }}">{{ perfume.nombre }}</h3>
+            <p class="w-full line-clamp-2 sm:line-clamp-1 min-h-[2.6em] sm:min-h-[1.3em] leading-[1.3] text-[12px] sm:text-[13px] font-light text-gray-500 mb-2 sm:mb-2.5"{% if perfume.inspirado_en %} title="Inspirado en {{ perfume.inspirado_en }}"{% endif %}>{% if perfume.inspirado_en %}Inspirado en <em class="font-serif text-gray-800">{{ perfume.inspirado_en }}</em>{% endif %}</p>
             <div class="w-full min-h-[2.5rem] sm:min-h-[1.25rem] flex flex-wrap items-center content-start justify-center gap-x-2 sm:gap-x-3 gap-y-0.5">
                 {% if perfume.n_presentaciones > 1 %}<span class="text-[10px] tracking-[0.16em] sm:tracking-[0.18em] uppercase text-gray-500">Desde</span>{% endif %}
                 {% if perfume.es_oferta and perfume.precio_oferta %}
