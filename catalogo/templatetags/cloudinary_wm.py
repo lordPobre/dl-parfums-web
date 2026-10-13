@@ -1,12 +1,23 @@
+import os
+
 from django import template
 
 register = template.Library()
 
 # Marca de agua aplicada vía transformación de URL de Cloudinary.
-# Ajusta el texto, opacidad (o_), posición (g_) y márgenes (x_,y_) a tu gusto.
-# Para usar un LOGO en vez de texto: sube tu logo a Cloudinary y reemplaza WM por,
-# por ejemplo: "l_dl_logo,o_45,g_center,w_0.5,fl_relative"
-WM = "l_text:Arial_45_bold:Instinto%20Olfativo,co_white,o_35,g_south_east,x_20,y_20"
+# Por defecto es texto. Para usar tu LOGO (se genera mucho más rápido que el texto):
+#   1. Sube el logo en PNG blanco con fondo transparente a Cloudinary.
+#   2. En Vercel crea la variable CLOUDINARY_WM_LOGO con su public_id
+#      (si está en una carpeta, cambia "/" por ":", ej. "marca:logo-blanco").
+WM_LOGO = os.environ.get("CLOUDINARY_WM_LOGO", "").strip()
+if WM_LOGO:
+    WM = f"l_{WM_LOGO},o_35,g_south_east,x_20,y_20,w_0.25,fl_relative"
+else:
+    WM = "l_text:Arial_45_bold:Instinto%20Olfativo,co_white,o_35,g_south_east,x_20,y_20"
+
+# Bajo este ancho no se pone marca de agua (miniaturas del carrito, buscador y galería):
+# ahí no se lee y es la parte más lenta de generar.
+ANCHO_MIN_MARCA = 300
 
 
 @register.filter
@@ -21,16 +32,17 @@ def watermark(url):
 def _transformar(url, ancho, con_marca):
     if not url or "/upload/" not in url:
         return url
-    t = f"f_auto,q_auto,c_limit,w_{int(ancho)}"
-    if con_marca:
+    ancho = int(ancho)
+    t = f"f_auto,q_auto,c_limit,w_{ancho}"
+    if con_marca and ancho >= ANCHO_MIN_MARCA:
         t += f"/{WM}"
     return url.replace("/upload/", f"/upload/{t}/", 1)
 
 
 @register.filter
 def cl(url, ancho=800):
-    """Imagen de producto optimizada (AVIF/WebP automático, ancho máximo) + marca de agua.
-    Uso: {{ perfume.imagen.url|cl:480 }}"""
+    """Imagen de producto optimizada (AVIF/WebP automático, ancho máximo) + marca de agua
+    desde 300 px. Uso: {{ perfume.imagen.url|cl:480 }}"""
     return _transformar(url, ancho, True)
 
 

@@ -13,6 +13,7 @@
     <meta property="og:url" content="{{ SITE_URL }}{{ request.path }}">
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
+    <link rel="preload" as="image" href="{% static 'img/logo-instinto-oscuro.png' %}">
 
     <script type="application/ld+json">
     {
@@ -271,10 +272,20 @@
             if (btnMenu) btnMenu.addEventListener('click', () => menuMovil.classList.toggle('hidden'));
         });
         // El preloader se oculta apenas el HTML está listo (antes esperaba a que cargaran TODAS las imágenes + 0,5 s)
-        document.addEventListener('DOMContentLoaded', function() {
-            const preloader = document.getElementById('preloader');
-            if (preloader) preloader.classList.add('preloader-hidden');
-        });
+        (function () {
+            var p = document.getElementById('preloader');
+            if (!p) return;
+            if (sessionStorage.getItem('io_pre')) { p.remove(); return; }
+            var t0 = performance.now(), MIN = 900, hecho = false;
+            function ocultar() {
+                if (hecho) return; hecho = true;
+                sessionStorage.setItem('io_pre', '1');
+                setTimeout(function () { p.classList.add('preloader-hidden'); },
+                        Math.max(0, MIN - (performance.now() - t0)));
+            }
+            document.addEventListener('DOMContentLoaded', ocultar);
+            setTimeout(ocultar, 2500);
+        })();
 
         // Disuasivos de descarga de imágenes
         document.addEventListener('contextmenu', function (e) {

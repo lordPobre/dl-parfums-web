@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static filtros %}
+{% load static filtros cloudinary_wm %}
 
 {% block title %}{% if buscar %}Resultados para «{{ buscar }}»{% elif landing.titulo %}{{ landing.titulo }}{% else %}Catálogo de perfumes alternativos{% endif %}{% if page_obj.number > 1 %} – Página {{ page_obj.number }}{% endif %} | Instinto Olfativo{% endblock %}
 {% block meta_description %}{% if landing.intro %}{{ landing.intro|striptags|truncatechars:155 }}{% else %}Explora nuestro catálogo de perfumes alternativos de nicho y diseñador en Chile. Filtra por familia olfativa, tamaño y precio. Envío a todo el país.{% endif %}{% endblock %}
@@ -59,7 +59,7 @@
                 <a href="{% filtro_url marca=marca.id %}#productos" title="{{ marca.nombre }}"
                    class="group flex-shrink-0 w-[130px] h-24 flex items-center justify-center px-3 border transition-all duration-300 {% if marca_seleccionada_id == marca.id %}border-gray-900 bg-gray-50{% else %}border-gray-100 hover:border-gray-300{% endif %}">
                     {% if marca.logo %}
-                        <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" loading="lazy" class="max-h-16 max-w-full object-contain transition-all duration-300 {% if marca_seleccionada_id == marca.id %}grayscale-0 opacity-100{% else %}grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100{% endif %}">
+                        <img src="{{ marca.logo.url|clsin:300 }}" alt="{{ marca.nombre }}" width="130" height="64" decoding="async" class="max-h-16 max-w-full object-contain transition-all duration-300 {% if marca_seleccionada_id == marca.id %}grayscale-0 opacity-100{% else %}grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100{% endif %}">
                     {% else %}
                         <span class="font-serif text-sm text-gray-800 text-center leading-tight">{{ marca.nombre }}</span>
                     {% endif %}
@@ -252,7 +252,7 @@
     <!-- Grilla -->
     <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 sm:gap-x-7 gap-y-10 sm:gap-y-14 pb-14">
         {% for perfume in perfumes %}
-            {% include "partials/tarjeta_perfume.html" with perfume=perfume %}
+            {% include "partials/tarjeta_perfume.html" with perfume=perfume indice=forloop.counter %}
         {% empty %}
         <div class="col-span-full py-20 text-center">
             <p class="text-gray-400 font-serif text-xl italic mb-3">{% if buscar %}No encontramos fragancias para «{{ buscar }}».{% else %}No se encontraron fragancias con estos filtros.{% endif %}</p>

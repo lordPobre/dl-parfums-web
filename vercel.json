@@ -19,9 +19,14 @@
   ],
   "routes": [
     {
-      "src": "/static/(css|img)/(.*)",
-      "dest": "/static/$1/$2",
+      "src": "/static/css/(.*)",
+      "dest": "/static/css/$1",
       "headers": { "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400" }
+    },
+    {
+      "src": "/static/img/(.*)",
+      "dest": "/static/img/$1",
+      "headers": { "Cache-Control": "public, max-age=604800, stale-while-revalidate=2592000" }
     },
     {
       "src": "/static/(.*)",

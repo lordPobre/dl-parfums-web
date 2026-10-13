@@ -64,7 +64,7 @@
                {% if i == '2' %}tabindex="-1"{% endif %} aria-hidden="{% if i == '2' %}true{% else %}false{% endif %}"
                class="flex-shrink-0 mx-8 md:mx-12 flex items-center justify-center h-20 transition-all duration-500 grayscale opacity-60 hover:grayscale-0 hover:opacity-100">
                 {% if marca.logo %}
-                    <img src="{{ marca.logo.url }}" alt="{{ marca.nombre }}" class="h-16 md:h-20 max-w-[200px] object-contain">
+                    <img src="{{ marca.logo.url|clsin:400 }}" alt="{{ marca.nombre }}" width="200" height="80" {% if i == '2' %}loading="lazy" {% endif %}decoding="async" class="h-16 md:h-20 w-auto max-w-[200px] object-contain">
                 {% else %}
                     <span class="font-serif text-xl md:text-2xl text-gray-800 tracking-widest whitespace-nowrap">{{ marca.nombre }}</span>
                 {% endif %}
@@ -172,7 +172,7 @@
         <div id="dest-track" class="flex-1 min-w-0 mx-3 flex gap-7 overflow-x-scroll scroll-smooth py-1" style="scrollbar-width:none;">
             {% for perfume in destacados %}
             <div class="flex-shrink-0 w-[260px]">
-                {% include "partials/tarjeta_perfume.html" with perfume=perfume %}
+                {% include "partials/tarjeta_perfume.html" with perfume=perfume sin_lazy=True %}
             </div>
             {% endfor %}
         </div>

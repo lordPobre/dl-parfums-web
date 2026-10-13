@@ -1,5 +1,7 @@
 {% load cloudinary_wm %}
-{% comment %}Tarjeta de perfume reutilizable. Espera la variable `perfume`.{% endcomment %}
+{% comment %}Tarjeta de perfume reutilizable. Espera la variable `perfume`.
+Opcionales: `indice` (posición en la grilla; las 4 primeras cargan sin espera y la 1.ª con prioridad alta)
+y `sin_lazy` (carruseles horizontales, donde lazy retrasa las imágenes fuera de pantalla).{% endcomment %}
 <div class="group flex flex-col bg-white {% if perfume.stock <= 0 %}opacity-60{% endif %}">
     <a href="{{ perfume.get_absolute_url }}" class="block">
         <div class="relative w-full aspect-[4/5] bg-[#f8f8f8] overflow-hidden flex items-center justify-center mb-6">
@@ -13,7 +15,9 @@
                      srcset="{{ perfume.imagen.url|cl:320 }} 320w, {{ perfume.imagen.url|cl:480 }} 480w, {{ perfume.imagen.url|cl:720 }} 720w"
                      sizes="(min-width:1280px) 300px, (min-width:1024px) 30vw, 45vw"
                      width="480" height="600"
-                     alt="{{ perfume.nombre }} — perfume {% if perfume.familia %}{{ perfume.familia.nombre|lower }} {% endif %}{% if perfume.marca %}de {{ perfume.marca.nombre }}{% endif %}" loading="lazy" decoding="async" class="max-h-[82%] max-w-[82%] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06] {% if perfume.stock <= 0 %}grayscale{% endif %}">
+                     alt="{{ perfume.nombre }} — perfume {% if perfume.familia %}{{ perfume.familia.nombre|lower }} {% endif %}{% if perfume.marca %}de {{ perfume.marca.nombre }}{% endif %}"
+                     {% if indice == 1 %}fetchpriority="high"{% elif sin_lazy or indice and indice <= 4 %}{% else %}loading="lazy"{% endif %}
+                     decoding="async" class="max-h-[82%] max-w-[82%] object-contain transition-transform duration-700 ease-out group-hover:scale-[1.06] {% if perfume.stock <= 0 %}grayscale{% endif %}">
             {% else %}
                 <span class="text-gray-300 font-light text-sm tracking-widest uppercase">Próximamente</span>
             {% endif %}
