@@ -69,7 +69,7 @@
 <!-- Breadcrumb -->
 <div class="max-w-[1300px] mx-auto px-5 md:px-10 pt-8">
     <nav aria-label="Ruta de navegación">
-        <ol class="flex flex-wrap items-center gap-2 text-[11px] tracking-[0.18em] uppercase text-gray-400">
+        <ol class="flex flex-wrap items-center gap-2 text-[11px] tracking-[0.18em] uppercase text-gray-500">
             <li><a href="{% url 'home' %}" class="hover:text-gray-900 transition-colors">Inicio</a></li>
             <li aria-hidden="true">/</li>
             <li><a href="{% url 'catalogo' %}" class="hover:text-gray-900 transition-colors">Perfumes</a></li>
@@ -124,7 +124,7 @@
         {% if perfume.es_oferta %}
         <span class="inline-block text-[10px] tracking-[0.24em] uppercase text-white bg-gray-900 py-1.5 px-3 mb-5">Oferta</span>
         {% endif %}
-        <p class="text-[11px] tracking-[0.3em] uppercase text-gray-400 mb-3">{{ perfume.marca.nombre }}</p>
+        <p class="text-[11px] tracking-[0.3em] uppercase text-gray-500 mb-3">{{ perfume.marca.nombre }}</p>
         <h1 class="font-serif text-3xl md:text-5xl text-gray-900 leading-tight mb-5">{{ perfume.nombre }}</h1>
         {% if perfume.inspirado_en %}
         <p class="-mt-2 mb-6 text-[15px] font-light text-gray-500">Inspirado en <em class="font-serif text-gray-800">{{ perfume.inspirado_en }}</em></p>
@@ -133,16 +133,16 @@
         <div class="flex items-baseline gap-4 mb-6">
             {% if seleccion and seleccion.precio_oferta %}
                 <span data-precio-actual class="font-serif text-3xl text-red-700">{{ seleccion.precio_oferta|clp }}</span>
-                <span data-precio-antes class="text-lg text-gray-400 line-through">{{ seleccion.precio|clp }}</span>
+                <span data-precio-antes class="text-lg text-gray-500 line-through">{{ seleccion.precio|clp }}</span>
             {% else %}
                 <span data-precio-actual class="font-serif text-3xl text-gray-900">{% if seleccion %}{{ seleccion.precio|clp }}{% else %}{{ perfume.precio|clp }}{% endif %}</span>
-                <span data-precio-antes class="text-lg text-gray-400 line-through hidden"></span>
+                <span data-precio-antes class="text-lg text-gray-500 line-through hidden"></span>
             {% endif %}
         </div>
 
         {% if presentaciones|length > 1 %}
         <fieldset class="mb-7">
-            <legend class="text-[10px] tracking-[0.24em] uppercase text-gray-400 mb-3">Tamaño</legend>
+            <legend class="text-[10px] tracking-[0.24em] uppercase text-gray-500 mb-3">Tamaño</legend>
             <div class="flex flex-wrap gap-2.5">
                 {% for v in presentaciones %}
                 <label class="cursor-pointer">
@@ -167,7 +167,7 @@
         
          <!-- Disclosure de fragancia alternativa (transparencia y confianza) -->
         <div class="flex gap-3 bg-[#fbfbfb] border border-gray-100 p-4 mb-6">
-            <svg class="w-5 h-5 flex-shrink-0 text-gray-400 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01" stroke-linecap="round"></path></svg>
+            <svg class="w-5 h-5 flex-shrink-0 text-gray-500 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01" stroke-linecap="round"></path></svg>
             <p class="text-[12px] font-light text-gray-500 leading-relaxed m-0">Fragancia alternativa inspirada en la original. Instinto Olfativo no está afiliado ni patrocinado por las casas de perfumería mencionadas; los nombres de marca se citan solo con fines descriptivos y de referencia olfativa.</p>
         </div>
 
@@ -186,7 +186,7 @@
             <span class="w-2 h-2 rounded-full bg-green-600 inline-block"></span> En stock · Listo para despacho
         </div>
         {% else %}
-        <div class="flex items-center gap-2.5 text-[12px] tracking-[0.14em] uppercase text-gray-400 mb-7">
+        <div class="flex items-center gap-2.5 text-[12px] tracking-[0.14em] uppercase text-gray-500 mb-7">
             <span class="w-2 h-2 rounded-full bg-gray-400 inline-block"></span> Agotado temporalmente
         </div>
         {% endif %}
@@ -196,15 +196,15 @@
             <h2 class="font-serif text-xl text-gray-900 mb-6 text-center">Pirámide Olfativa</h2>
             <div class="space-y-5">
                 <div class="text-center">
-                    <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-1.5">Notas de Salida</span>
+                    <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-500 mb-1.5">Notas de Salida</span>
                     <p class="font-serif text-base text-gray-900">{{ perfume.notas_salida|default:"—" }}</p>
                 </div>
                 <div class="text-center">
-                    <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-1.5">Notas de Corazón</span>
+                    <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-500 mb-1.5">Notas de Corazón</span>
                     <p class="font-serif text-base text-gray-900">{{ perfume.notas_corazon|default:"—" }}</p>
                 </div>
                 <div class="text-center">
-                    <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-400 mb-1.5">Notas de Fondo</span>
+                    <span class="block text-[10px] uppercase tracking-[0.24em] text-gray-500 mb-1.5">Notas de Fondo</span>
                     <p class="font-serif text-base text-gray-900">{{ perfume.notas_fondo|default:"—" }}</p>
                 </div>
             </div>
@@ -232,14 +232,14 @@
                 Solicitar por WhatsApp
             </a>
         </div>
-        <p class="text-center text-[12px] font-light text-gray-400 mt-4">Asesoría inmediata · Pago y coordinación por WhatsApp</p>
+        <p class="text-center text-[12px] font-light text-gray-500 mt-4">Asesoría inmediata · Pago y coordinación por WhatsApp</p>
         {% else %}
-        <div class="w-full bg-gray-100 text-gray-400 py-5 text-center text-[12px] tracking-[0.22em] uppercase cursor-not-allowed">Agotado Temporalmente</div>
+        <div class="w-full bg-gray-100 text-gray-500 py-5 text-center text-[12px] tracking-[0.22em] uppercase cursor-not-allowed">Agotado Temporalmente</div>
         {% endif %}
 
         <!-- Compartir en redes -->
         <div class="mt-8 pt-6 border-t border-gray-100">
-            <p class="text-[10px] tracking-[0.24em] uppercase text-gray-400 mb-4 text-center md:text-left">Compartir</p>
+            <p class="text-[10px] tracking-[0.24em] uppercase text-gray-500 mb-4 text-center md:text-left">Compartir</p>
             <div class="flex items-center gap-3 justify-center md:justify-start">
                 <a href="https://api.whatsapp.com/send?text={{ perfume.nombre|urlencode }}%20-%20{{ SITE_URL }}{{ request.path }}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Compartir en WhatsApp"
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
@@ -253,6 +253,10 @@
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h3l-7 8 8 12h-6l-5-7-6 7H2l8-9L2 2h6l4 6zm-1 18h2L7 4H5z"></path></svg>
                 </a>
+                <a href="https://www.tiktok.com/@monitido1" target="_blank" rel="noopener noreferrer nofollow" aria-label="Síguenos en TikTok"
+                   class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 2h-3.2v13.6a2.9 2.9 0 1 1-2.1-2.8v-3.3a6.2 6.2 0 1 0 5.3 6.1V9.2a7.7 7.7 0 0 0 4.5 1.4V7.4a4.5 4.5 0 0 1-4.5-4.5z"></path></svg>
+                </a>
                 <a href="https://www.instagram.com/monitidoparfums" target="_blank" rel="noopener noreferrer nofollow" aria-label="Síguenos en Instagram"
                    class="w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"></line></svg>
@@ -265,7 +269,7 @@
 <!-- RESEÑAS -->
 <section id="resenas" class="border-t border-gray-100 py-20 md:py-24 px-5 md:px-10 max-w-[900px] mx-auto">
     <div class="text-center mb-14">
-        <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Opiniones de clientes</span>
+        <span class="text-[11px] tracking-[0.34em] text-gray-500 uppercase">Opiniones de clientes</span>
         <h2 class="font-serif text-3xl md:text-4xl text-gray-900 mt-3.5">Reseñas</h2>
         {% if total_resenas %}
         <div class="flex items-center justify-center gap-3 mt-5">
@@ -295,12 +299,12 @@
                 </div>
             </div>
             <p class="text-[15px] font-light text-gray-600 leading-relaxed">{{ resena.comentario }}</p>
-            <p class="text-[11px] tracking-[0.14em] uppercase text-gray-400 mt-3">{{ resena.fecha|date:"d M Y" }}</p>
+            <p class="text-[11px] tracking-[0.14em] uppercase text-gray-500 mt-3">{{ resena.fecha|date:"d M Y" }}</p>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <p class="text-center text-gray-400 font-serif italic text-lg mb-12">Sé el primero en dejar una reseña de esta fragancia.</p>
+    <p class="text-center text-gray-500 font-serif italic text-lg mb-12">Sé el primero en dejar una reseña de esta fragancia.</p>
     {% endif %}
 
     <!-- Formulario de reseña -->
@@ -334,7 +338,7 @@
             <textarea name="comentario" required rows="4" placeholder="Cuéntanos tu experiencia con esta fragancia..."
                       class="w-full bg-white border border-gray-200 px-4 py-3 text-sm font-light focus:outline-none focus:border-gray-900 transition-colors"></textarea>
             <button type="submit" class="w-full bg-gray-900 text-white py-4 text-[11px] tracking-[0.22em] uppercase hover:bg-black transition-colors">Enviar Reseña</button>
-            <p class="text-center text-[12px] font-light text-gray-400">Tu reseña será publicada tras ser revisada.</p>
+            <p class="text-center text-[12px] font-light text-gray-500">Tu reseña será publicada tras ser revisada.</p>
         </form>
     </div>
 </section>
@@ -343,7 +347,7 @@
 {% if relacionados %}
 <section class="border-t border-gray-100 py-20 md:py-24 px-5 md:px-10 max-w-[1400px] mx-auto mt-10">
     <div class="text-center mb-12">
-        <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">También te podría gustar</span>
+        <span class="text-[11px] tracking-[0.34em] text-gray-500 uppercase">También te podría gustar</span>
         <h2 class="font-serif text-3xl md:text-4xl text-gray-900 mt-3.5">Fragancias afines</h2>
     </div>
     <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 sm:gap-x-7 gap-y-10 sm:gap-y-14">

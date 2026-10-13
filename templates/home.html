@@ -5,7 +5,7 @@
 {% block meta_description %}Perfumes alternativos de nicho y diseñador en Chile. Fragancias inspiradas en la alta perfumería a precio accesible, con asesoría personalizada y envío a todo el país.{% endblock %}
 
 {% block extra_head %}
-{% if portadas %}<link rel="preload" as="image" href="{{ portadas.0.imagen.url|clsin:1600 }}" fetchpriority="high">{% endif %}
+{% if portadas %}{% with portada=portadas.0 %}<link rel="preload" as="image" imagesrcset="{{ portada.imagen.url|clsin:640 }} 640w, {{ portada.imagen.url|clsin:1000 }} 1000w, {{ portada.imagen.url|clsin:1600 }} 1600w" imagesizes="100vw" fetchpriority="high">{% endwith %}{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -14,8 +14,9 @@
     {% if portadas %}
     <div id="hero-carousel" class="absolute inset-0 z-0">
         {% for portada in portadas %}
-        <div class="hero-slide absolute inset-0 bg-cover bg-center transition-opacity duration-[1400ms] ease-in-out {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %}"
-             {% if forloop.first %}style="background-image: url('{{ portada.imagen.url|clsin:1600 }}');"{% else %}data-bg="{{ portada.imagen.url|clsin:1600 }}"{% endif %}></div>
+        <img class="hero-slide absolute inset-0 w-full h-full object-cover transition-opacity duration-[1400ms] ease-in-out {% if forloop.first %}opacity-100{% else %}opacity-0{% endif %}"
+             {% if forloop.first %}src="{{ portada.imagen.url|clsin:1000 }}" srcset="{{ portada.imagen.url|clsin:640 }} 640w, {{ portada.imagen.url|clsin:1000 }} 1000w, {{ portada.imagen.url|clsin:1600 }} 1600w" fetchpriority="high"{% else %}data-srcset="{{ portada.imagen.url|clsin:640 }} 640w, {{ portada.imagen.url|clsin:1000 }} 1000w, {{ portada.imagen.url|clsin:1600 }} 1600w"{% endif %}
+             sizes="100vw" width="1600" height="900" alt="" decoding="async">
         {% endfor %}
     </div>
     {% else %}
@@ -28,10 +29,12 @@
     <div class="absolute inset-0 z-[1]" style="background: linear-gradient(180deg, rgba(31,41,55,0.55), rgba(0,0,0,0.85));"></div>
 
     {% if portadas|length > 1 %}
-    <div id="hero-dots" class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex gap-2.5">
+    <div id="hero-dots" class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex">
         {% for portada in portadas %}
         <button type="button" data-index="{{ forloop.counter0 }}" aria-label="Ir a la imagen {{ forloop.counter }}"
-                class="hero-dot w-2 h-2 rounded-full transition-all duration-300 {% if forloop.first %}bg-white w-6{% else %}bg-white/40 hover:bg-white/70{% endif %}"></button>
+                class="hero-dot w-8 h-8 flex items-center justify-center">
+            <span class="block h-2 rounded-full transition-all duration-300 {% if forloop.first %}bg-white w-6{% else %}bg-white/40 w-2{% endif %}"></span>
+        </button>
         {% endfor %}
     </div>
     {% endif %}
@@ -49,7 +52,7 @@
 
 <section class="py-14 bg-white border-b border-gray-100 overflow-hidden">
     <div class="max-w-[1400px] mx-auto px-5 md:px-10">
-        <p class="text-center text-[11px] tracking-[0.34em] text-gray-400 uppercase mb-10">Nuestras Casas</p>
+        <p class="text-center text-[11px] tracking-[0.34em] text-gray-500 uppercase mb-10">Nuestras Casas</p>
     </div>
     {% if marcas %}
     <div class="marquee group relative w-full overflow-hidden"
@@ -80,7 +83,7 @@
 {% if promociones %}
 <section id="promociones" class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
     <div class="text-center mb-14">
-        <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Ofertas especiales</span>
+        <span class="text-[11px] tracking-[0.34em] text-gray-500 uppercase">Ofertas especiales</span>
         <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">Promociones</h2>
         <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
     </div>
@@ -140,12 +143,12 @@
         </div>
         <div class="bg-white px-8 py-14 md:px-16 md:py-20 flex flex-col justify-center">
             <span class="text-[11px] tracking-[0.34em] text-red-700 uppercase mb-5">Oferta por tiempo limitado</span>
-            <p class="text-[11px] tracking-[0.22em] text-gray-400 uppercase mb-3">{{ destacada.marca.nombre }}</p>
+            <p class="text-[11px] tracking-[0.22em] text-gray-500 uppercase mb-3">{{ destacada.marca.nombre }}</p>
             <h2 class="font-serif text-3xl md:text-5xl text-gray-900 leading-tight mb-6">{{ destacada.nombre }}</h2>
             <p class="font-light text-[15px] leading-relaxed text-gray-500 max-w-md mb-7">{{ destacada.descripcion|truncatewords:30 }}</p>
             <div class="flex items-baseline gap-4 mb-9">
                 <span class="font-serif text-3xl md:text-4xl text-red-700">{{ destacada.precio_oferta|clp }}</span>
-                <span class="text-lg text-gray-400 line-through">{{ destacada.precio|clp }}</span>
+                <span class="text-lg text-gray-500 line-through">{{ destacada.precio|clp }}</span>
             </div>
             <div>
                 <a href="{{ destacada.get_absolute_url }}" class="inline-block bg-gray-900 text-white px-11 py-4 text-[11px] tracking-[0.26em] uppercase font-medium hover:bg-black transition-colors">Ver Detalles</a>
@@ -160,7 +163,7 @@
 {% if destacados %}
 <section id="destacados" class="pt-10 md:pt-12 pb-24 md:pb-28 px-5 md:px-10 max-w-[1400px] mx-auto">
     <div class="text-center mb-14">
-        <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Nuestra Selección</span>
+        <span class="text-[11px] tracking-[0.34em] text-gray-500 uppercase">Nuestra Selección</span>
         <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">Fragancias Destacadas</h2>
         <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
     </div>
@@ -206,7 +209,7 @@
     </div>
 
     <div class="text-center mb-14">
-        <span class="text-[11px] tracking-[0.34em] text-gray-400 uppercase">Encuentra tu perfil</span>
+        <span class="text-[11px] tracking-[0.34em] text-gray-500 uppercase">Encuentra tu perfil</span>
         <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">Explora por familia olfativa</h2>
         <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
         <button type="button" data-abrir-test class="mt-7 border border-gray-900 text-[11px] tracking-[0.22em] uppercase text-gray-900 px-9 py-3.5 hover:bg-gray-900 hover:text-white transition-all duration-300">Hacer el test olfativo</button>
@@ -244,8 +247,8 @@ document.addEventListener("DOMContentLoaded", function () {
 <div id="test-olfativo" class="hidden fixed inset-0 z-[200] bg-gray-900/75 backdrop-blur-sm flex items-center justify-center p-6">
     <div class="bg-white w-full max-w-[620px] max-h-[90vh] overflow-y-auto p-10 md:p-12" data-modal-caja>
         <div class="flex justify-between items-center mb-8">
-            <span class="text-[11px] tracking-[0.34em] uppercase text-gray-400">Test olfativo</span>
-            <button type="button" data-cerrar-test aria-label="Cerrar" class="text-gray-400 hover:text-gray-900 transition-colors">
+            <span class="text-[11px] tracking-[0.34em] uppercase text-gray-500">Test olfativo</span>
+            <button type="button" data-cerrar-test aria-label="Cerrar" class="text-gray-500 hover:text-gray-900 transition-colors">
                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
             </button>
         </div>
@@ -253,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <!-- Preguntas -->
         <div data-test-preguntas>
             <div class="h-[2px] bg-gray-100 mb-8"><div data-test-progreso class="h-[2px] bg-gray-900 transition-all duration-400" style="width:0%"></div></div>
-            <p data-test-paso class="text-[11px] tracking-[0.2em] uppercase text-gray-400 mb-3"></p>
+            <p data-test-paso class="text-[11px] tracking-[0.2em] uppercase text-gray-500 mb-3"></p>
             <h3 data-test-pregunta class="font-serif text-2xl md:text-[27px] text-gray-900 leading-snug mb-8"></h3>
             <div data-test-opciones class="flex flex-col gap-3"></div>
         </div>
@@ -261,7 +264,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <!-- Resultado -->
         <div data-test-resultado class="hidden text-center pt-2">
             <div data-test-resultado-icono class="text-5xl font-serif text-gray-900 mb-4">✦</div>
-            <span class="text-[11px] tracking-[0.3em] uppercase text-gray-400">Tu familia olfativa es</span>
+            <span class="text-[11px] tracking-[0.3em] uppercase text-gray-500">Tu familia olfativa es</span>
             <h3 data-test-resultado-nombre class="font-serif text-4xl text-gray-900 mt-2.5 mb-4"></h3>
             <p data-test-resultado-desc class="text-[14.5px] font-light leading-relaxed text-gray-500 max-w-[420px] mx-auto mb-8"></p>
             <div class="flex gap-3.5 justify-center flex-wrap">
@@ -478,25 +481,26 @@ document.addEventListener("DOMContentLoaded", function () {
         const slides = Array.from(document.querySelectorAll('#hero-carousel .hero-slide'));
         // Las portadas 2..N se cargan después de la primera (no compiten con el LCP)
         window.addEventListener('load', function () {
-            slides.forEach(function (s) { if (s.dataset.bg) s.style.backgroundImage = "url('" + s.dataset.bg + "')"; });
+            slides.forEach(function (s) { if (s.dataset.srcset) { s.srcset = s.dataset.srcset; s.removeAttribute('data-srcset'); } });
         });
         if (slides.length < 2) return;
-        const dots = Array.from(document.querySelectorAll('#hero-dots .hero-dot'));
+        const botones = Array.from(document.querySelectorAll('#hero-dots .hero-dot'));
+        const dots = botones.map(function (b) { return b.firstElementChild; });
         let actual = 0;
         let timer = null;
         const INTERVALO = 5000;
 
         function mostrar(i) {
             slides[actual].classList.replace('opacity-100', 'opacity-0');
-            if (dots[actual]) { dots[actual].classList.remove('bg-white', 'w-6'); dots[actual].classList.add('bg-white/40'); }
+            if (dots[actual]) { dots[actual].classList.remove('bg-white', 'w-6'); dots[actual].classList.add('bg-white/40', 'w-2'); }
             actual = (i + slides.length) % slides.length;
             slides[actual].classList.replace('opacity-0', 'opacity-100');
-            if (dots[actual]) { dots[actual].classList.add('bg-white', 'w-6'); dots[actual].classList.remove('bg-white/40'); }
+            if (dots[actual]) { dots[actual].classList.add('bg-white', 'w-6'); dots[actual].classList.remove('bg-white/40', 'w-2'); }
         }
         function iniciar() { timer = setInterval(() => mostrar(actual + 1), INTERVALO); }
         function reiniciar() { clearInterval(timer); iniciar(); }
 
-        dots.forEach((dot, i) => dot.addEventListener('click', () => { mostrar(i); reiniciar(); }));
+        botones.forEach((b, i) => b.addEventListener('click', () => { mostrar(i); reiniciar(); }));
         iniciar();
     });
 </script>

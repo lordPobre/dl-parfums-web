@@ -6,7 +6,7 @@ y `sin_lazy` (carruseles horizontales, donde lazy retrasa las imágenes fuera de
     <a href="{{ perfume.get_absolute_url }}" class="block">
         <div class="relative w-full aspect-[4/5] bg-[#f8f8f8] overflow-hidden flex items-center justify-center mb-6">
             {% if perfume.stock <= 0 %}
-            <span class="absolute top-4 left-4 z-10 bg-gray-400 text-white text-[9px] tracking-[0.24em] uppercase py-1.5 px-2.5">Agotado</span>
+            <span class="absolute top-4 left-4 z-10 bg-gray-500 text-white text-[9px] tracking-[0.24em] uppercase py-1.5 px-2.5">Agotado</span>
             {% elif perfume.es_oferta %}
             <span class="absolute top-4 left-4 z-10 bg-gray-900 text-white text-[9px] tracking-[0.24em] uppercase py-1.5 px-2.5">Oferta</span>
             {% endif %}
@@ -23,18 +23,18 @@ y `sin_lazy` (carruseles horizontales, donde lazy retrasa las imágenes fuera de
             {% endif %}
         </div>
         <div class="flex flex-col items-center text-center px-2">
-            <p class="text-[10px] tracking-[0.24em] text-gray-400 uppercase mb-2">{{ perfume.marca.nombre }}</p>
+            <p class="text-[10px] tracking-[0.24em] text-gray-500 uppercase mb-2">{{ perfume.marca.nombre }}</p>
             <h3 class="text-base sm:text-lg font-serif text-gray-900 mb-2.5 leading-snug group-hover:text-gray-600 transition-colors">{{ perfume.nombre }}</h3>
             <div class="flex items-center gap-3">
-                {% if perfume.n_presentaciones > 1 %}<span class="text-[10px] tracking-[0.18em] uppercase text-gray-400">Desde</span>{% endif %}
+                {% if perfume.n_presentaciones > 1 %}<span class="text-[10px] tracking-[0.18em] uppercase text-gray-500">Desde</span>{% endif %}
                 {% if perfume.es_oferta and perfume.precio_oferta %}
-                    <span class="text-sm text-gray-400 line-through font-light">{{ perfume.precio|clp }}</span>
+                    <span class="text-sm text-gray-500 line-through font-light">{{ perfume.precio|clp }}</span>
                     <span class="text-sm text-red-700 font-medium">{{ perfume.precio_oferta|clp }}</span>
                 {% else %}
                     <span class="text-sm tracking-wider text-gray-800 font-light">{{ perfume.precio|clp }}</span>
                 {% endif %}
                 {% if perfume.stock <= 0 %}
-                    <span class="text-[10px] tracking-[0.18em] uppercase text-gray-400 border border-gray-300 px-2 py-0.5">Agotado</span>
+                    <span class="text-[10px] tracking-[0.18em] uppercase text-gray-500 border border-gray-300 px-2 py-0.5">Agotado</span>
                 {% endif %}
             </div>
         </div>

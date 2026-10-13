@@ -21,7 +21,7 @@
 <section class="pt-10 pb-2 bg-white">
     <form method="get" action="{% url 'catalogo' %}#productos" class="max-w-[560px] mx-auto px-5 md:px-10" role="search">
         <div class="flex items-center border border-gray-200 focus-within:border-gray-900 transition-colors">
-            <span class="pl-4 text-gray-400">
+            <span class="pl-4 text-gray-500">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3" stroke-linecap="round"></path></svg>
             </span>
             <label for="q-catalogo" class="sr-only">Buscar perfumes</label>
@@ -45,7 +45,7 @@
     <div class="max-w-[1280px] mx-auto px-5 md:px-10">
         <div class="flex justify-center mb-8">
             <a href="{% filtro_url marca=None %}#productos"
-               class="text-[11px] tracking-[0.24em] uppercase pb-1.5 transition-all {% if not marca_seleccionada_id %}text-gray-900 border-b border-gray-900{% else %}text-gray-400 hover:text-gray-900{% endif %}">
+               class="text-[11px] tracking-[0.24em] uppercase pb-1.5 transition-all {% if not marca_seleccionada_id %}text-gray-900 border-b border-gray-900{% else %}text-gray-500 hover:text-gray-900{% endif %}">
                Todas las Casas
             </a>
         </div>
@@ -104,7 +104,7 @@
         </div>
         <div class="px-5 py-6 flex flex-col gap-7">
             <div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Para</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Para</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url genero=None %}#productos" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not genero_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
                         <a href="{% filtro_url genero='F' %}#productos" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if genero_actual == 'F' %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Mujer</a>
@@ -113,28 +113,28 @@
                     </div>
                 </div>
             {% if familias %}<div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Familia olfativa</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Familia olfativa</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url familia=None %}#productos" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not familia_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todas</a>
                         {% for familia in familias %}<a href="{% filtro_url familia=familia.id %}#productos" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if familia_actual == familia.id %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ familia.nombre }}</a>{% endfor %}
                     </div>
                 </div>{% endif %}
             {% if tamanos|length > 1 %}<div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Tamaño</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Tamaño</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url tamano=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not tamano_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
                         {% for ml in tamanos %}<a href="{% filtro_url tamano=ml %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if tamano_actual == ml %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ ml }} ml</a>{% endfor %}
                     </div>
                 </div>{% endif %}
             <div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Precio</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Precio</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url precio=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not precio_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
                         {% for clave, etiqueta, minimo, maximo in precios %}<a href="{% filtro_url precio=clave %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if precio_actual == clave %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
                     </div>
                 </div>
             <div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Disponibilidad</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Disponibilidad</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url stock=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not solo_stock %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
                         <a href="{% filtro_url stock='1' %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if solo_stock %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Solo disponibles</a>
@@ -167,7 +167,7 @@
     <!-- Filtro por familia olfativa (carrusel con flechas) -->
     {% if familias %}
     <div class="hidden md:block mb-8">
-        <p class="text-center text-[10px] tracking-[0.34em] uppercase text-gray-400 mb-4">Familia olfativa</p>
+        <p class="text-center text-[10px] tracking-[0.34em] uppercase text-gray-500 mb-4">Familia olfativa</p>
         <div class="relative flex items-center max-w-[1100px] mx-auto">
             <button type="button" id="fam-prev" aria-label="Anterior"
                     class="flex-shrink-0 w-9 h-9 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
@@ -199,28 +199,28 @@
             </summary>
             <div class="absolute left-1/2 -translate-x-1/2 top-full mt-3 z-40 w-[560px] max-w-[calc(100vw-80px)] bg-white border border-gray-200 shadow-xl p-7 flex flex-col gap-6">
                 {% if tamanos|length > 1 %}<div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Tamaño</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Tamaño</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url tamano=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not tamano_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
                         {% for ml in tamanos %}<a href="{% filtro_url tamano=ml %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if tamano_actual == ml %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ ml }} ml</a>{% endfor %}
                     </div>
                 </div>{% endif %}
                 <div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Precio</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Precio</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url precio=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not precio_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
                         {% for clave, etiqueta, minimo, maximo in precios %}<a href="{% filtro_url precio=clave %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if precio_actual == clave %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
                     </div>
                 </div>
                 <div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Disponibilidad</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Disponibilidad</p>
                     <div class="flex flex-wrap gap-2">
                         <a href="{% filtro_url stock=None %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if not solo_stock %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Todos</a>
                         <a href="{% filtro_url stock='1' %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if solo_stock %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">Solo disponibles</a>
                     </div>
                 </div>
                 <div class="flex flex-col gap-3">
-                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-400">Ordenar</p>
+                    <p class="text-[10px] tracking-[0.3em] uppercase text-gray-500">Ordenar</p>
                     <div class="flex flex-wrap gap-2">
                         {% for valor, etiqueta in ordenes %}<a href="{% filtro_url orden=valor alternar=False %}#productos" rel="nofollow" class="min-h-[44px] px-4 inline-flex items-center rounded-full border text-[11px] tracking-[0.14em] uppercase transition-colors {% if valor == orden_actual %}bg-gray-900 text-white border-gray-900{% else %}text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900{% endif %}">{{ etiqueta }}</a>{% endfor %}
                     </div>
@@ -247,7 +247,7 @@
     </div>
     {% endif %}
 
-    <p class="text-center text-[11px] tracking-[0.24em] uppercase text-gray-400 mb-10">{{ page_obj.paginator.count }} fragancia{{ page_obj.paginator.count|pluralize }}{% if page_obj.paginator.num_pages > 1 %} · página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}{% endif %}</p>
+    <p class="text-center text-[11px] tracking-[0.24em] uppercase text-gray-500 mb-10">{{ page_obj.paginator.count }} fragancia{{ page_obj.paginator.count|pluralize }}{% if page_obj.paginator.num_pages > 1 %} · página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}{% endif %}</p>
 
     <!-- Grilla -->
     <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 sm:gap-x-7 gap-y-10 sm:gap-y-14 pb-14">
@@ -255,7 +255,7 @@
             {% include "partials/tarjeta_perfume.html" with perfume=perfume indice=forloop.counter %}
         {% empty %}
         <div class="col-span-full py-20 text-center">
-            <p class="text-gray-400 font-serif text-xl italic mb-3">{% if buscar %}No encontramos fragancias para «{{ buscar }}».{% else %}No se encontraron fragancias con estos filtros.{% endif %}</p>
+            <p class="text-gray-500 font-serif text-xl italic mb-3">{% if buscar %}No encontramos fragancias para «{{ buscar }}».{% else %}No se encontraron fragancias con estos filtros.{% endif %}</p>
             <p class="text-sm font-light text-gray-500 mb-6">Prueba con el nombre del perfume original, una nota (vainilla, oud, lavanda) o quita algún filtro.</p>
             <a href="{% url 'catalogo' %}#productos" class="text-[11px] uppercase tracking-[0.2em] text-gray-900 border-b border-gray-900 pb-0.5 inline-block">Ver todo el catálogo</a>
         </div>
@@ -264,7 +264,7 @@
 
     {% if sugerencias %}
     <div class="pb-20">
-        <p class="text-center text-[11px] tracking-[0.3em] uppercase text-gray-400 mb-8">¿Quizás buscabas?</p>
+        <p class="text-center text-[11px] tracking-[0.3em] uppercase text-gray-500 mb-8">¿Quizás buscabas?</p>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-4 sm:gap-x-7 gap-y-10">
             {% for perfume in sugerencias %}
                 {% include "partials/tarjeta_perfume.html" with perfume=perfume %}
@@ -280,7 +280,7 @@
         {% endif %}
         {% for n in rango_paginas %}
             {% if n == page_obj.paginator.ELLIPSIS %}
-            <span class="h-11 w-8 flex items-center justify-center text-gray-400">…</span>
+            <span class="h-11 w-8 flex items-center justify-center text-gray-500">…</span>
             {% elif n == page_obj.number %}
             <span aria-current="page" class="h-11 min-w-[44px] px-3 flex items-center justify-center bg-gray-900 text-white text-sm">{{ n }}</span>
             {% else %}
