@@ -20,11 +20,13 @@
         {% endfor %}
     </div>
     {% else %}
-        {% with primera=ofertas.0|default:destacados.0 %}
-            {% if primera and primera.imagen %}
-            <div class="absolute inset-0 z-0 bg-cover bg-center opacity-100" style="background-image: url('{{ primera.imagen.url|cl:1600 }}');"></div>
-            {% endif %}
-        {% endwith %}
+        {# Sin portadas: usa la primera oferta o, si no hay, el primer destacado. #}
+        {# (No usar "ofertas.0|default:destacados.0": el argumento de un filtro no se silencia y da error 500 si no hay destacados.) #}
+        {% if ofertas %}{% with primera=ofertas.0 %}
+            {% if primera.imagen %}<div class="absolute inset-0 z-0 bg-cover bg-center opacity-100" style="background-image: url('{{ primera.imagen.url|cl:1600 }}');"></div>{% endif %}
+        {% endwith %}{% elif destacados %}{% with primera=destacados.0 %}
+            {% if primera.imagen %}<div class="absolute inset-0 z-0 bg-cover bg-center opacity-100" style="background-image: url('{{ primera.imagen.url|cl:1600 }}');"></div>{% endif %}
+        {% endwith %}{% endif %}
     {% endif %}
     <div class="absolute inset-0 z-[1]" style="background: linear-gradient(180deg, rgba(31,41,55,0.55), rgba(0,0,0,0.85));"></div>
 

@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  django:
+    name: Django (revisiones y pruebas)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: instinto
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_SETTINGS_MODULE: core.settings_ci
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/instinto
+      # Valores falsos: el CI no sube imágenes ni envía correos.
+      SECRET_KEY: ci-solo-para-pruebas-9f3b7c1e5a2d8f4b6c0e7a9d1f3b5c7e9a2d4f6b8
+      CLOUDINARY_CLOUD_NAME: ci
+      CLOUDINARY_API_KEY: "000000000000000"
+      CLOUDINARY_API_SECRET: ci
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Revisión general de Django
+        run: python manage.py check
+
+      - name: Revisión de configuración de producción
+        env:
+          VERCEL: "1"
+          DJANGO_SETTINGS_MODULE: core.settings
+        run: python manage.py check --deploy
+
+      - name: Migraciones al día con los modelos
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Migrar una base vacía
+        run: python manage.py migrate --noinput
+
+      - name: Pruebas
+        run: python manage.py test --noinput --verbosity 2
+
+  css:
+    name: Tailwind compilado
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descargar Tailwind (misma versión que compilar_css.sh)
+        run: |
+          VER=$(grep -oP 'VER="\K[^"]+' compilar_css.sh)
+          echo "Tailwind $VER"
+          curl -sSLo tailwindcss "https://github.com/tailwindlabs/tailwindcss/releases/download/$VER/tailwindcss-linux-x64"
+          chmod +x tailwindcss
+
+      - name: Compilar y comparar con static/css/app.css
+        run: |
+          ./tailwindcss -c tailwind.config.js -i static/css/input.css -o /tmp/app.css --minify
+          if ! cmp -s /tmp/app.css static/css/app.css; then
+            echo "::error file=static/css/app.css::app.css está desactualizado respecto de las plantillas. Ejecuta compilar_css (sh, ps1 o bat) y haz commit de static/css/app.css."
+            exit 1
+          fi
+          echo "app.css al día."
