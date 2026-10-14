@@ -469,7 +469,7 @@ def api_buscar(request):
         'resultados': resultados,
         'ver_todos': reverse('catalogo') + '?' + urlencode({'q': texto}),
     })
-    patch_cache_control(resp, public=True, max_age=60, s_maxage=300, stale_while_revalidate=3600)
+    patch_cache_control(resp, public=True, max_age=300, s_maxage=3600, stale_while_revalidate=86400)
     return resp
 
 

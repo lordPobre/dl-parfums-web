@@ -111,7 +111,7 @@ class PaginasPublicasTests(Base):
         self.assertContains(self.client.get("/robots.txt"), "Disallow: /api/")
 
     def test_cache_cdn(self):
-        self.assertIn("s-maxage=300", self.client.get(reverse("catalogo"))["Cache-Control"])
+        self.assertIn("s-maxage=3600", self.client.get(reverse("catalogo"))["Cache-Control"])
         self.assertIn("private", self.client.get(reverse("catalogo"), {"q": "dior"})["Cache-Control"])
 
 

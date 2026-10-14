@@ -1,3 +1,4 @@
+import os
 from functools import wraps
 
 from django.utils.cache import patch_cache_control
@@ -6,8 +7,13 @@ from django.utils.cache import patch_cache_control
 # Cualquier otro (?q=, ?resena=, ?familia_txt=...) se sirve siempre fresco desde Django.
 PARAMS_CACHEABLES = {"page", "genero", "marca", "familia", "nota", "precio", "tamano", "formato", "intensidad", "stock", "orden"}
 
+# Cuánto guarda el CDN de Vercel cada página antes de volver a pedirla a Django (y a la base).
+# Con 300 s, cada URL despertaba Neon cada 5 minutos y la base nunca llegaba a suspenderse.
+# Se puede cambiar sin tocar código con la variable CACHE_CDN_SEGUNDOS en Vercel.
+SEGUNDOS_POR_DEFECTO = int(os.environ.get("CACHE_CDN_SEGUNDOS", 3600))
 
-def cache_cdn(segundos=300):
+
+def cache_cdn(segundos=None):
     """Deja que el CDN de Vercel guarde la página `segundos` y la siga sirviendo
     (mientras la renueva en segundo plano) hasta 24 h si Django tarda o falla.
 
@@ -30,7 +36,8 @@ def cache_cdn(segundos=300):
             ):
                 patch_cache_control(
                     response, public=True, max_age=0,
-                    s_maxage=segundos, stale_while_revalidate=86400,
+                    s_maxage=max(segundos or 0, SEGUNDOS_POR_DEFECTO),
+                    stale_while_revalidate=86400,
                 )
             else:
                 patch_cache_control(response, private=True, no_cache=True)
