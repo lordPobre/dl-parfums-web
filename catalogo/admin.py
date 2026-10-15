@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin, TabularInline
 from django.db import transaction
 from django.db.models import F, Count, Q
 from django.urls import reverse, path
@@ -13,7 +14,7 @@ from .admin_ventas import registrar_panel_ventas
 
 
 @admin.register(ImagenPortada)
-class ImagenPortadaAdmin(admin.ModelAdmin):
+class ImagenPortadaAdmin(ModelAdmin):
     list_display = ('miniatura', 'titulo', 'orden', 'activo')
     list_display_links = ('miniatura', 'titulo')
     list_editable = ('orden', 'activo')
@@ -29,37 +30,39 @@ class ImagenPortadaAdmin(admin.ModelAdmin):
         return "—"
     miniatura.short_description = "Vista previa"
 
-class ImagenPerfumeInline(admin.TabularInline):
+class ImagenPerfumeInline(TabularInline):
     model = ImagenPerfume
+    tab = True
     extra = 3              
     fields = ('imagen', 'orden')
 
 
-class ResenaInline(admin.TabularInline):
+class ResenaInline(TabularInline):
     model = Resena
+    tab = True
     extra = 0
     fields = ('nombre', 'calificacion', 'comentario', 'aprobado', 'fecha')
     readonly_fields = ('fecha',)
 
 @admin.register(Resena)
-class ResenaAdmin(admin.ModelAdmin):
+class ResenaAdmin(ModelAdmin):
     list_display = ('nombre', 'perfume', 'calificacion', 'aprobado', 'fecha')
     list_editable = ('aprobado',)
     list_filter = ('aprobado', 'calificacion')
     search_fields = ('nombre', 'perfume__nombre', 'comentario')
 
 @admin.register(Marca)
-class MarcaAdmin(admin.ModelAdmin):
+class MarcaAdmin(ModelAdmin):
     list_display = ('nombre', 'slug')
     search_fields = ('nombre',)
     prepopulated_fields = {'slug': ('nombre',)}
 
 @admin.register(FamiliaOlfativa)
-class FamiliaAdmin(admin.ModelAdmin):
+class FamiliaAdmin(ModelAdmin):
     list_display = ('nombre', 'slug')
     prepopulated_fields = {'slug': ('nombre',)}
 
-class FamiliaOlfativaAdmin(admin.ModelAdmin):
+class FamiliaOlfativaAdmin(ModelAdmin):
     list_display = ('nombre', 'total_perfumes')
     search_fields = ('nombre',)
     ordering = ('nombre',)
@@ -68,8 +71,9 @@ class FamiliaOlfativaAdmin(admin.ModelAdmin):
         return obj.perfume_set.count()
     total_perfumes.short_description = "N.º de perfumes"
 
-class PresentacionInline(admin.TabularInline):
+class PresentacionInline(TabularInline):
     model = Presentacion
+    tab = True
     extra = 1
     fields = ('formato', 'ml', 'precio', 'precio_oferta', 'stock', 'activo', 'orden', 'sku')
     readonly_fields = ('sku',)
@@ -77,8 +81,9 @@ class PresentacionInline(admin.TabularInline):
     verbose_name_plural = "Presentaciones (tamaños, precios y stock)"
 
 
-class PerfumeNotaInline(admin.TabularInline):
+class PerfumeNotaInline(TabularInline):
     model = PerfumeNota
+    tab = True
     extra = 3
     fields = ('nivel', 'nota', 'orden')
     autocomplete_fields = ('nota',)
@@ -87,7 +92,7 @@ class PerfumeNotaInline(admin.TabularInline):
 
 
 @admin.register(Nota)
-class NotaAdmin(admin.ModelAdmin):
+class NotaAdmin(ModelAdmin):
     list_display = ('nombre', 'total_perfumes', 'con_texto', 'slug')
     search_fields = ('nombre',)
     prepopulated_fields = {'slug': ('nombre',)}
@@ -165,7 +170,9 @@ class PrevNextAdminMixin:
     
 
 @admin.register(Perfume)
-class PerfumeAdmin(PrevNextAdminMixin, admin.ModelAdmin):
+class PerfumeAdmin(PrevNextAdminMixin, ModelAdmin):
+    warn_unsaved_form = True     # avisa si sales con cambios sin guardar
+    list_filter_submit = True    # filtros con botón «Aplicar»
     list_display = ('nombre', 'inspirado_en', 'marca', 'precio', 'stock', 'n_presentaciones', 'genero', 'es_oferta', 'activo', 'destacado')
     list_filter = ('marca', 'familia', SinNotasFilter, 'concentracion', 'genero','es_oferta', 'activo', 'destacado')
     search_fields = ('nombre', 'marca__nombre', 'inspirado_en')
@@ -206,7 +213,7 @@ class PerfumeAdmin(PrevNextAdminMixin, admin.ModelAdmin):
     
     
 @admin.register(Promocion)
-class PromocionAdmin(admin.ModelAdmin):
+class PromocionAdmin(ModelAdmin):
     list_display = ('miniatura', 'titulo', 'muestra_tema', 'precio', 'vigencia', 'orden', 'activo')
     list_display_links = ('miniatura', 'titulo')
     list_editable = ('precio', 'orden', 'activo')
@@ -261,7 +268,7 @@ class PromocionAdmin(admin.ModelAdmin):
         return f"{fmt(obj.fecha_inicio)} → {fmt(obj.fecha_fin)}"
 
 @admin.register(PaginaNosotros)
-class PaginaNosotrosAdmin(admin.ModelAdmin):
+class PaginaNosotrosAdmin(ModelAdmin):
     list_display = ('__str__', 'titulo', 'actualizado')
 
     def has_add_permission(self, request):
@@ -271,7 +278,7 @@ class PaginaNosotrosAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False  # no permitir borrar el contenido
 
-class ItemPedidoInline(admin.TabularInline):
+class ItemPedidoInline(TabularInline):
     model = ItemPedido
     extra = 0
     fields = ('perfume', 'presentacion', 'nombre', 'precio', 'cantidad', 'subtotal')
@@ -367,7 +374,7 @@ def rechazar_pedidos(modeladmin, request, queryset):
 
 
 @admin.register(Pedido)
-class PedidoAdmin(admin.ModelAdmin):
+class PedidoAdmin(ModelAdmin):
     list_display = ('codigo', 'cliente', 'telefono', 'estado', 'total', 'stock_descontado', 'creado')
     list_filter = ('estado', 'creado')
     search_fields = ('id', 'cliente', 'telefono')
@@ -404,6 +411,28 @@ class PedidoAdmin(admin.ModelAdmin):
         elif nuevo == 'rechazado':
             devolver_stock(obj.pk)
             messages.success(request, f"{obj.codigo} rechazado.")
+
+
+
+# Usuarios y grupos con el estilo de Unfold (Django los registra con el admin clásico)
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin, UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import Group, User
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+
+admin.site.unregister(User)
+admin.site.unregister(Group)
+
+
+@admin.register(User)
+class UsuarioAdmin(BaseUserAdmin, ModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+
+
+@admin.register(Group)
+class GrupoAdmin(BaseGroupAdmin, ModelAdmin):
+    pass
 
 
 registrar_panel_ventas(admin.site)

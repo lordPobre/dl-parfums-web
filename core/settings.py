@@ -24,7 +24,9 @@ ALLOWED_HOSTS = ['instintoolfativo.cl', 'www.instintoolfativo.cl', '.vercel.app'
 SITE_URL = 'https://www.instintoolfativo.cl'
 
 INSTALLED_APPS = [
-    'jazzmin',
+    'unfold',  # antes de django.contrib.admin
+    'unfold.contrib.filters',
+    'unfold.contrib.forms',
     'cloudinary_storage', 
     'cloudinary',
     'django.contrib.admin',
@@ -70,54 +72,8 @@ AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
 AXES_IPWARE_PROXY_COUNT = 1 if EN_PRODUCCION else 0
 AXES_IPWARE_META_PRECEDENCE_ORDER = ["HTTP_X_FORWARDED_FOR", "REMOTE_ADDR"]
 
-JAZZMIN_SETTINGS = {
-    "site_title": "Instinto Olfativo Admin",
-    "site_header": "Instinto Olfativo",
-    "site_brand": "Instinto Olfativo",
-    "welcome_sign": "Gestión de Catálogo - Instinto Olfativo",
-    "copyright": "Instinto Olfativo",
-    
-    "search_model": ["catalogo.Perfume"],
-
-    "show_sidebar": True,
-    "navigation_expanded": True,
-    "hide_apps": [],
-    "hide_models": [],
-
-    "icons": {
-        "auth": "fas fa-users-cog",
-        "auth.user": "fas fa-user",
-        "auth.Group": "fas fa-users",
-        "catalogo.Marca": "fas fa-tag",
-        "catalogo.FamiliaOlfativa": "fas fa-leaf",
-        "catalogo.Perfume": "fas fa-spray-can",
-        "catalogo.ImagenPortada": "fas fa-images",
-        "catalogo.Promocion": "fas fa-percent",
-        "catalogo.PaginaNosotros": "fas fa-file-alt",
-        "catalogo.Resena": "fas fa-star",
-        "catalogo.Pedido": "fas fa-shopping-cart",
-    },
-    
-    "changeform_format": "horizontal_tabs",
-    "custom_links": {
-        "catalogo": [{
-            "name": "Panel de Ventas",
-            "url": "admin:panel_ventas",
-            "icon": "fas fa-chart-line",
-        }],
-    },
-
-}
-
-JAZZMIN_UI_TWEAKS = {
-    "theme": "pulse", 
-    "navbar": "navbar-white navbar-light",
-    "sidebar": "sidebar-dark-primary",
-    "sidebar_nav_child_indent": True,
-    "sidebar_nav_compact_style": False,
-    "sidebar_nav_legacy_style": False,
-    "sidebar_nav_flat_style": False,
-}
+# Admin: Unfold. Menú, colores e Inicio en core/admin_tema.py
+from .admin_tema import UNFOLD  # noqa: E402
 
 TEMPLATES = [
     {

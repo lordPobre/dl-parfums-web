@@ -12,7 +12,8 @@
         var row = document.querySelector(".submit-row") ||
                   document.querySelector("#jazzy-actions") ||
                   document.querySelector(".card-footer") ||
-                  document.querySelector("form .submit-row");
+                  document.querySelector("form .submit-row") ||
+                  (document.querySelector("form [name=_save]") || {}).parentElement;
         if (!row) return false;
         if (row.querySelector("[data-nav-perfume]")) return true; // evita duplicar
         var ref = row.querySelector("input[type=submit], button, a.button, .btn");

@@ -317,3 +317,23 @@ class PromocionesTests(Base):
         cuerpo = json.dumps({"items": [{"id": f"promo-{vencida.pk}"}], "cliente": "CI"})
         r = self.client.post(reverse("crear_pedido"), data=cuerpo, content_type="application/json")
         self.assertEqual(r.status_code, 400)
+
+
+class AdminUnfoldTests(TestCase):
+    """Las pantallas principales del admin cargan con Unfold."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.client.force_login(User.objects.create_superuser("admin-ci", "ci@example.com", "x"))
+
+    def test_pantallas_cargan(self):
+        for nombre in ("admin:index", "admin:panel_ventas", "admin:catalogo_perfume_changelist",
+                       "admin:catalogo_perfume_add", "admin:catalogo_promocion_add",
+                       "admin:catalogo_pedido_changelist", "admin:auth_user_changelist"):
+            with self.subTest(nombre):
+                self.assertEqual(self.client.get(reverse(nombre)).status_code, 200)
+
+    def test_inicio_muestra_resumen(self):
+        r = self.client.get(reverse("admin:index"))
+        self.assertContains(r, "Pedidos por confirmar")
+        self.assertContains(r, "Nueva promoción")

@@ -1,0 +1,98 @@
+{% extends "admin/base.html" %}
+{% comment %}Inicio del admin. Los datos vienen de catalogo/dashboard.py.{% endcomment %}
+{% block title %}Inicio | {{ site_title|default:"Instinto Olfativo" }}{% endblock %}
+{% block breadcrumbs %}{% endblock %}
+{% block content %}
+<style>
+  .io-dash{display:flex;flex-direction:column;gap:28px;max-width:1240px;color:#111827}
+  .io-dash h1{font-size:24px;font-weight:600;margin:0}
+  .io-sub{margin:6px 0 0;color:#6b7280;font-size:14px}
+  .io-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+  .io-card{border:1px solid #e5e7eb;border-radius:8px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  a.io-kpi{display:flex;flex-direction:column;gap:10px;padding:18px 20px;color:#111827;text-decoration:none;transition:border-color .2s}
+  a.io-kpi:hover{border-color:#9ca3af}
+  .io-kpi-top{display:flex;justify-content:space-between;align-items:center;color:#6b7280;font-size:13px}
+  .io-kpi-valor{font-size:28px;font-weight:600;letter-spacing:-.01em}
+  .io-kpi-nota{font-size:12px;color:#6b7280}
+  .io-kpi-nota.alerta{color:#b45309}
+  .io-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:20px;align-items:start}
+  @media (max-width:1000px){.io-grid{grid-template-columns:1fr}}
+  .io-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #e5e7eb;font-weight:600}
+  .io-head a{font-size:13px;font-weight:400;color:#4b5563}
+  .io-scroll{overflow-x:auto}
+  .io-fila{display:grid;grid-template-columns:90px minmax(180px,1.5fr) 110px 100px 110px;gap:12px;align-items:center;padding:12px 20px;border-bottom:1px solid #f3f4f6;font-size:13px;color:#111827;text-decoration:none;min-width:640px}
+  .io-fila:hover{background:#fafafa}
+  .io-fila:last-child{border-bottom:none}
+  .io-muted{color:#6b7280}
+  .io-items{color:#9ca3af;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .io-badge{display:inline-block;font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+  .io-pendiente{background:#fef3c7;color:#92400e}.io-aprobado{background:#dcfce7;color:#166534}.io-rechazado{background:#f3f4f6;color:#4b5563}
+  .io-lado{display:flex;flex-direction:column;gap:20px}
+  .io-bloque{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+  .io-bloque strong{font-weight:600;margin-bottom:4px}
+  a.io-atajo{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid #e5e7eb;border-radius:6px;color:#111827;text-decoration:none;font-size:13.5px}
+  a.io-atajo:hover{background:#f9fafb}
+  .io-atajo span:nth-child(2){flex:1}
+  .io-promo{display:flex;align-items:center;gap:12px;color:#111827;text-decoration:none}
+  .io-sw{width:28px;height:28px;border-radius:6px;flex-shrink:0;box-sizing:border-box}
+  .io-vacio{padding:28px 20px;color:#9ca3af;font-size:13px;text-align:center}
+</style>
+<div class="io-dash">
+  <div>
+    <h1>Hola{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}</h1>
+    <p class="io-sub">{{ saludo_fecha }} · esto es lo que necesita tu atención hoy.</p>
+  </div>
+
+  <div class="io-kpis">
+    {% for k in kpis %}
+    <a class="io-card io-kpi" href="{% url k.url %}{{ k.query|default:'' }}">
+      <span class="io-kpi-top">{{ k.titulo }}<span class="material-symbols-outlined" style="font-size:20px;color:#9ca3af;">{{ k.icono }}</span></span>
+      <span class="io-kpi-valor">{{ k.valor }}</span>
+      <span class="io-kpi-nota{% if k.alerta %} alerta{% endif %}">{{ k.nota }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="io-grid">
+    <div class="io-card" style="overflow:hidden;">
+      <div class="io-head">Pedidos recientes <a href="{% url 'admin:catalogo_pedido_changelist' %}">Ver todos</a></div>
+      <div class="io-scroll">
+        {% for r in recientes %}
+        <a class="io-fila" href="{% url 'admin:catalogo_pedido_change' r.pedido.pk %}">
+          <span class="io-muted">{{ r.pedido.codigo }}</span>
+          <span style="display:flex;flex-direction:column;gap:2px;min-width:0;"><span style="font-weight:500;">{{ r.pedido.cliente|default:"Sin nombre" }}</span><span class="io-items">{{ r.items }}</span></span>
+          <span class="io-muted">{% if r.fecha.date == hoy %}Hoy, {{ r.fecha|time:"H:i" }}{% else %}{{ r.fecha|date:"j M" }}{% endif %}</span>
+          <span style="font-weight:500;">{{ r.total }}</span>
+          <span><span class="io-badge io-{{ r.pedido.estado }}">{{ r.pedido.get_estado_display }}</span></span>
+        </a>
+        {% empty %}
+        <div class="io-vacio">Todavía no hay pedidos.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="io-lado">
+      <div class="io-card io-bloque">
+        <strong>Atajos</strong>
+        <a class="io-atajo" href="{% url 'admin:catalogo_perfume_add' %}"><span class="material-symbols-outlined" style="font-size:20px;">add_circle</span><span>Agregar perfume</span><span class="material-symbols-outlined" style="font-size:18px;color:#9ca3af;">arrow_forward</span></a>
+        <a class="io-atajo" href="{% url 'admin:catalogo_promocion_add' %}"><span class="material-symbols-outlined" style="font-size:20px;">percent</span><span>Nueva promoción</span><span class="material-symbols-outlined" style="font-size:18px;color:#9ca3af;">arrow_forward</span></a>
+        <a class="io-atajo" href="{% url 'admin:catalogo_imagenportada_changelist' %}"><span class="material-symbols-outlined" style="font-size:20px;">photo_library</span><span>Cambiar portada del home</span><span class="material-symbols-outlined" style="font-size:18px;color:#9ca3af;">arrow_forward</span></a>
+      </div>
+      <div class="io-card io-bloque">
+        <strong>Promociones en el home</strong>
+        {% for p in promos_vigentes %}
+        <a class="io-promo" href="{% url 'admin:catalogo_promocion_change' p.pk %}">
+          <span class="io-sw" style="background:{% if p.tema == 'navidad' %}#173a2c;border-top:4px solid #d4b062{% elif p.tema == 'valentin' %}#4a1424;border-top:4px solid #f2b8c0{% elif p.tema == 'madre' %}#f3e9df;border-top:4px solid #9a5743{% elif p.tema == 'padre' %}#2b2420;border-top:4px solid #c89b6d{% elif p.tema == 'patrias' %}#0f2550;border-top:4px solid #d52b1e{% elif p.tema == 'black' %}#000;border-top:4px solid #dc2626{% else %}#111827;border-top:4px solid #e5e7eb{% endif %};"></span>
+          <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+            <span style="font-size:13.5px;font-weight:500;">{{ p.titulo }}</span>
+            <span style="font-size:12px;color:#6b7280;">{{ p.get_tema_display }} · {% if p.fecha_fin %}vence el {{ p.fecha_fin|date:"j \d\e F" }}{% else %}sin fecha de término{% endif %}</span>
+          </span>
+        </a>
+        {% empty %}
+        <span style="font-size:13px;color:#9ca3af;">No hay promociones visibles en el home.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
