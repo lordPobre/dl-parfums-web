@@ -336,7 +336,7 @@
     {% endif %}
 </section>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
     document.addEventListener("DOMContentLoaded", function () {
         // Carruseles de casas y familias
         [["marcas-track", "marcas-prev", "marcas-next", 420], ["fam-track", "fam-prev", "fam-next", 360]].forEach(function (c) {

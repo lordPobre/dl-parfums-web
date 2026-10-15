@@ -12,7 +12,7 @@ La decisión se guarda en localStorage["io_consent"] = {"publicidad": true|false
         <button type="button" data-consent="si" style="flex:1;min-width:120px;padding:11px 14px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;background:transparent;color:#fff;border:1px solid #fff;cursor:pointer;">Aceptar</button>
     </div>
 </div>
-<script>
+<script nonce="{{ request.csp_nonce }}">
 (function () {
     var META = "{{ META_PIXEL_ID|escapejs }}", TIKTOK = "{{ TIKTOK_PIXEL_ID|escapejs }}", KEY = "io_consent";
     var caja = document.getElementById("io-cookies");

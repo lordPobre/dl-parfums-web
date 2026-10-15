@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 {% load static css_inline %}
 <html lang="es">
@@ -15,7 +16,7 @@
     <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
     <link rel="preload" as="image" href="{% static 'img/logo-instinto-oscuro.png' %}">
 
-    <script type="application/ld+json">
+    <script nonce="{{ request.csp_nonce }}" type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "OnlineStore",
@@ -49,12 +50,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://res.cloudinary.com">
     <!-- Fuentes sin bloquear el primer pintado -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@300;400;500&display=swap"></noscript>
 
     {% css_inline 'css/app.css' %}
 
-    <style>
+    <style nonce="{{ request.csp_nonce }}">
         .font-serif { font-family: 'Playfair Display', serif; }
         .font-sans { font-family: 'Montserrat', sans-serif; }
         html { scroll-behavior: smooth; }
@@ -245,7 +246,7 @@
                         <li><a href="{% url 'politicas' %}" class="hover:text-white transition-colors">Políticas de Envío</a></li>
                         <li><a href="{% url 'terminos' %}" class="hover:text-white transition-colors">Términos y Condiciones</a></li>
                         <li><a href="{% url 'privacidad' %}" class="hover:text-white transition-colors">Política de Privacidad</a></li>
-                        {% if META_PIXEL_ID or TIKTOK_PIXEL_ID %}<li><button type="button" onclick="abrirPreferenciasCookies()" class="hover:text-white transition-colors">Preferencias de cookies</button></li>{% endif %}
+                        {% if META_PIXEL_ID or TIKTOK_PIXEL_ID %}<li><button type="button" data-accion="preferencias-cookies" class="hover:text-white transition-colors">Preferencias de cookies</button></li>{% endif %}
                         <li><span class="text-gray-400">Autenticidad garantizada</span></li>
                     </ul>
                     <div class="flex items-center gap-3 mt-6">
@@ -274,7 +275,7 @@
 
     {% include "partials/consentimiento.html" %}
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", () => {
             const btnMenu = document.getElementById('mobile-menu-button');
             const menuMovil = document.getElementById('mobile-menu');
@@ -528,5 +529,6 @@
             render();
         })();
     </script>
+    <script nonce="{{ request.csp_nonce }}" src="{% static 'js/sitio.js' %}" defer></script>
 </body>
 </html>

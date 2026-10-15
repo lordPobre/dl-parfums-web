@@ -450,3 +450,42 @@ class ConsentimientoYPromocionesTests(TestCase):
 
     def test_mapa_carga_al_clic(self):
         self.assertNotContains(self.client.get(reverse("contacto")), '<iframe')
+
+
+class CSPEstrictaTests(TestCase):
+    def directiva(self, csp, nombre):
+        for d in csp.split(";"):
+            partes = d.split()
+            if partes and partes[0] == nombre:
+                return d
+        return ""
+
+    def test_csp_del_sitio_sin_unsafe_inline(self):
+        csp = self.client.get(reverse("home"))["Content-Security-Policy"]
+        self.assertIn("default-src 'none'", csp)
+        self.assertNotIn("'unsafe-inline'", self.directiva(csp, "script-src"))
+        self.assertNotIn("'unsafe-inline'", self.directiva(csp, "style-src"))
+        self.assertNotIn("'unsafe-eval'", csp)
+        self.assertIn("object-src 'none'", csp)
+
+    def test_nonce_de_la_cabecera_coincide_con_el_html(self):
+        import re
+        r = self.client.get(reverse("home"))
+        nonce = re.search(r"'nonce-([^']+)'", r["Content-Security-Policy"]).group(1)
+        self.assertIn(f'nonce="{nonce}"', r.content.decode())
+
+    def test_nonce_cambia_en_cada_respuesta(self):
+        a = self.client.get(reverse("home"))["Content-Security-Policy"]
+        b = self.client.get(reverse("home"))["Content-Security-Policy"]
+        self.assertNotEqual(a, b)
+
+    def test_sin_handlers_inline(self):
+        import re
+        for nombre in ("home", "contacto"):
+            html = self.client.get(reverse(nombre)).content.decode()
+            self.assertIsNone(re.search(r"\son[a-z]+\s*=\s*[\"']", html), nombre)
+
+    def test_cabeceras_cross_origin(self):
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r["Cross-Origin-Resource-Policy"], "same-site")
+        self.assertEqual(r["Cross-Origin-Opener-Policy"], "same-origin")

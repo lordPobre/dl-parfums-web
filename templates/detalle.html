@@ -6,7 +6,7 @@
 {% block og_title %}{% if perfume.meta_titulo %}{{ perfume.meta_titulo }}{% else %}{{ perfume.nombre }} | Instinto Olfativo{% endif %}{% endblock %}
 
 {% block extra_head %}
-<script type="application/ld+json">
+<script nonce="{{ request.csp_nonce }}" type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Product",
@@ -51,7 +51,7 @@
   "aggregateRating": { "@type": "AggregateRating", "ratingValue": "{{ promedio|floatformat:1 }}", "reviewCount": "{{ total_resenas }}" }{% endif %}
 }
 </script>
-<script type="application/ld+json">
+<script nonce="{{ request.csp_nonce }}" type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
@@ -360,7 +360,7 @@
 </section>
 {% endif %}
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
     // Visor de galería: al hacer clic en una miniatura, cambia la imagen principal
     document.addEventListener("DOMContentLoaded", function () {
         const principal = document.getElementById('imagen-principal');
@@ -381,7 +381,7 @@
     });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
     // Reseñas: obtiene el token CSRF justo antes de enviar
     document.addEventListener("DOMContentLoaded", function () {
         var form = document.getElementById("form-resena");
@@ -403,7 +403,7 @@
     });
 </script>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
     // Selector de tamaño: actualiza precio, botón "Agregar" y mensaje de WhatsApp
     document.addEventListener("DOMContentLoaded", function () {
         var radios = Array.prototype.slice.call(document.querySelectorAll('input[name="presentacion"]'));

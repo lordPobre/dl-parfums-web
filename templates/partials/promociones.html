@@ -4,7 +4,7 @@ Promociones del home. Cada tarjeta usa el tema elegido en el admin (clase pt-<te
 Los colores viven aquí como variables CSS: no dependen de recompilar Tailwind.
 {% endcomment %}
 {% if promociones %}
-<style>
+<style nonce="{{ request.csp_nonce }}">
   .pt-especial{--pt-bg:#111827;--pt-ink:#fff;--pt-muted:#9ca3af;--pt-accent:#e5e7eb;--pt-line:#1f2937;--pt-img:#f3f4f6;--pt-pattern:none;--pt-size:auto;--pt-label-bg:#fff;--pt-label-ink:#111827;--pt-btn-bg:#fff;--pt-btn-ink:#111827;--pt-band:#111827;--pt-frame:none;--pt-orn:#111827}
   .pt-navidad{--pt-bg:#173a2c;--pt-ink:#f7f3e8;--pt-muted:#b5c4b9;--pt-accent:#d4b062;--pt-line:#2a5141;--pt-img:#eef2ec;--pt-pattern:radial-gradient(rgba(23,58,44,.14) 1.2px,transparent 1.6px);--pt-size:14px 14px;--pt-label-bg:#d4b062;--pt-label-ink:#173a2c;--pt-btn-bg:#d4b062;--pt-btn-ink:#173a2c;--pt-band:#d4b062;--pt-frame:1px solid rgba(212,176,98,.45);--pt-orn:#173a2c}
   .pt-valentin{--pt-bg:#4a1424;--pt-ink:#fdf2f3;--pt-muted:#d9aab3;--pt-accent:#f2b8c0;--pt-line:#64253a;--pt-img:#f9eef0;--pt-pattern:radial-gradient(rgba(74,20,36,.12) 1.2px,transparent 1.6px);--pt-size:14px 14px;--pt-label-bg:#f2b8c0;--pt-label-ink:#4a1424;--pt-btn-bg:#f2b8c0;--pt-btn-ink:#4a1424;--pt-band:#f2b8c0;--pt-frame:none;--pt-orn:#4a1424}

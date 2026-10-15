@@ -120,7 +120,7 @@
         <div class="w-12 h-[1px] bg-gray-900 mx-auto mt-6"></div>
     </div>
     <div class="relative flex items-center">
-        <button type="button" onclick="var t=document.getElementById('dest-track'); t.scrollLeft-=290;" aria-label="Anterior"
+        <button type="button" data-carrusel="dest-track" data-paso="-290" aria-label="Anterior"
                 class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
         </button>
@@ -131,7 +131,7 @@
             </div>
             {% endfor %}
         </div>
-        <button type="button" onclick="var t=document.getElementById('dest-track'); t.scrollLeft+=290;" aria-label="Siguiente"
+        <button type="button" data-carrusel="dest-track" data-paso="+290" aria-label="Siguiente"
                 class="flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-200 text-gray-600 hover:border-gray-900 hover:text-gray-900 transition-colors z-10 bg-white">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
         </button>
@@ -187,7 +187,7 @@
     </div>
 </section>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.addEventListener("DOMContentLoaded", function () {
     var t = document.getElementById('famhome-track');
     if (!t) return;
@@ -228,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
 </div>
 
 {{ familias_data|json_script:"familias-data" }}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 document.addEventListener("DOMContentLoaded", function () {
     var CATALOGO = "{% url 'catalogo' %}";
 
@@ -427,7 +427,7 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 </section>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
     // Carrusel de fondo del hero (autoplay + puntos)
     document.addEventListener("DOMContentLoaded", function () {
         const slides = Array.from(document.querySelectorAll('#hero-carousel .hero-slide'));
