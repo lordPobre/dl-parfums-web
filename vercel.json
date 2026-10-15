@@ -3,6 +3,11 @@
   "regions": [
     "gru1"
   ],
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  },
   "builds": [
     {
       "src": "core/wsgi.py",

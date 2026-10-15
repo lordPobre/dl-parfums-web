@@ -27,3 +27,5 @@ promos-tematicas/
 staticfiles/
 admin-unfold/
 semana1-seguridad/
+.vercel
+.env*
