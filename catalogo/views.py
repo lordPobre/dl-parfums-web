@@ -11,7 +11,8 @@ from django.middleware.csrf import get_token
 from django.views.decorators.cache import never_cache
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
-from django.core.mail import send_mail
+from django.conf import settings
+from django.core.mail import EmailMessage
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg, Case, When, IntegerField, Count
@@ -19,25 +20,15 @@ from django.db import transaction
 from django.core.cache import cache
 from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido, Presentacion, SlugAntiguo, Nota, PerfumeNota
 from .cache_cdn import cache_cdn
+from .forms import ContactoForm
 from .models import ENCABEZADO_TEMA
 from .busqueda import buscar_perfumes, sugerir
 from .filtros import url_filtros
 from .templatetags.cloudinary_wm import cl, clp
 
 
-def _ip(request):
-    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
-    return (xff.split(",")[0].strip() if xff else request.META.get("REMOTE_ADDR", "")) or "anon"
-
-
-def _excede_limite(request, accion, maximo, segundos):
-    """Límite simple por IP usando la caché de Django (Redis si está configurado)."""
-    clave = f"lim:{accion}:{_ip(request)}"
-    n = cache.get(clave, 0)
-    if n >= maximo:
-        return True
-    cache.set(clave, n + 1, segundos)
-    return False
+# Límite por IP compartido entre instancias de Vercel (catalogo/limites.py)
+from .limites import excede_limite as _excede_limite, ip_cliente as _ip  # noqa: E402
 
 
 @cache_cdn()
@@ -55,10 +46,7 @@ def home(request):
     temas = {p.tema for p in promociones}
     tema_promos = temas.pop() if len(temas) == 1 else 'especial'
     # Familias en JSON para el test olfativo (id + nombre) — cubre todas las del admin
-    familias_data = json.dumps(
-        [{'id': f.id, 'nombre': f.nombre} for f in familias],
-        ensure_ascii=False,
-    )
+    familias_data = [{'id': f.id, 'nombre': f.nombre} for f in familias]  # la plantilla lo escapa con json_script
 
     context = {
         'ofertas': ofertas,
@@ -417,23 +405,34 @@ def perfume_detalle(request, slug):
 
 
 def contacto(request):
+    form = ContactoForm(request.POST or None)
     if request.method == 'POST':
-        nombre = request.POST.get('nombre')
-        email_cliente = request.POST.get('email')
-        mensaje = request.POST.get('mensaje')
-
-        asunto = f'Nuevo mensaje de contacto en Instinto Olfativo de: {nombre}'
-        cuerpo = f'Nombre: {nombre}\nCorreo de contacto: {email_cliente}\n\nMensaje:\n{mensaje}'
-        mi_correo = os.environ.get('EMAIL_HOST_USER')
-
-        try:
-            send_mail(asunto, cuerpo, mi_correo, [mi_correo], fail_silently=False)
+        if request.POST.get('sitio_web'):          # campo trampa: se finge éxito y no se envía nada
             messages.success(request, 'Tu mensaje ha sido enviado. Te contactaremos pronto.')
             return redirect('contacto')
-        except Exception:
-            messages.error(request, 'Hubo un problema al enviar el mensaje. Intenta nuevamente.')
+        if _excede_limite(request, 'contacto', 3, 600):
+            messages.error(request, 'Recibimos varios mensajes seguidos desde tu conexión. '
+                                    'Intenta en unos minutos o escríbenos por WhatsApp.')
+        elif form.is_valid():
+            datos = form.cleaned_data
+            buzon = os.environ.get('EMAIL_HOST_USER') or settings.DEFAULT_FROM_EMAIL
+            correo = EmailMessage(
+                subject=f"Nuevo mensaje de contacto en Instinto Olfativo de: {datos['nombre']}",
+                body=f"Nombre: {datos['nombre']}\nCorreo de contacto: {datos['email']}\n\nMensaje:\n{datos['mensaje']}",
+                from_email=buzon,
+                to=[buzon],
+                reply_to=[datos['email']],   # «Responder» en Gmail le contesta al cliente
+            )
+            try:
+                correo.send(fail_silently=False)
+                messages.success(request, 'Tu mensaje ha sido enviado. Te contactaremos pronto.')
+                return redirect('contacto')
+            except Exception:
+                messages.error(request, 'Hubo un problema al enviar el mensaje. Intenta nuevamente.')
+        else:
+            messages.error(request, 'Revisa los campos marcados.')
 
-    return render(request, 'contacto.html')
+    return render(request, 'contacto.html', {'form': form})
 
 
 @cache_cdn(3600)

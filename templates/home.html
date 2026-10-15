@@ -227,7 +227,7 @@ document.addEventListener("DOMContentLoaded", function () {
     </div>
 </div>
 
-<script id="familias-data" type="application/json">{{ familias_data|safe }}</script>
+{{ familias_data|json_script:"familias-data" }}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     var CATALOGO = "{% url 'catalogo' %}";

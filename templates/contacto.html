@@ -67,19 +67,28 @@
 
         <div class="bg-gray-50 p-8 md:p-12">
             <h3 class="text-xs uppercase tracking-[0.2em] text-gray-500 mb-8">Envíanos un mensaje</h3>
-            <form action="#" method="POST" class="space-y-6">
+            <form method="POST" class="space-y-6" novalidate>
                 {% csrf_token %}
-                <div>
-                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Nombre Completo</label>
-                    <input type="text" name="nombre" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light">
+                {% for m in messages %}
+                <p role="status" style="margin:0;padding:12px 14px;font-size:13px;line-height:1.5;{% if m.tags == 'error' %}background:#fef2f2;color:#991b1b;border:1px solid #fecaca;{% else %}background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;{% endif %}">{{ m }}</p>
+                {% endfor %}
+                <div style="position:absolute;left:-9999px;" aria-hidden="true">
+                    <label>No llenar <input type="text" name="sitio_web" tabindex="-1" autocomplete="off"></label>
                 </div>
                 <div>
-                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Correo Electrónico</label>
-                    <input type="email" name="email" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light">
+                    <label for="c-nombre" class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Nombre Completo</label>
+                    <input id="c-nombre" type="text" name="nombre" required maxlength="80" autocomplete="name" value="{{ form.nombre.value|default:'' }}" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light">
+                    {% if form.nombre.errors %}<p style="margin:6px 0 0;font-size:12px;color:#b91c1c;">{{ form.nombre.errors.0 }}</p>{% endif %}
                 </div>
                 <div>
-                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Mensaje</label>
-                    <textarea name="mensaje" rows="4" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light resize-none"></textarea>
+                    <label for="c-email" class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Correo Electrónico</label>
+                    <input id="c-email" type="email" name="email" required maxlength="120" autocomplete="email" value="{{ form.email.value|default:'' }}" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light">
+                    {% if form.email.errors %}<p style="margin:6px 0 0;font-size:12px;color:#b91c1c;">{{ form.email.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                    <label for="c-mensaje" class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Mensaje</label>
+                    <textarea id="c-mensaje" name="mensaje" rows="4" required maxlength="3000" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light resize-none">{{ form.mensaje.value|default:'' }}</textarea>
+                    {% if form.mensaje.errors %}<p style="margin:6px 0 0;font-size:12px;color:#b91c1c;">{{ form.mensaje.errors.0 }}</p>{% endif %}
                 </div>
                 <button type="submit" class="w-full bg-gray-900 text-white uppercase tracking-widest text-xs py-5 hover:bg-black transition-colors">
                     Enviar Consulta

@@ -554,3 +554,15 @@ class ItemPedido(models.Model):
     @property
     def subtotal(self):
         return self.precio * self.cantidad
+
+
+class LimiteSolicitud(models.Model):
+    """Conteo anónimo de envíos por IP (hash, no la IP) para frenar abusos. Se borra a las 24 h.
+    Lo usa catalogo/limites.py; no aparece en el admin."""
+    clave = models.CharField(max_length=40)
+    creado = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = "límite de solicitudes"
+        verbose_name_plural = "límites de solicitudes"
+        indexes = [models.Index(fields=["clave", "creado"], name="limite_clave_creado_idx")]

@@ -1,6 +1,5 @@
 from django.contrib import admin, messages
 from unfold.admin import ModelAdmin, TabularInline
-from unfold.admin import ModelAdmin, TabularInline
 from django.db import transaction
 from django.db.models import F, Count, Q
 from django.urls import reverse, path

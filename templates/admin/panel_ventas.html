@@ -38,13 +38,20 @@
   <p style="margin-top:14px; font-size:12px; color:#6b7280;">Solo se consideran pedidos en estado <strong>Aprobado</strong>.</p>
 </div>
 
+{{ labels_dia|json_script:"labels_dia" }}
+{{ valores_dia|json_script:"valores_dia" }}
+{{ labels_mes|json_script:"labels_mes" }}
+{{ valores_mes|json_script:"valores_mes" }}
+{{ labels_anio|json_script:"labels_anio" }}
+{{ valores_anio|json_script:"valores_anio" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 (function () {
+  function _d(id) { return JSON.parse(document.getElementById(id).textContent); }
   var SERIES = {
-    dia:  { labels: {{ labels_dia|safe }},  valores: {{ valores_dia|safe }},  titulo: 'Ventas de los últimos 30 días' },
-    mes:  { labels: {{ labels_mes|safe }},  valores: {{ valores_mes|safe }},  titulo: 'Ventas de los últimos 12 meses' },
-    anio: { labels: {{ labels_anio|safe }}, valores: {{ valores_anio|safe }}, titulo: 'Ventas de los últimos 5 años' }
+    dia:  { labels: _d('labels_dia'),  valores: _d('valores_dia'),  titulo: 'Ventas de los últimos 30 días' },
+    mes:  { labels: _d('labels_mes'),  valores: _d('valores_mes'),  titulo: 'Ventas de los últimos 12 meses' },
+    anio: { labels: _d('labels_anio'), valores: _d('valores_anio'), titulo: 'Ventas de los últimos 5 años' }
   };
   var ctx = document.getElementById('graficoVentas').getContext('2d');
   var chart = new Chart(ctx, {

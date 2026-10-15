@@ -337,3 +337,61 @@ class AdminUnfoldTests(TestCase):
         r = self.client.get(reverse("admin:index"))
         self.assertContains(r, "Pedidos por confirmar")
         self.assertContains(r, "Nueva promoción")
+
+
+class SeguridadSemana1Tests(TestCase):
+    """Límites compartidos por IP, formulario de contacto protegido y JSON escapado."""
+
+    def setUp(self):
+        from django.core import mail
+        mail.outbox = []
+
+    def _contacto(self, **extra):
+        datos = {"nombre": "Ana Pérez", "email": "ana@example.com", "mensaje": "Hola, ¿tienen Eclaire?"}
+        datos.update(extra)
+        return self.client.post(reverse("contacto"), datos, REMOTE_ADDR="203.0.113.7")
+
+    def test_limite_se_guarda_sin_la_ip(self):
+        from django.test import RequestFactory
+        from .limites import excede_limite
+        from .models import LimiteSolicitud
+        req = RequestFactory().post("/", REMOTE_ADDR="198.51.100.4")
+        self.assertEqual([excede_limite(req, "prueba", 2, 600) for _ in range(3)], [False, False, True])
+        self.assertFalse(LimiteSolicitud.objects.filter(clave__contains="198.51.100.4").exists())
+
+    def test_contacto_envia_con_responder_al_cliente(self):
+        from django.core import mail
+        r = self._contacto()
+        self.assertRedirects(r, reverse("contacto"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].reply_to, ["ana@example.com"])
+
+    def test_contacto_campo_trampa_no_envia(self):
+        from django.core import mail
+        self._contacto(sitio_web="http://spam.example")
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_contacto_email_invalido_no_envia(self):
+        from django.core import mail
+        r = self._contacto(email="no-es-un-correo")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_contacto_limite_por_ip(self):
+        from django.core import mail
+        for _ in range(5):
+            self._contacto()
+        self.assertEqual(len(mail.outbox), 3)
+
+    def test_contacto_nombre_sin_saltos_de_linea(self):
+        from django.core import mail
+        self._contacto(nombre="Ana\nBcc: otro@example.com")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertNotIn("\n", mail.outbox[0].subject)
+
+    def test_home_usa_json_script(self):
+        # El bloque del test olfativo solo se dibuja si hay familias con perfumes activos;
+        # basta con comprobar que la vista entrega datos (no texto JSON) para json_script.
+        r = self.client.get(reverse("home"))
+        self.assertIsInstance(r.context["familias_data"], list)
+        self.assertNotIn("familias_data|safe", Path(settings.BASE_DIR, "templates", "home.html").read_text(encoding="utf-8"))
