@@ -11,10 +11,6 @@
     {
       "src": "static/**",
       "use": "@vercel/static"
-    },
-    {
-      "src": "staticfiles/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -30,8 +26,8 @@
     },
     {
       "src": "/static/(.*)",
-      "dest": "/staticfiles/$1",
-      "headers": { "Cache-Control": "public, max-age=86400" }
+      "dest": "core/wsgi.py",
+      "headers": { "Cache-Control": "public, max-age=86400, s-maxage=86400" }
     },
     {
       "src": "/(.*)",
