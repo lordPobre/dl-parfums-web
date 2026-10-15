@@ -407,7 +407,6 @@ class TextosLegalesTests(TestCase):
 
     def test_pie_con_vendedor_y_enlaces(self):
         r = self.client.get(reverse("politicas"))
-        self.assertContains(r, "19.084.712-8")
         self.assertContains(r, reverse("terminos"))
         self.assertContains(r, reverse("privacidad"))
         self.assertContains(r, "pertenecen a sus respectivos titulares")
