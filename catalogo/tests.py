@@ -419,3 +419,35 @@ class TextosLegalesTests(TestCase):
         r = self.client.get("/sitemap.xml")
         self.assertContains(r, "/terminos/")
         self.assertContains(r, "/privacidad/")
+
+
+class ConsentimientoYPromocionesTests(TestCase):
+    def test_sin_ids_no_hay_aviso_ni_pixeles(self):
+        r = self.client.get(reverse("politicas"))
+        self.assertNotContains(r, 'id="io-cookies"')
+        self.assertNotContains(r, "fbevents.js")
+
+    def test_con_id_el_pixel_espera_consentimiento(self):
+        from django.test import override_settings
+        with override_settings(META_PIXEL_ID="123456789"):
+            r = self.client.get(reverse("politicas"))
+        self.assertContains(r, 'id="io-cookies"')
+        self.assertContains(r, "Rechazar")
+        self.assertNotContains(r, "<script async src=\"https://connect.facebook.net")
+
+    def test_promocion_exige_fecha_o_unidades(self):
+        from datetime import date
+        from django.core.exceptions import ValidationError
+        from .models import Promocion
+        with self.assertRaises(ValidationError):
+            Promocion(titulo="x", precio=5000).full_clean()
+        Promocion(titulo="x", precio=5000, unidades=20).full_clean()
+        Promocion(titulo="x", precio=5000, fecha_fin=date(2026, 12, 24)).full_clean()
+
+    def test_tarjeta_muestra_unidades(self):
+        from .models import Promocion
+        Promocion.objects.create(titulo="Dúo", precio=5000, unidades=20)
+        self.assertContains(self.client.get(reverse("home")), "Hasta agotar 20 unidades")
+
+    def test_mapa_carga_al_clic(self):
+        self.assertNotContains(self.client.get(reverse("contacto")), '<iframe')

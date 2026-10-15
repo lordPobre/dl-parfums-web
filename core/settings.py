@@ -159,6 +159,10 @@ STORAGES = {
 # ajuste, que Django eliminó en 5.1. Django 6 lo ignora (manda STORAGES); solo evita el error.
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
+# Píxeles de publicidad: solo se cargan si el visitante acepta (partials/consentimiento.html)
+META_PIXEL_ID = os.environ.get('META_PIXEL_ID', '')
+TIKTOK_PIXEL_ID = os.environ.get('TIKTOK_PIXEL_ID', '')
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 

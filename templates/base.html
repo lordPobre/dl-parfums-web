@@ -245,6 +245,7 @@
                         <li><a href="{% url 'politicas' %}" class="hover:text-white transition-colors">Políticas de Envío</a></li>
                         <li><a href="{% url 'terminos' %}" class="hover:text-white transition-colors">Términos y Condiciones</a></li>
                         <li><a href="{% url 'privacidad' %}" class="hover:text-white transition-colors">Política de Privacidad</a></li>
+                        {% if META_PIXEL_ID or TIKTOK_PIXEL_ID %}<li><button type="button" onclick="abrirPreferenciasCookies()" class="hover:text-white transition-colors">Preferencias de cookies</button></li>{% endif %}
                         <li><span class="text-gray-400">Autenticidad garantizada</span></li>
                     </ul>
                     <div class="flex items-center gap-3 mt-6">
@@ -270,6 +271,8 @@
             </div>
         </div>
     </footer>
+
+    {% include "partials/consentimiento.html" %}
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {

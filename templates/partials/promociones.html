@@ -75,7 +75,7 @@ Los colores viven aquí como variables CSS: no dependen de recompilar Tailwind.
                     {% endif %}
                 </div>
                 <div class="pt-body flex flex-col flex-grow p-8">
-                    <span class="pt-vigencia">{% if promo.fecha_fin %}Hasta el {{ promo.fecha_fin|date:"j \d\e F" }}{% else %}Por tiempo limitado{% endif %}</span>
+                    <span class="pt-vigencia">{% if promo.fecha_fin %}Hasta el {{ promo.fecha_fin|date:"j \d\e F" }}{% elif promo.unidades %}Hasta agotar {{ promo.unidades }} unidades{% else %}Hasta agotar stock{% endif %}</span>
                     <h3 class="font-serif text-2xl md:text-3xl leading-tight mb-3">{{ promo.titulo }}</h3>
                     {% if promo.descripcion %}
                     <p class="pt-muted font-light text-sm leading-relaxed mb-5">{{ promo.descripcion }}</p>

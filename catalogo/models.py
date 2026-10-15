@@ -352,6 +352,10 @@ class Promocion(models.Model):
     )
     fecha_inicio = models.DateField(blank=True, null=True, help_text="Opcional. Desde este día aparece en el home.")
     fecha_fin = models.DateField(blank=True, null=True, help_text="Opcional. Último día visible; la tarjeta muestra «Hasta el …».")
+    unidades = models.PositiveIntegerField(
+        blank=True, null=True,
+        help_text="Unidades disponibles. Si no hay fecha de término, es obligatorio: la tarjeta muestra «Hasta agotar N unidades».",
+    )
     orden = models.PositiveIntegerField(default=0, help_text="Menor número aparece primero.")
     activo = models.BooleanField(default=True)
 
@@ -369,6 +373,9 @@ class Promocion(models.Model):
             errores['precio_normal'] = "Debe ser mayor que el precio de la promoción."
         if self.fecha_inicio and self.fecha_fin and self.fecha_fin < self.fecha_inicio:
             errores['fecha_fin'] = "Debe ser igual o posterior a la fecha de inicio."
+        if not self.fecha_fin and not self.unidades:
+            errores['fecha_fin'] = ("Indica la fecha de término o las unidades disponibles: "
+                                    "la ley exige informar cuánto dura la promoción.")
         if errores:
             raise ValidationError(errores)
 

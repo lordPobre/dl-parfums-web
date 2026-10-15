@@ -224,7 +224,7 @@ class PromocionAdmin(ModelAdmin):
         (None, {'fields': ('titulo', 'descripcion', 'perfumes', 'imagen')}),
         ('Precio', {'fields': ('precio', 'precio_normal')}),
         ('Estilo y vigencia', {
-            'fields': ('tema', 'etiqueta', 'fecha_inicio', 'fecha_fin'),
+            'fields': ('tema', 'etiqueta', 'fecha_inicio', 'fecha_fin', 'unidades'),
             'description': "El tema define colores y adorno de la tarjeta. Si todas las promociones "
                            "visibles comparten tema, el encabezado de la sección también lo usa. "
                            "Con fecha de término, la promoción se oculta sola al día siguiente.",

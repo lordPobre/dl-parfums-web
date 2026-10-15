@@ -1,0 +1,44 @@
+{% comment %}
+Aviso de cookies y carga de píxeles SOLO con consentimiento.
+Los IDs vienen de las variables META_PIXEL_ID y TIKTOK_PIXEL_ID (Vercel). Sin IDs, no hay aviso.
+La decisión se guarda en localStorage["io_consent"] = {"publicidad": true|false, "fecha": "..."}.
+{% endcomment %}
+{% if META_PIXEL_ID or TIKTOK_PIXEL_ID %}
+<div id="io-cookies" role="dialog" aria-live="polite" aria-label="Preferencias de cookies" hidden
+     style="position:fixed;left:16px;right:16px;bottom:16px;z-index:350;max-width:560px;margin:0 auto;background:#111827;color:#f9fafb;padding:20px 22px;box-shadow:0 20px 40px -20px rgba(0,0,0,.5);font-family:'Montserrat',sans-serif;">
+    <p style="margin:0 0 14px;font-size:13px;line-height:1.6;font-weight:300;">Usamos cookies necesarias para que el sitio funcione. Con tu permiso, también usamos cookies de Meta y TikTok para medir y mostrar anuncios. <a href="{% url 'privacidad' %}#cookies" style="color:#fff;text-decoration:underline;">Más información</a></p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" data-consent="no" style="flex:1;min-width:120px;padding:11px 14px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;background:transparent;color:#fff;border:1px solid #fff;cursor:pointer;">Rechazar</button>
+        <button type="button" data-consent="si" style="flex:1;min-width:120px;padding:11px 14px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;background:transparent;color:#fff;border:1px solid #fff;cursor:pointer;">Aceptar</button>
+    </div>
+</div>
+<script>
+(function () {
+    var META = "{{ META_PIXEL_ID|escapejs }}", TIKTOK = "{{ TIKTOK_PIXEL_ID|escapejs }}", KEY = "io_consent";
+    var caja = document.getElementById("io-cookies");
+    function leer() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
+    function cargar() {
+        if (META && !window.fbq) {
+            !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', META); fbq('track', 'PageView');
+        }
+        if (TIKTOK && !window.ttq) {
+            !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.load=function(e){var n="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=n;ttq._t=ttq._t||{};ttq._t[e]=+new Date;var o=d.createElement("script");o.type="text/javascript";o.async=!0;o.src=n+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load(TIKTOK);ttq.page()}(window,document,'ttq');
+        }
+    }
+    function decidir(si) {
+        try { localStorage.setItem(KEY, JSON.stringify({ publicidad: si, fecha: new Date().toISOString() })); } catch (e) {}
+        caja.hidden = true;
+        if (si) cargar(); else if (window.fbq || window.ttq) location.reload();  // al retirar el permiso se descarga todo
+    }
+    caja.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-consent]");
+        if (b) decidir(b.getAttribute("data-consent") === "si");
+    });
+    window.abrirPreferenciasCookies = function () { caja.hidden = false; };
+    var d = leer();
+    if (d && d.publicidad === true) cargar();
+    else if (!d) caja.hidden = false;
+})();
+</script>
+{% endif %}
