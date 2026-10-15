@@ -395,3 +395,27 @@ class SeguridadSemana1Tests(TestCase):
         r = self.client.get(reverse("home"))
         self.assertIsInstance(r.context["familias_data"], list)
         self.assertNotIn("familias_data|safe", Path(settings.BASE_DIR, "templates", "home.html").read_text(encoding="utf-8"))
+
+
+class TextosLegalesTests(TestCase):
+    """Páginas legales publicadas y enlazadas, con los datos del vendedor visibles."""
+
+    def test_paginas_cargan(self):
+        for nombre, texto in (("terminos", "Derecho de retracto"), ("privacidad", "Tus derechos")):
+            with self.subTest(nombre):
+                self.assertContains(self.client.get(reverse(nombre)), texto)
+
+    def test_pie_con_vendedor_y_enlaces(self):
+        r = self.client.get(reverse("politicas"))
+        self.assertContains(r, "19.084.712-8")
+        self.assertContains(r, reverse("terminos"))
+        self.assertContains(r, reverse("privacidad"))
+        self.assertContains(r, "pertenecen a sus respectivos titulares")
+
+    def test_aviso_en_contacto(self):
+        self.assertContains(self.client.get(reverse("contacto")), reverse("privacidad"))
+
+    def test_sitemap_incluye_paginas_legales(self):
+        r = self.client.get("/sitemap.xml")
+        self.assertContains(r, "/terminos/")
+        self.assertContains(r, "/privacidad/")

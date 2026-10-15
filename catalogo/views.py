@@ -441,6 +441,16 @@ def politicas_envio(request):
 
 
 @cache_cdn(3600)
+def terminos(request):
+    return render(request, 'terminos.html')
+
+
+@cache_cdn(3600)
+def privacidad(request):
+    return render(request, 'privacidad.html')
+
+
+@cache_cdn(3600)
 def nosotros(request):
     nosotros = PaginaNosotros.cargar()
     return render(request, 'nosotros.html', {'nosotros': nosotros})

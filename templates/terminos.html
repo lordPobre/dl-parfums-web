@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Términos y Condiciones | Instinto Olfativo{% endblock %}
+{% block meta_description %}Condiciones de compra en Instinto Olfativo: pedidos, precios, pagos, entregas, derecho de retracto de 10 días y garantía legal.{% endblock %}
+
+{% block content %}
+<section class="max-w-[800px] mx-auto px-4 md:px-8 py-20 md:py-32 font-sans">
+
+    <div class="text-center md:text-left mb-16">
+        <span class="text-xs tracking-[0.3em] text-gray-400 uppercase mb-4 block">Información al Cliente</span>
+        <h1 class="text-3xl md:text-5xl font-serif text-gray-900 mb-6">Términos y Condiciones</h1>
+        <div class="w-12 h-[1px] bg-gray-800 mx-auto md:mx-0"></div>
+    </div>
+
+    <div class="text-gray-600 font-light leading-relaxed" style="display:flex;flex-direction:column;gap:18px;font-size:16px;">
+
+        <p>Estos términos regulan las compras realizadas en <strong>www.instintoolfativo.cl</strong>. Al solicitar un pedido, aceptas estas condiciones. Se rigen por la ley chilena, en especial la Ley N.º 19.496 sobre Protección de los Derechos de los Consumidores.</p>
+
+        <h2 id="vendedor" style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">1. Quién vende</h2>
+        <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;">
+            <li><strong>Nombre comercial:</strong> Instinto Olfativo</li>
+            <li><strong>Titular:</strong> Diego Fernando Leal Oyarzun</li>
+            <li><strong>RUT:</strong> 19.084.712-8</li>
+            <li><strong>Domicilio:</strong> San Martín 967, Castro, Región de Los Lagos, Chile</li>
+            <li><strong>Correo:</strong> <a href="mailto:monitidoparfums@gmail.com" style="text-decoration:underline;">monitidoparfums@gmail.com</a></li>
+            <li><strong>WhatsApp:</strong> <a href="https://wa.me/56962169898" target="_blank" rel="noopener" style="text-decoration:underline;">+56 9 6216 9898</a></li>
+        </ul>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">2. Cómo se compra</h2>
+        <p>Agregas los productos a tu selección y presionas «Solicitar por WhatsApp». El sitio registra tu pedido con un número y abre una conversación con nosotros con el detalle y el total.</p>
+        <p>La compra queda confirmada cuando, por WhatsApp, te confirmamos la disponibilidad, el costo de envío y el total final, y tú realizas el pago. Si un producto ya no está disponible, te avisamos antes de cobrar.</p>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">3. Precios</h2>
+        <p>Los precios están en pesos chilenos e incluyen IVA. Rigen mientras están publicados en el sitio. El costo de envío, cuando corresponde, se informa antes de que pagues y se suma al total.</p>
+        <p>Si por un error evidente de digitación se publica un precio irrisorio, te avisaremos antes de cobrar y podrás comprar al precio correcto o desistir sin costo.</p>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">4. Medios de pago</h2>
+        <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;">
+            <li><strong>Transferencia bancaria.</strong> Los datos de la cuenta se entregan solo por nuestro WhatsApp oficial (+56 9 6216 9898).</li>
+            <li><strong>Efectivo</strong>, en entregas presenciales dentro de Castro.</li>
+        </ul>
+        <p>Nunca te pediremos claves, códigos de verificación ni datos de tarjetas.</p>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">5. Entregas</h2>
+        <p>Entregamos en Castro sin costo, en un punto o domicilio que acordamos contigo. Para regiones despachamos los viernes, con una compra mínima de $20.000, un costo desde $5.000 según destino (gratis sobre $50.000) y un plazo de 4 a 6 días hábiles. El detalle está en <a href="{% url 'politicas' %}" style="text-decoration:underline;">Políticas de Envío</a>.</p>
+
+        <h2 id="retracto" style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">6. Derecho de retracto</h2>
+        <p>Tienes <strong>10 días corridos desde que recibes el producto</strong> para retractarte de la compra, sin dar motivo.</p>
+        <ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;">
+            <li>El producto debe estar <strong>sin uso, con su sello o precinto intacto</strong> y en su empaque original.</li>
+            <li>Avísanos por WhatsApp o correo dentro del plazo, indicando tu número de pedido.</li>
+            <li>En Castro, coordinamos la devolución en persona. Desde regiones, el envío de vuelta lo pagas tú.</li>
+            <li>Te devolvemos el total pagado por el producto por transferencia, dentro de los 10 días hábiles siguientes a recibirlo de vuelta.</li>
+        </ul>
+
+        <h2 id="garantia" style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">7. Garantía legal</h2>
+        <p>Si un producto llega dañado o defectuoso, no corresponde a lo que compraste o no tiene la calidad ofrecida, tienes <strong>6 meses desde la recepción</strong> para elegir entre su <strong>cambio</strong>, su <strong>reparación</strong> o la <strong>devolución de lo pagado</strong>. En estos casos, nosotros pagamos el envío.</p>
+        <p>La garantía legal no depende de que el producto esté sellado y no la limitan las condiciones de los cambios voluntarios del punto 8.</p>
+
+        <h2 id="cambios" style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">8. Cambios voluntarios</h2>
+        <p>Si prefieres cambiar el producto por otro en lugar de retractarte, puedes hacerlo dentro de los mismos 10 días, siempre que esté sellado y sin uso. Si el nuevo producto tiene otro precio, se paga o se devuelve la diferencia.</p>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">9. Promociones</h2>
+        <p>Cada promoción indica su vigencia (por ejemplo, «Hasta el 24 de diciembre»). Las promociones sin fecha de término publicada se mantienen hasta agotar stock o hasta que avisemos su término en el sitio. El precio normal que se muestra tachado es el precio al que vendemos el producto fuera de la promoción.</p>
+
+        <h2 id="referencias" style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">10. Perfumes «inspirados en»</h2>
+        <p>Algunos productos indican que están «inspirados en» un perfume de otra casa. Esa referencia solo describe un perfil olfativo similar para orientarte. No son el perfume original ni un producto de esa casa, e Instinto Olfativo no tiene relación con las marcas mencionadas, que pertenecen a sus respectivos titulares.</p>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">11. Reseñas</h2>
+        <p>Publicamos las reseñas después de revisarlas. Solo ocultamos las que contienen insultos, datos personales, publicidad o contenido que no trata sobre el producto. No ocultamos reseñas por ser negativas.</p>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">12. Datos personales</h2>
+        <p>Cómo usamos tus datos está explicado en la <a href="{% url 'privacidad' %}" style="text-decoration:underline;">Política de Privacidad</a>.</p>
+
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:#111827;margin:28px 0 0;font-weight:500;">13. Reclamos</h2>
+        <p>Escríbenos por WhatsApp o a <a href="mailto:monitidoparfums@gmail.com" style="text-decoration:underline;">monitidoparfums@gmail.com</a>. Respondemos dentro de 5 días hábiles. Si no quedas conforme, puedes acudir al Servicio Nacional del Consumidor (<a href="https://www.sernac.cl" target="_blank" rel="noopener" style="text-decoration:underline;">sernac.cl</a>) o a los tribunales competentes, incluidos los de tu domicilio.</p>
+
+        <p class="text-sm text-gray-500 mt-10">Última actualización: octubre de 2026.</p>
+    </div>
+</section>
+{% endblock %}

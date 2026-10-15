@@ -11,7 +11,7 @@ class EstaticoSitemap(Sitemap):
     _priority = {"home": 1.0, "catalogo": 0.9}
 
     def items(self):
-        return ["home", "catalogo", "nosotros", "contacto", "politicas"]
+        return ["home", "catalogo", "nosotros", "contacto", "politicas", "terminos", "privacidad"]
 
     def priority(self, item):
         return self._priority.get(item, 0.5)
