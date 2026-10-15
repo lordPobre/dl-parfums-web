@@ -1,0 +1,59 @@
+name: Desplegar producción
+
+# Corre solo cuando el CI termina bien en main: primero migra Neon y después publica en
+# Vercel. Así el código nuevo nunca llega antes que las columnas nuevas de la base.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: produccion
+  cancel-in-progress: false   # nunca cortar una migración a medias
+
+permissions:
+  contents: read
+
+jobs:
+  desplegar:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      DJANGO_SETTINGS_MODULE: core.settings
+      DATABASE_URL: ${{ secrets.DATABASE_URL_PRODUCCION }}
+      # migrate no usa estas claves, pero settings.py las lee al arrancar
+      SECRET_KEY: solo-para-migrar-${{ github.run_id }}
+      CLOUDINARY_CLOUD_NAME: ci
+      CLOUDINARY_API_KEY: "000000000000000"
+      CLOUDINARY_API_SECRET: ci
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Migraciones pendientes
+        run: python manage.py showmigrations --plan | grep "\[ \]" || echo "Ninguna."
+
+      - name: Migrar Neon
+        run: python manage.py migrate --noinput
+
+      - name: Publicar en Vercel
+        run: |
+          npm install --global vercel@latest
+          vercel deploy --prod --yes --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
