@@ -269,3 +269,51 @@ class PlantillasTests(SimpleTestCase):
             nombre = ruta.relative_to(raiz).as_posix()
             with self.subTest(plantilla=nombre):
                 motor.get_template(nombre)
+
+
+class PromocionesTests(Base):
+    def crear(self, **datos):
+        from .models import Promocion
+        datos.setdefault("precio", 1000)
+        return Promocion.objects.create(**datos)
+
+    def test_vigencia_y_tema_en_el_home(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        hoy = timezone.localdate()
+        self.crear(titulo="Vencida", tema="navidad", fecha_fin=hoy - timedelta(days=1))
+        self.crear(titulo="Futura", tema="navidad", fecha_inicio=hoy + timedelta(days=1))
+        self.crear(titulo="Dúo Navidad", tema="navidad", precio=12900, precio_normal=16000, fecha_fin=hoy)
+        r = self.client.get(reverse("home"))
+        self.assertEqual([p.titulo for p in r.context["promociones"]], ["Dúo Navidad"])
+        self.assertEqual(r.context["tema_promos"], "navidad")
+        self.assertContains(r, "Especial de Navidad")
+        self.assertContains(r, "-19%")
+
+    def test_temas_mezclados_usan_encabezado_neutro(self):
+        self.crear(titulo="A", tema="navidad")
+        self.crear(titulo="B", tema="black")
+        r = self.client.get(reverse("home"))
+        self.assertEqual(r.context["tema_promos"], "especial")
+        self.assertContains(r, "Ofertas especiales")
+
+    def test_etiqueta_generica_muestra_el_tema(self):
+        self.assertEqual(self.crear(titulo="A", tema="madre").texto_etiqueta, "Día de la Madre")
+        self.assertEqual(self.crear(titulo="B", tema="madre", etiqueta="2x1").texto_etiqueta, "2x1")
+
+    def test_validaciones(self):
+        from datetime import date
+        from django.core.exceptions import ValidationError
+        from .models import Promocion
+        with self.assertRaises(ValidationError):
+            Promocion(titulo="x", precio=5000, precio_normal=4000).full_clean()
+        with self.assertRaises(ValidationError):
+            Promocion(titulo="x", precio=5000, fecha_inicio=date(2026, 12, 24), fecha_fin=date(2026, 12, 1)).full_clean()
+
+    def test_promocion_vencida_no_se_puede_pedir(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        vencida = self.crear(titulo="Vencida", fecha_fin=timezone.localdate() - timedelta(days=1))
+        cuerpo = json.dumps({"items": [{"id": f"promo-{vencida.pk}"}], "cliente": "CI"})
+        r = self.client.post(reverse("crear_pedido"), data=cuerpo, content_type="application/json")
+        self.assertEqual(r.status_code, 400)

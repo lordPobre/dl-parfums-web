@@ -2,6 +2,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
+from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
@@ -291,9 +292,33 @@ class ImagenPortada(models.Model):
     def __str__(self):
         return self.titulo or f"Portada #{self.pk}"
 
+TEMAS_PROMO = [
+    ('especial', 'Oferta especial'),
+    ('navidad', 'Navidad'),
+    ('valentin', 'San Valentín'),
+    ('madre', 'Día de la Madre'),
+    ('padre', 'Día del Padre'),
+    ('patrias', 'Fiestas Patrias'),
+    ('black', 'Black Friday'),
+]
+
+# Encabezado de la sección del home (antetítulo, título). Se usa el del tema
+# cuando todas las promociones visibles lo comparten; si no, el de 'especial'.
+ENCABEZADO_TEMA = {
+    'especial': ('Ofertas especiales', 'Promociones'),
+    'navidad': ('Especial de Navidad', 'Regalos que se recuerdan'),
+    'valentin': ('San Valentín', 'Para regalar en pareja'),
+    'madre': ('Día de la Madre', 'Para ella, con gratitud'),
+    'padre': ('Día del Padre', 'Clásicos para papá'),
+    'patrias': ('Fiestas Patrias', 'Celebra el 18 con aroma'),
+    'black': ('Black Friday', 'Precios que no vuelven'),
+}
+
+
 class Promocion(models.Model):
     """Promociones y combos gestionables desde el admin.
-    Ej: título="2 x $10.000", descripción="Llévate dos fragancias seleccionadas"."""
+    Ej: título="2 x $10.000", descripción="Llévate dos fragancias seleccionadas".
+    El tema cambia el estilo de la tarjeta en el home; las fechas la muestran/ocultan solas."""
     titulo = models.CharField(
         max_length=120,
         help_text="Ej: '2 Perfumes por $10.000' o 'Combo Pareja'."
@@ -317,6 +342,16 @@ class Promocion(models.Model):
         'Perfume', blank=True, related_name='promociones',
         help_text="Perfumes incluidos en la promoción (opcional)."
     )
+    tema = models.CharField(
+        max_length=12, choices=TEMAS_PROMO, default='especial',
+        help_text="Estilo de la tarjeta en el home (colores, adorno y etiqueta)."
+    )
+    precio_normal = models.PositiveIntegerField(
+        blank=True, null=True,
+        help_text="Opcional. Precio sin la promoción; muestra el precio tachado, el % y el ahorro."
+    )
+    fecha_inicio = models.DateField(blank=True, null=True, help_text="Opcional. Desde este día aparece en el home.")
+    fecha_fin = models.DateField(blank=True, null=True, help_text="Opcional. Último día visible; la tarjeta muestra «Hasta el …».")
     orden = models.PositiveIntegerField(default=0, help_text="Menor número aparece primero.")
     activo = models.BooleanField(default=True)
 
@@ -327,6 +362,40 @@ class Promocion(models.Model):
 
     def __str__(self):
         return self.titulo
+
+    def clean(self):
+        errores = {}
+        if self.precio_normal is not None and self.precio is not None and self.precio_normal <= self.precio:
+            errores['precio_normal'] = "Debe ser mayor que el precio de la promoción."
+        if self.fecha_inicio and self.fecha_fin and self.fecha_fin < self.fecha_inicio:
+            errores['fecha_fin'] = "Debe ser igual o posterior a la fecha de inicio."
+        if errores:
+            raise ValidationError(errores)
+
+    @classmethod
+    def vigentes(cls):
+        """Activas y dentro de sus fechas (hora de Chile)."""
+        hoy = timezone.localdate()
+        return cls.objects.filter(activo=True).filter(
+            models.Q(fecha_inicio__isnull=True) | models.Q(fecha_inicio__lte=hoy),
+            models.Q(fecha_fin__isnull=True) | models.Q(fecha_fin__gte=hoy),
+        )
+
+    @property
+    def texto_etiqueta(self):
+        """La etiqueta propia ('2x1'); si quedó la genérica, el nombre del tema."""
+        propia = (self.etiqueta or '').strip()
+        return propia if propia and propia != 'Promoción' else self.get_tema_display()
+
+    @property
+    def descuento(self):
+        if self.precio_normal and self.precio and self.precio_normal > self.precio:
+            return round((1 - self.precio / self.precio_normal) * 100)
+        return None
+
+    @property
+    def ahorro(self):
+        return self.precio_normal - self.precio if self.descuento else None
 
 class ImagenPerfume(models.Model):
     """Imágenes adicionales de un perfume (galería). La imagen principal sigue

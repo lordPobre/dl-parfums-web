@@ -1,0 +1,117 @@
+{% load cloudinary_wm %}
+{% comment %}
+Promociones del home. Cada tarjeta usa el tema elegido en el admin (clase pt-<tema>).
+Los colores viven aquí como variables CSS: no dependen de recompilar Tailwind.
+{% endcomment %}
+{% if promociones %}
+<style>
+  .pt-especial{--pt-bg:#111827;--pt-ink:#fff;--pt-muted:#9ca3af;--pt-accent:#e5e7eb;--pt-line:#1f2937;--pt-img:#f3f4f6;--pt-pattern:none;--pt-size:auto;--pt-label-bg:#fff;--pt-label-ink:#111827;--pt-btn-bg:#fff;--pt-btn-ink:#111827;--pt-band:#111827;--pt-frame:none;--pt-orn:#111827}
+  .pt-navidad{--pt-bg:#173a2c;--pt-ink:#f7f3e8;--pt-muted:#b5c4b9;--pt-accent:#d4b062;--pt-line:#2a5141;--pt-img:#eef2ec;--pt-pattern:radial-gradient(rgba(23,58,44,.14) 1.2px,transparent 1.6px);--pt-size:14px 14px;--pt-label-bg:#d4b062;--pt-label-ink:#173a2c;--pt-btn-bg:#d4b062;--pt-btn-ink:#173a2c;--pt-band:#d4b062;--pt-frame:1px solid rgba(212,176,98,.45);--pt-orn:#173a2c}
+  .pt-valentin{--pt-bg:#4a1424;--pt-ink:#fdf2f3;--pt-muted:#d9aab3;--pt-accent:#f2b8c0;--pt-line:#64253a;--pt-img:#f9eef0;--pt-pattern:radial-gradient(rgba(74,20,36,.12) 1.2px,transparent 1.6px);--pt-size:14px 14px;--pt-label-bg:#f2b8c0;--pt-label-ink:#4a1424;--pt-btn-bg:#f2b8c0;--pt-btn-ink:#4a1424;--pt-band:#f2b8c0;--pt-frame:none;--pt-orn:#4a1424}
+  .pt-madre{--pt-bg:#f3e9df;--pt-ink:#3a2a24;--pt-muted:#7a665c;--pt-accent:#9a5743;--pt-line:#e2d2c4;--pt-img:#fffaf5;--pt-pattern:none;--pt-size:auto;--pt-label-bg:#3a2a24;--pt-label-ink:#f3e9df;--pt-btn-bg:#3a2a24;--pt-btn-ink:#f3e9df;--pt-band:#c99a86;--pt-frame:1px solid rgba(154,87,67,.25);--pt-orn:#9a5743}
+  .pt-padre{--pt-bg:#2b2420;--pt-ink:#f3ebe1;--pt-muted:#b3a597;--pt-accent:#c89b6d;--pt-line:#40362f;--pt-img:#f3eee8;--pt-pattern:repeating-linear-gradient(135deg,rgba(43,36,32,.05) 0 1px,transparent 1px 9px);--pt-size:auto;--pt-label-bg:#c89b6d;--pt-label-ink:#2b2420;--pt-btn-bg:#c89b6d;--pt-btn-ink:#2b2420;--pt-band:#c89b6d;--pt-frame:none;--pt-orn:#2b2420}
+  .pt-patrias{--pt-bg:#0f2550;--pt-ink:#fff;--pt-muted:#a9b6d3;--pt-accent:#fff;--pt-line:#1f3a6e;--pt-img:#eef1f7;--pt-pattern:radial-gradient(rgba(15,37,80,.12) 1.2px,transparent 1.6px);--pt-size:14px 14px;--pt-label-bg:#d52b1e;--pt-label-ink:#fff;--pt-btn-bg:#fff;--pt-btn-ink:#0f2550;--pt-band:linear-gradient(90deg,#fff 50%,#d52b1e 50%);--pt-frame:none;--pt-orn:#0f2550}
+  .pt-black{--pt-bg:#000;--pt-ink:#fff;--pt-muted:#a3a3a3;--pt-accent:#f87171;--pt-line:#262626;--pt-img:#f5f5f5;--pt-pattern:repeating-linear-gradient(45deg,rgba(0,0,0,.05) 0 1px,transparent 1px 8px);--pt-size:auto;--pt-label-bg:#dc2626;--pt-label-ink:#fff;--pt-btn-bg:#dc2626;--pt-btn-ink:#fff;--pt-band:#dc2626;--pt-frame:none;--pt-orn:#000}
+
+  .pts{background:#fff;border-bottom:1px solid #f3f4f6;transition:background .6s ease}
+  .pts-navidad{background:#f6f7f3}.pts-valentin{background:#fcf6f7}.pts-madre{background:#fcf8f4}.pts-padre{background:#f8f6f3}.pts-patrias{background:#f5f7fb}
+  .pts-eyebrow{display:inline-flex;align-items:center;gap:10px;color:#6b7280}
+  .pts-rule{background:#111827}
+  .pts-navidad .pts-eyebrow{color:#8a6d2b}.pts-navidad .pts-rule{background:#d4b062}.pts-navidad .pts-icono{color:#d4b062}
+  .pts-valentin .pts-eyebrow{color:#8c3a50}.pts-valentin .pts-rule{background:#4a1424}.pts-valentin .pts-icono{color:#4a1424}
+  .pts-madre .pts-eyebrow{color:#9a5743}.pts-madre .pts-rule{background:#c99a86}.pts-madre .pts-icono{color:#c99a86}
+  .pts-padre .pts-eyebrow{color:#8a6440}.pts-padre .pts-rule{background:#2b2420}.pts-padre .pts-icono{color:#2b2420}
+  .pts-patrias .pts-eyebrow{color:#0f2550}.pts-patrias .pts-rule{background:#d52b1e}.pts-patrias .pts-icono{color:#d52b1e}
+  .pts-black .pts-eyebrow{color:#b91c1c}.pts-black .pts-rule{background:#000}.pts-black .pts-icono{color:#000}
+
+  .pt-card{background:var(--pt-bg);color:var(--pt-ink);transition:transform .4s ease,box-shadow .4s ease}
+  .pt-card:hover{transform:translateY(-4px);box-shadow:0 24px 50px -28px rgba(0,0,0,.45)}
+  .pt-band{height:4px;background:var(--pt-band)}
+  .pt-media{position:relative;aspect-ratio:16/10;background-color:var(--pt-img);background-image:var(--pt-pattern);background-size:var(--pt-size);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .pt-foto{width:100%;height:100%;object-fit:contain;padding:28px 24px 18px;mix-blend-mode:multiply;transition:transform .7s ease}
+  .pt-frasco{height:74%;max-width:46%;object-fit:contain;mix-blend-mode:multiply;margin:0 -14px;position:relative;transition:transform .8s ease}
+  .pt-card:hover .pt-foto,.pt-card:hover .pt-frasco{transform:scale(1.05)}
+  .pt-orn{position:absolute;right:14px;bottom:10px;opacity:.22;color:var(--pt-orn)}
+  .pt-label,.pt-pct{position:absolute;top:16px;z-index:2;display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;padding:6px 10px}
+  .pt-label{left:16px;background:var(--pt-label-bg);color:var(--pt-label-ink)}
+  .pt-pct{right:16px;background:#fff;color:#111827;letter-spacing:.18em}
+  .pt-body{outline:var(--pt-frame);outline-offset:-10px}
+  .pt-vigencia{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--pt-accent);margin-bottom:12px}
+  .pt-muted{color:var(--pt-muted)}
+  .pt-dot{width:4px;height:4px;background:var(--pt-accent);flex-shrink:0}
+  .pt-pie{border-top:1px solid var(--pt-line);flex-wrap:wrap}
+  .pt-precio{display:flex;align-items:baseline;gap:10px}
+  .pt-tachado{font-size:14px;color:var(--pt-muted);text-decoration:line-through}
+  .pt-ahorro{display:block;margin-top:4px;font-size:11px;letter-spacing:.08em;color:var(--pt-accent)}
+  .pt-btn{background:var(--pt-btn-bg);color:var(--pt-btn-ink);border:1px solid var(--pt-btn-bg);transition:opacity .25s}
+  .pt-btn:hover{opacity:.85}
+  .pt-link{border-bottom:1px solid currentColor;transition:opacity .25s}
+  .pt-link:hover{opacity:.75}
+</style>
+<section id="promociones" class="pts pts-{{ tema_promos }}">
+    <div class="py-24 md:py-28 px-5 md:px-10 max-w-[1400px] mx-auto">
+        <div class="text-center mb-14">
+            <span class="pts-eyebrow text-[11px] tracking-[0.34em] uppercase">
+                {% if tema_promos != 'especial' %}<span class="pts-icono">{% include "partials/icono_tema_promo.html" with tema=tema_promos tam=14 %}</span>{% endif %}
+                {{ encabezado_promos.0 }}
+            </span>
+            <h2 class="text-4xl md:text-5xl font-serif text-gray-900 mt-4">{{ encabezado_promos.1 }}</h2>
+            <div class="pts-rule w-12 h-[1px] mx-auto mt-6"></div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for promo in promociones %}
+            <article class="pt-card pt-{{ promo.tema }} group relative flex flex-col overflow-hidden">
+                <div class="pt-band"></div>
+                <div class="pt-media">
+                    <span class="pt-label">{% include "partials/icono_tema_promo.html" with tema=promo.tema tam=12 %}{{ promo.texto_etiqueta }}</span>
+                    {% if promo.descuento %}<span class="pt-pct">-{{ promo.descuento }}%</span>{% endif %}
+                    {% if promo.imagen %}
+                        <img src="{{ promo.imagen.url|cl:720 }}" width="720" height="450" loading="lazy" decoding="async" alt="{{ promo.titulo }}" class="pt-foto">
+                    {% else %}
+                        <span class="pt-orn">{% include "partials/icono_tema_promo.html" with tema=promo.tema tam=64 %}</span>
+                        {% for p in promo.perfumes.all|slice:":2" %}{% if p.imagen %}
+                        <img src="{{ p.imagen.url|cl:480 }}" width="480" height="600" loading="lazy" decoding="async" alt="{{ p.nombre }}" class="pt-frasco">
+                        {% endif %}{% endfor %}
+                    {% endif %}
+                </div>
+                <div class="pt-body flex flex-col flex-grow p-8">
+                    <span class="pt-vigencia">{% if promo.fecha_fin %}Hasta el {{ promo.fecha_fin|date:"j \d\e F" }}{% else %}Por tiempo limitado{% endif %}</span>
+                    <h3 class="font-serif text-2xl md:text-3xl leading-tight mb-3">{{ promo.titulo }}</h3>
+                    {% if promo.descripcion %}
+                    <p class="pt-muted font-light text-sm leading-relaxed mb-5">{{ promo.descripcion }}</p>
+                    {% endif %}
+                    {% if promo.perfumes.all %}
+                    <ul class="text-[13px] font-light space-y-1.5 mb-6">
+                        {% for p in promo.perfumes.all %}
+                        <li class="flex items-center gap-2"><span class="pt-dot"></span>{{ p.nombre }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    <div class="pt-pie mt-auto pt-5 flex items-end justify-between gap-3">
+                        <div>
+                            <div class="pt-precio">
+                                <span class="font-serif text-3xl">{{ promo.precio|clp }}</span>
+                                {% if promo.descuento %}<span class="pt-tachado">{{ promo.precio_normal|clp }}</span>{% endif %}
+                            </div>
+                            {% if promo.ahorro %}<span class="pt-ahorro">Ahorras {{ promo.ahorro|clp }}</span>{% endif %}
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button type="button" data-add-cart
+                                    data-id="promo-{{ promo.id }}"
+                                    data-nombre="{{ promo.titulo }}"
+                                    data-marca="Promoción"
+                                    data-precio="{{ promo.precio }}"
+                                    data-img="{% if promo.imagen %}{{ promo.imagen.url|cl:160 }}{% endif %}"
+                                    class="pt-btn text-[11px] tracking-[0.2em] uppercase px-3 py-1.5">Agregar</button>
+                            <a href="https://wa.me/56962169898?text=Hola,%20me%20interesa%20la%20promoci%C3%B3n%20{{ promo.titulo|urlencode }}."
+                               target="_blank" rel="noopener noreferrer"
+                               class="pt-link text-[11px] tracking-[0.2em] uppercase pb-0.5">Lo quiero</a>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}

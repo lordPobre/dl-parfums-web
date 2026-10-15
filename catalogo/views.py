@@ -19,6 +19,7 @@ from django.db import transaction
 from django.core.cache import cache
 from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido, Presentacion, SlugAntiguo, Nota, PerfumeNota
 from .cache_cdn import cache_cdn
+from .models import ENCABEZADO_TEMA
 from .busqueda import buscar_perfumes, sugerir
 from .filtros import url_filtros
 from .templatetags.cloudinary_wm import cl, clp
@@ -49,7 +50,10 @@ def home(request):
     # Diapositivas del carrusel de portada (gestionadas desde el admin)
     portadas = ImagenPortada.objects.filter(activo=True)
     # Promociones / combos activos (gestionados desde el admin)
-    promociones = Promocion.objects.filter(activo=True).prefetch_related('perfumes')
+    # (solo las vigentes por fecha). Si todas comparten tema, el encabezado también lo usa.
+    promociones = list(Promocion.vigentes().prefetch_related('perfumes'))
+    temas = {p.tema for p in promociones}
+    tema_promos = temas.pop() if len(temas) == 1 else 'especial'
     # Familias en JSON para el test olfativo (id + nombre) — cubre todas las del admin
     familias_data = json.dumps(
         [{'id': f.id, 'nombre': f.nombre} for f in familias],
@@ -64,6 +68,8 @@ def home(request):
         'familias_data': familias_data,
         'portadas': portadas,
         'promociones': promociones,
+        'tema_promos': tema_promos,
+        'encabezado_promos': ENCABEZADO_TEMA[tema_promos],
     }
     return render(request, 'home.html', context)
 
@@ -525,7 +531,7 @@ def crear_pedido(request):
     mas_barata = {}
     for pres in disponibles.filter(perfume_id__in=set(destino.values())).order_by("precio"):
         mas_barata.setdefault(pres.perfume_id, pres)
-    promos = Promocion.objects.filter(activo=True).in_bulk([i for t, i, _ in pedidas if t == "promo"])
+    promos = Promocion.vigentes().in_bulk([i for t, i, _ in pedidas if t == "promo"])
 
     lineas = []
     for tipo, obj_id, qty in pedidas:

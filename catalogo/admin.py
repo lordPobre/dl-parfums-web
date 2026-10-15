@@ -207,12 +207,30 @@ class PerfumeAdmin(PrevNextAdminMixin, admin.ModelAdmin):
     
 @admin.register(Promocion)
 class PromocionAdmin(admin.ModelAdmin):
-    list_display = ('miniatura', 'titulo', 'precio', 'etiqueta', 'orden', 'activo')
+    list_display = ('miniatura', 'titulo', 'muestra_tema', 'precio', 'vigencia', 'orden', 'activo')
     list_display_links = ('miniatura', 'titulo')
     list_editable = ('precio', 'orden', 'activo')
-    list_filter = ('activo',)
+    list_filter = ('activo', 'tema')
     filter_horizontal = ('perfumes',)
     ordering = ('orden', 'id')
+    fieldsets = (
+        (None, {'fields': ('titulo', 'descripcion', 'perfumes', 'imagen')}),
+        ('Precio', {'fields': ('precio', 'precio_normal')}),
+        ('Estilo y vigencia', {
+            'fields': ('tema', 'etiqueta', 'fecha_inicio', 'fecha_fin'),
+            'description': "El tema define colores y adorno de la tarjeta. Si todas las promociones "
+                           "visibles comparten tema, el encabezado de la sección también lo usa. "
+                           "Con fecha de término, la promoción se oculta sola al día siguiente.",
+        }),
+        ('Publicación', {'fields': ('orden', 'activo')}),
+    )
+
+    COLOR_TEMA = {
+        'especial': ('#111827', '#e5e7eb'), 'navidad': ('#173a2c', '#d4b062'),
+        'valentin': ('#4a1424', '#f2b8c0'), 'madre': ('#f3e9df', '#9a5743'),
+        'padre': ('#2b2420', '#c89b6d'), 'patrias': ('#0f2550', '#d52b1e'),
+        'black': ('#000000', '#dc2626'),
+    }
 
     def miniatura(self, obj):
         if obj.imagen:
@@ -222,6 +240,25 @@ class PromocionAdmin(admin.ModelAdmin):
             )
         return "—"
     miniatura.short_description = "Vista previa"
+
+    @admin.display(description="Tema", ordering='tema')
+    def muestra_tema(self, obj):
+        fondo, acento = self.COLOR_TEMA.get(obj.tema, self.COLOR_TEMA['especial'])
+        return format_html(
+            '<span style="display:inline-flex;align-items:center;gap:8px;">'
+            '<span style="width:16px;height:16px;background:{};border-top:4px solid {};box-sizing:border-box;"></span>{}</span>',
+            fondo, acento, obj.get_tema_display(),
+        )
+
+    @admin.display(description="Vigencia")
+    def vigencia(self, obj):
+        from django.utils import timezone
+        if obj.fecha_fin and obj.fecha_fin < timezone.localdate():
+            return "Vencida"
+        if not (obj.fecha_inicio or obj.fecha_fin):
+            return "Siempre"
+        fmt = lambda d: d.strftime("%d/%m/%Y") if d else "…"
+        return f"{fmt(obj.fecha_inicio)} → {fmt(obj.fecha_fin)}"
 
 @admin.register(PaginaNosotros)
 class PaginaNosotrosAdmin(admin.ModelAdmin):
