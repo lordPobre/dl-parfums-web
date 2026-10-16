@@ -162,6 +162,7 @@ STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 # Píxeles de publicidad: solo se cargan si el visitante acepta (partials/consentimiento.html)
 META_PIXEL_ID = os.environ.get('META_PIXEL_ID', '')
 TIKTOK_PIXEL_ID = os.environ.get('TIKTOK_PIXEL_ID', '')
+GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

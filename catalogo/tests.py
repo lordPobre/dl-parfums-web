@@ -527,3 +527,28 @@ class SEOTests(TestCase):
         self.assertEqual(titulo_seo(corto), "Oud 21 – Inspirado en Oud Wood | Instinto Olfativo")
         self.assertNotIn("Instinto Olfativo", titulo_seo(largo))
         self.assertEqual(titulo_seo(N(meta_titulo="Manual", nombre="X", inspirado_en="")), "Manual")
+
+
+class SEOSegundaRondaTests(TestCase):
+    def test_home_sin_problemas_del_reporte(self):
+        import re
+        html = self.client.get(reverse("home")).content.decode()
+        titulo = re.search(r"<title>([^<]*)</title>", html).group(1)
+        self.assertLessEqual(len(titulo), 60)
+        self.assertNotIn("<h3 data-test", html)
+        self.assertIsNone(re.search(r"<h[1-6][^>]*>\s*</h[1-6]>", html))
+        self.assertIn("js/base.js", html)
+        self.assertNotIn("const btnMenu", html)
+
+    def test_imagenes_con_src_y_alt(self):
+        import re
+        html = self.client.get(reverse("home")).content.decode()
+        for img in re.findall(r"<img\b[^>]*>", html):
+            self.assertRegex(img, r'\bsrc="[^"]+"', img)
+            self.assertRegex(img, r'\balt="[^"]+"', img)
+
+    def test_google_site_verification(self):
+        from django.test import override_settings
+        with override_settings(GOOGLE_SITE_VERIFICATION="abc123"):
+            html = self.client.get(reverse("contacto")).content.decode()
+        self.assertIn('name="google-site-verification" content="abc123"', html)

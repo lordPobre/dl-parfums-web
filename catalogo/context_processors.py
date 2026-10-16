@@ -7,4 +7,5 @@ def sitio(request):
         "SITE_URL": settings.SITE_URL,
         "META_PIXEL_ID": getattr(settings, "META_PIXEL_ID", ""),
         "TIKTOK_PIXEL_ID": getattr(settings, "TIKTOK_PIXEL_ID", ""),
+        "GOOGLE_SITE_VERIFICATION": getattr(settings, "GOOGLE_SITE_VERIFICATION", ""),
     }
