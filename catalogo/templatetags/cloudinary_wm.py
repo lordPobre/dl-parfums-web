@@ -59,3 +59,11 @@ def clp(valor):
         return "$" + f"{int(valor):,}".replace(",", ".")
     except (TypeError, ValueError):
         return valor
+
+
+@register.filter
+def clalto(url, alto=160):
+    """Sin marca de agua, limitada por ALTO (logos de casas: se muestran a 64-80 px de alto)."""
+    if not url or "/upload/" not in url:
+        return url
+    return url.replace("/upload/", f"/upload/f_auto,q_auto,c_limit,h_{int(alto)}/", 1)

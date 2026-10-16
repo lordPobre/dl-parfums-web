@@ -588,3 +588,36 @@ class JSMinificadoTests(SimpleTestCase):
                     minificar(f.read_text(encoding="utf-8")),
                     f"static/js/{f.name} no coincide con src/: corre python minificar_js.py",
                 )
+
+
+
+# ---------- movil-rendimiento: fuentes locales e imágenes a su tamaño ----------
+import re as _re_mr
+
+from django.contrib.staticfiles import finders as _finders_mr
+
+
+class RendimientoMovilTests(TestCase):
+    def setUp(self):
+        self.html = self.client.get(reverse("home")).content.decode()
+
+    def test_sin_google_fonts(self):
+        self.assertNotIn("fonts.googleapis.com", self.html)
+        self.assertNotIn("fonts.gstatic.com", self.html)
+
+    def test_fuentes_precargadas_existen(self):
+        fuentes = _re_mr.findall(r'href="[^"]*/fonts/([^"/]+\.woff2)"[^>]*as="font"', self.html)
+        self.assertTrue(fuentes, 'falta <link rel="preload" as="font">')
+        for f in fuentes:
+            f = _re_mr.sub(r"\.[0-9a-f]{12}(?=\.woff2$)", "", f)  # nombre con hash del manifest
+            with self.subTest(f):
+                self.assertIsNotNone(_finders_mr.find(f"fonts/{f}"), f"falta static/fonts/{f}")
+
+    def test_logo_e_icono_webp_con_tamano(self):
+        imgs = _re_mr.findall(r"<img\b[^>]*(?:logo-instinto|icono-gota)[^>]*>", self.html)
+        self.assertTrue(imgs)
+        for tag in imgs:
+            with self.subTest(tag[:90]):
+                self.assertNotIn(".png", tag)
+                self.assertRegex(tag, r'\swidth="\d+"')
+                self.assertRegex(tag, r'\sheight="\d+"')

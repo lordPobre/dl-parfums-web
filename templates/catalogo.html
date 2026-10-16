@@ -63,7 +63,7 @@
                 <a href="{% filtro_url marca=marca.id %}#productos" title="{{ marca.nombre }}"
                    class="group flex-shrink-0 w-[130px] h-24 flex items-center justify-center px-3 border transition-all duration-300 {% if marca_seleccionada_id == marca.id %}border-gray-900 bg-gray-50{% else %}border-gray-100 hover:border-gray-300{% endif %}">
                     {% if marca.logo %}
-                        <img src="{{ marca.logo.url|clsin:300 }}" alt="{{ marca.nombre }}" width="130" height="64" decoding="async" class="max-h-16 max-w-full object-contain transition-all duration-300 {% if marca_seleccionada_id == marca.id %}grayscale-0 opacity-100{% else %}grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100{% endif %}">
+                        <img src="{{ marca.logo.url|clalto:160 }}" alt="{{ marca.nombre }}" width="130" height="64" decoding="async" class="max-h-16 max-w-full object-contain transition-all duration-300 {% if marca_seleccionada_id == marca.id %}grayscale-0 opacity-100{% else %}grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100{% endif %}">
                     {% else %}
                         <span class="font-serif text-sm text-gray-800 text-center leading-tight">{{ marca.nombre }}</span>
                     {% endif %}

@@ -38,7 +38,7 @@ La decisión se guarda en localStorage["io_consent"] = {"publicidad": true|false
     window.abrirPreferenciasCookies = function () { caja.hidden = false; };
     var d = leer();
     if (d && d.publicidad === true) cargar();
-    else if (!d) caja.hidden = false;
+    else if (!d) (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { caja.hidden = false; });  // tras cargar las fuentes: no se mueve (CLS)
 })();
 </script>
 {% endif %}

@@ -66,7 +66,7 @@ Los colores viven aquí como variables CSS: no dependen de recompilar Tailwind.
                     <span class="pt-label">{% include "partials/icono_tema_promo.html" with tema=promo.tema tam=12 %}{{ promo.texto_etiqueta }}</span>
                     {% if promo.descuento %}<span class="pt-pct">-{{ promo.descuento }}%</span>{% endif %}
                     {% if promo.imagen %}
-                        <img src="{{ promo.imagen.url|cl:720 }}" width="720" height="450" loading="lazy" decoding="async" alt="{{ promo.titulo }}" class="pt-foto">
+                        <img src="{{ promo.imagen.url|cl:480 }}" srcset="{{ promo.imagen.url|cl:400 }} 400w, {{ promo.imagen.url|cl:560 }} 560w, {{ promo.imagen.url|cl:720 }} 720w" sizes="(min-width:1024px) 260px, (min-width:640px) 30vw, 55vw" width="720" height="450" loading="lazy" decoding="async" alt="{{ promo.titulo }}" class="pt-foto">
                     {% else %}
                         <span class="pt-orn">{% include "partials/icono_tema_promo.html" with tema=promo.tema tam=64 %}</span>
                         {% for p in promo.perfumes.all|slice:":2" %}{% if p.imagen %}

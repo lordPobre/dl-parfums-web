@@ -68,7 +68,7 @@
             <a href="{{ marca.get_absolute_url }}"
                class="flex-shrink-0 mx-8 md:mx-12 flex items-center justify-center h-20 transition-all duration-500 grayscale opacity-60 hover:grayscale-0 hover:opacity-100">
                 {% if marca.logo %}
-                    <img src="{{ marca.logo.url|clsin:400 }}" alt="{{ marca.nombre }}" width="200" height="80" decoding="async" class="h-16 md:h-20 w-auto max-w-[200px] object-contain">
+                    <img src="{{ marca.logo.url|clalto:160 }}" alt="{{ marca.nombre }}" width="200" height="80" decoding="async" class="h-16 md:h-20 w-auto max-w-[200px] object-contain">
                 {% else %}
                     <span class="font-serif text-xl md:text-2xl text-gray-800 tracking-widest whitespace-nowrap">{{ marca.nombre }}</span>
                 {% endif %}

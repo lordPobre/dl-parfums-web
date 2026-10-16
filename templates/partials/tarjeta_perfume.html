@@ -14,8 +14,8 @@ así todas las tarjetas de una fila miden lo mismo y los botones quedan alineado
             {% endif %}
             {% if perfume.imagen %}
                 <img src="{{ perfume.imagen.url|cl:480 }}"
-                     srcset="{{ perfume.imagen.url|cl:320 }} 320w, {{ perfume.imagen.url|cl:480 }} 480w, {{ perfume.imagen.url|cl:720 }} 720w"
-                     sizes="(min-width:1280px) 300px, (min-width:1024px) 30vw, 45vw"
+                     srcset="{{ perfume.imagen.url|cl:240 }} 240w, {{ perfume.imagen.url|cl:360 }} 360w, {{ perfume.imagen.url|cl:480 }} 480w, {{ perfume.imagen.url|cl:720 }} 720w"
+                     sizes="(min-width:1280px) 250px, (min-width:1024px) 25vw, 37vw"
                      width="480" height="600"
                      alt="{{ perfume.nombre }} — perfume {% if perfume.familia %}{{ perfume.familia.nombre|lower }} {% endif %}{% if perfume.marca %}de {{ perfume.marca.nombre }}{% endif %}"
                      {% if indice == 1 %}fetchpriority="high"{% elif sin_lazy or indice and indice <= 4 %}{% else %}loading="lazy"{% endif %}
