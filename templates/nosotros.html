@@ -2,6 +2,7 @@
 {% load static cloudinary_wm %}
 
 {% block title %}Nosotros | Instinto Olfativo{% endblock %}
+{% block meta_description %}{% if nosotros.contenido %}{{ nosotros.contenido|striptags|truncatechars:155 }}{% else %}Conoce Instinto Olfativo, tienda de perfumes alternativos de nicho y diseñador en Castro, Chiloé, con asesoría personalizada y envíos a todo Chile.{% endif %}{% endblock %}
 
 {% block content %}
 <section class="relative pt-40 pb-20 bg-[#fbfbfb] text-center border-b border-gray-100">
@@ -44,7 +45,7 @@
         <!-- Columna derecha: imagen si existe, si no la caja de cita -->
         {% if nosotros.imagen %}
         <div class="bg-[#f8f8f8] overflow-hidden min-h-[420px]">
-            <img src="{{ nosotros.imagen.url }}" alt="{{ nosotros.titulo }}" class="w-full h-full object-cover">
+            <img src="{{ nosotros.imagen.url|clsin:1200 }}" width="1200" height="900" loading="lazy" decoding="async" alt="{{ nosotros.titulo|default:'Instinto Olfativo' }}" class="w-full h-full object-cover">
         </div>
 
         {% elif nosotros.cita %}

@@ -1,9 +1,12 @@
 {% extends 'base.html' %}
-{% load static cloudinary_wm %}
+{% load static cloudinary_wm seo %}
 
-{% block title %}{% if perfume.meta_titulo %}{{ perfume.meta_titulo }}{% else %}{{ perfume.nombre }}{% if perfume.inspirado_en %} – Inspirado en {{ perfume.inspirado_en }}{% endif %} | Instinto Olfativo{% endif %}{% endblock %}
-{% block meta_description %}{% if perfume.meta_descripcion %}{{ perfume.meta_descripcion }}{% else %}{{ perfume.nombre }}{% if perfume.familia %}, fragancia {{ perfume.familia.nombre|lower }}{% endif %}{% if perfume.inspirado_en %} inspirada en {{ perfume.inspirado_en }}{% endif %}. Desde {{ perfume.precio_vigente|clp }}. Envío a todo Chile.{% endif %}{% endblock %}
-{% block og_title %}{% if perfume.meta_titulo %}{{ perfume.meta_titulo }}{% else %}{{ perfume.nombre }} | Instinto Olfativo{% endif %}{% endblock %}
+{% block title %}{{ perfume|titulo_seo }}{% endblock %}
+{% block meta_description %}{{ perfume|descripcion_seo }}{% endblock %}
+{% block og_title %}{{ perfume|titulo_seo }}{% endblock %}
+{% block og_description %}{{ perfume|descripcion_seo }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_image %}{% if perfume.imagen %}{{ perfume.imagen.url|cl:1200 }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 
 {% block extra_head %}
 <script nonce="{{ request.csp_nonce }}" type="application/ld+json">
@@ -14,7 +17,6 @@
   {% if perfume.imagen %}"image": ["{{ perfume.imagen.url|cl:1200 }}"],{% endif %}
   "description": "{{ perfume.descripcion|striptags|escapejs }}",
   "sku": "{{ perfume.id }}",
-  "mpn": "{{ perfume.id }}",
   "brand": { "@type": "Brand", "name": "{{ perfume.marca.nombre|escapejs }}" },
   "url": "{{ SITE_URL }}{{ request.path }}"{% if perfume.inspirado_en %},
   "alternateName": "Inspirado en {{ perfume.inspirado_en|escapejs }}"{% endif %}{% if presentaciones %},
@@ -28,7 +30,7 @@
       "price": "{{ v.precio_vigente }}",
       "itemCondition": "https://schema.org/NewCondition",
       "availability": "https://schema.org/{% if v.stock > 0 %}InStock{% else %}OutOfStock{% endif %}",
-      "seller": { "@type": "Organization", "name": "Instinto Olfativo" },
+      "seller": { "@type": "Organization", "@id": "https://www.instintoolfativo.cl/#organizacion", "name": "Instinto Olfativo" },
       "shippingDetails": {
         "@type": "OfferShippingDetails",
         "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "CL" },
@@ -36,7 +38,7 @@
         "deliveryTime": {
           "@type": "ShippingDeliveryTime",
           "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "DAY" },
-          "transitTime": { "@type": "QuantitativeValue", "minValue": 4, "maxValue": 5, "unitCode": "DAY" }
+          "transitTime": { "@type": "QuantitativeValue", "minValue": 4, "maxValue": 6, "unitCode": "DAY" }
         }
       },
       "hasMerchantReturnPolicy": {
@@ -44,7 +46,7 @@
         "applicableCountry": "CL",
         "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
         "merchantReturnDays": 10,
-        "merchantReturnLink": "{{ SITE_URL }}{% url 'politicas' %}#cambios"
+        "merchantReturnLink": "{{ SITE_URL }}{% url 'terminos' %}#retracto"
       }
     }{% if not forloop.last %},{% endif %}{% endfor %}
   ]{% endif %}{% if total_resenas %},

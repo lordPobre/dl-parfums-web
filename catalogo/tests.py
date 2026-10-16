@@ -489,3 +489,41 @@ class CSPEstrictaTests(TestCase):
         r = self.client.get(reverse("home"))
         self.assertEqual(r["Cross-Origin-Resource-Policy"], "same-site")
         self.assertEqual(r["Cross-Origin-Opener-Policy"], "same-origin")
+
+
+class SEOTests(TestCase):
+    def test_home_metadatos(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertEqual(html.count("<h1"), 1)
+        self.assertIn('lang="es-CL"', html)
+        for etiqueta in ('property="og:image"', 'property="og:site_name"', 'name="twitter:card"', '"@type":"WebSite"'):
+            self.assertIn(etiqueta, html)
+
+    def test_descripciones_distintas(self):
+        import re
+        def desc(nombre):
+            html = self.client.get(reverse(nombre)).content.decode()
+            return re.search(r'<meta name="description" content="([^"]*)"', html).group(1)
+        valores = [desc(n) for n in ("home", "catalogo", "contacto", "nosotros")]
+        self.assertEqual(len(set(valores)), len(valores))
+
+    def test_404_propio_y_noindex(self):
+        r = self.client.get("/esta-pagina-no-existe/")
+        self.assertEqual(r.status_code, 404)
+        self.assertIn("Página no encontrada", r.content.decode())
+        self.assertIn('name="robots" content="noindex"', r.content.decode())
+
+    def test_sitemap_con_imagenes(self):
+        r = self.client.get("/sitemap.xml")
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.content.decode().startswith("<?xml"))
+        self.assertIn("sitemap-image", r.content.decode())
+
+    def test_titulo_seo(self):
+        from types import SimpleNamespace as N
+        from catalogo.templatetags.seo import titulo_seo
+        corto = N(meta_titulo="", nombre="Oud 21", inspirado_en="Oud Wood")
+        largo = N(meta_titulo="", nombre="Smart Collection No. 387", inspirado_en="Bleu de Chanel Eau de Parfum")
+        self.assertEqual(titulo_seo(corto), "Oud 21 – Inspirado en Oud Wood | Instinto Olfativo")
+        self.assertNotIn("Instinto Olfativo", titulo_seo(largo))
+        self.assertEqual(titulo_seo(N(meta_titulo="Manual", nombre="X", inspirado_en="")), "Manual")

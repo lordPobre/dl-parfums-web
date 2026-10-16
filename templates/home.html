@@ -5,6 +5,7 @@
 {% block meta_description %}Perfumes alternativos de nicho y diseñador en Chile. Fragancias inspiradas en la alta perfumería a precio accesible, con asesoría personalizada y envío a todo el país.{% endblock %}
 
 {% block extra_head %}
+<script nonce="{{ request.csp_nonce }}" type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Instinto Olfativo","alternateName":["Instinto Olfativo Chile","instintoolfativo.cl"],"url":"https://www.instintoolfativo.cl/","inLanguage":"es-CL","publisher":{"@id":"https://www.instintoolfativo.cl/#organizacion"}}</script>
 {% if portadas %}{% with portada=portadas.0 %}<link rel="preload" as="image" imagesrcset="{{ portada.imagen.url|clsin:640 }} 640w, {{ portada.imagen.url|clsin:1000 }} 1000w, {{ portada.imagen.url|clsin:1600 }} 1600w" imagesizes="100vw" fetchpriority="high">{% endwith %}{% endif %}
 {% endblock %}
 
@@ -42,8 +43,8 @@
     {% endif %}
 
     <div class="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center animate-rise">
-        <span class="text-[11px] tracking-[0.5em] text-white/70 uppercase mb-7">Alta Perfumería</span>
-        <h1 class="text-5xl md:text-8xl font-serif text-white mb-6 leading-[1.05]">Descubre<br><em class="italic font-medium">tu esencia ideal</em></h1>
+        <h1 class="text-[11px] tracking-[0.5em] text-white/70 uppercase mb-7" style="font-weight:400;line-height:1.8;">Perfumes alternativos en Chile</h1>
+        <p class="text-5xl md:text-8xl font-serif text-white mb-6 leading-[1.05]">Descubre<br><em class="italic font-medium">tu esencia ideal</em></p>
         <p class="text-base md:text-lg text-white/70 mb-10 font-light max-w-xl leading-relaxed">La colección más variada para quienes buscan dejar una huella imborrable en cada encuentro.</p>
         <div class="flex flex-wrap gap-4 justify-center">
             <a href="{% url 'catalogo' %}" class="bg-white text-gray-900 px-10 py-4 uppercase tracking-[0.26em] text-[11px] font-medium hover:bg-gray-200 transition duration-300">Explorar Colección</a>
@@ -103,7 +104,7 @@
                 <span class="text-lg text-gray-500 line-through">{{ destacada.precio|clp }}</span>
             </div>
             <div>
-                <a href="{{ destacada.get_absolute_url }}" class="inline-block bg-gray-900 text-white px-11 py-4 text-[11px] tracking-[0.26em] uppercase font-medium hover:bg-black transition-colors">Ver Detalles</a>
+                <a href="{{ destacada.get_absolute_url }}" class="inline-block bg-gray-900 text-white px-11 py-4 text-[11px] tracking-[0.26em] uppercase font-medium hover:bg-black transition-colors">Ver Detalles<span class="sr-only"> de {{ destacada.nombre }}</span></a>
             </div>
         </div>
     </div>

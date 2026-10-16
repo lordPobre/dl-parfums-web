@@ -5,7 +5,11 @@
 {% block meta_description %}{% if landing.intro %}{{ landing.intro|striptags|truncatechars:155 }}{% else %}Explora nuestro catálogo de perfumes alternativos de nicho y diseñador en Chile. Filtra por familia olfativa, tamaño y precio. Envío a todo el país.{% endif %}{% endblock %}
 {% block og_title %}{% if landing.titulo %}{{ landing.titulo }}{% else %}Catálogo de perfumes{% endif %} | Instinto Olfativo{% endblock %}
 {% block canonical %}{{ SITE_URL }}{{ request.path }}{% if page_obj.number > 1 %}?page={{ page_obj.number }}{% endif %}{% endblock %}
-{% block extra_head %}{% if buscar or landing.noindex %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+{% block og_url %}{{ SITE_URL }}{{ request.path }}{% if page_obj.number > 1 %}?page={{ page_obj.number }}{% endif %}{% endblock %}
+{% block extra_head %}{% if buscar or landing.noindex %}<meta name="robots" content="noindex,follow">{% else %}
+<script nonce="{{ request.csp_nonce }}" type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":"{% if landing.titulo %}{{ landing.titulo|escapejs }}{% else %}Catálogo de perfumes alternativos{% endif %}","url":"{{ SITE_URL }}{{ request.path }}{% if page_obj.number > 1 %}?page={{ page_obj.number }}{% endif %}","isPartOf":{"@id":"https://www.instintoolfativo.cl/#organizacion"},"breadcrumb":{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"{{ SITE_URL }}/"},{"@type":"ListItem","position":2,"name":"Perfumes","item":"{{ SITE_URL }}{% url 'catalogo' %}"}{% if landing.titulo %},{"@type":"ListItem","position":3,"name":"{{ landing.titulo|escapejs }}"}{% endif %}]},"mainEntity":{"@type":"ItemList","numberOfItems":{{ page_obj.paginator.count }},"itemListElement":[{% for p in page_obj %}{"@type":"ListItem","position":{{ page_obj.start_index|add:forloop.counter0 }},"url":"{{ SITE_URL }}{{ p.get_absolute_url }}","name":"{{ p.nombre|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]}}
+</script>{% endif %}{% endblock %}
 
 {% block content %}
 

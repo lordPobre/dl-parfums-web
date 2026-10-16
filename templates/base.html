@@ -1,17 +1,20 @@
-{% load static %}
 <!DOCTYPE html>
 {% load static css_inline %}
-<html lang="es">
+<html lang="es-CL">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Instinto Olfativo | Perfumes Alternativos de Nicho{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Descubre la colección más exclusiva de alta perfumería. Encuentra tu esencia ideal con nuestra selección de marcas de lujo.{% endblock %}">
+    <meta name="description" content="{% block meta_description %}Perfumes alternativos de nicho y diseñador en Chile, inspirados en la alta perfumería. Asesoría personalizada por WhatsApp y envío a todo el país.{% endblock %}">
     <meta property="og:title" content="{% block og_title %}Instinto Olfativo | Perfumes Alternativos de Nicho{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}Descubre la colección más exclusiva de alta perfumería.{% endblock %}">
-    <meta property="og:type" content="website">
+    <meta property="og:description" content="{% block og_description %}Perfumes alternativos de nicho y diseñador en Chile, con asesoría personalizada y envío a todo el país.{% endblock %}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:site_name" content="Instinto Olfativo">
+    <meta property="og:locale" content="es_CL">
+    <meta property="og:image" content="{% block og_image %}{{ SITE_URL }}{% static 'img/logo-instinto-oscuro.png' %}{% endblock %}">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="canonical" href="{% block canonical %}{{ SITE_URL }}{{ request.path }}{% endblock %}">
-    <meta property="og:url" content="{{ SITE_URL }}{{ request.path }}">
+    <meta property="og:url" content="{% block og_url %}{{ SITE_URL }}{{ request.path }}{% endblock %}">
     <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
     <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
     <link rel="preload" as="image" href="{% static 'img/logo-instinto-oscuro.png' %}">
@@ -20,11 +23,13 @@
     {
       "@context": "https://schema.org",
       "@type": "OnlineStore",
+      "@id": "https://www.instintoolfativo.cl/#organizacion",
       "name": "Instinto Olfativo",
       "url": "https://www.instintoolfativo.cl/",
       "logo": "https://www.instintoolfativo.cl{% static 'img/logo-instinto-oscuro.png' %}",
       "description": "Tienda online chilena de perfumes alternativos de nicho y diseñador, con decants y fragancias inspiradas en la alta perfumería.",
       "areaServed": { "@type": "Country", "name": "Chile" },
+      "address": { "@type": "PostalAddress", "addressLocality": "Castro", "addressRegion": "Los Lagos", "addressCountry": "CL" },
       "hasMerchantReturnPolicy": {
         "@type": "MerchantReturnPolicy",
         "applicableCountry": "CL",
