@@ -51,6 +51,8 @@
                 setTimeout(function () { input.focus(); }, 30);
             }
             function cerrar() {
+                input.blur();
+                boton.focus();
                 caja.classList.add("hidden");
                 boton.setAttribute("aria-expanded", "false");
                 document.body.style.overflow = "";
@@ -104,7 +106,8 @@
             caja.addEventListener("click", function (e) { if (e.target.closest("[data-cerrar-buscador]")) cerrar(); });
             document.addEventListener("keydown", function (e) {
                 if (e.key === "Escape" && !caja.classList.contains("hidden")) cerrar();
-                var escribiendo = /INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || "");
+                var t = e.target || {};
+                var escribiendo = (t.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(t.tagName || "")) && t.offsetParent !== null;
                 if (e.key === "/" && !escribiendo && caja.classList.contains("hidden")) { e.preventDefault(); abrir(); }
             });
         })();
