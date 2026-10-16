@@ -328,9 +328,9 @@
                 <label>No completar <input type="text" name="sitio_web" tabindex="-1" autocomplete="off"></label>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <input type="text" name="nombre" required placeholder="Tu nombre"
+                <input type="text" name="nombre" required placeholder="Tu nombre" aria-label="Tu nombre"
                        class="w-full bg-white border border-gray-200 px-4 py-3 text-sm font-light focus:outline-none focus:border-gray-900 transition-colors">
-                <select name="calificacion" required
+                <select name="calificacion" required aria-label="Calificación" 
                         class="w-full bg-white border border-gray-200 px-4 py-3 text-sm font-light focus:outline-none focus:border-gray-900 transition-colors">
                     <option value="5">5 estrellas — Excelente</option>
                     <option value="4">4 estrellas — Muy bueno</option>
@@ -339,7 +339,7 @@
                     <option value="1">1 estrella — Malo</option>
                 </select>
             </div>
-            <textarea name="comentario" required rows="4" placeholder="Cuéntanos tu experiencia con esta fragancia..."
+            <textarea name="comentario" required rows="4" aria-label="Tu reseña" placeholder="Cuéntanos tu experiencia con esta fragancia..."
                       class="w-full bg-white border border-gray-200 px-4 py-3 text-sm font-light focus:outline-none focus:border-gray-900 transition-colors"></textarea>
             <button type="submit" class="w-full bg-gray-900 text-white py-4 text-[11px] tracking-[0.22em] uppercase hover:bg-black transition-colors">Enviar Reseña</button>
             <p class="text-center text-[12px] font-light text-gray-500">Tu reseña será publicada tras ser revisada.</p>
