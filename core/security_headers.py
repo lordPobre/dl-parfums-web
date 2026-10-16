@@ -11,7 +11,7 @@ from django.urls import reverse
 TERCEROS_SCRIPT = "https://connect.facebook.net https://analytics.tiktok.com"
 
 CSP_SITIO = (
-    "default-src 'none'; "
+    "default-src 'none' https://analytics.tiktok.com; "
     "script-src 'self' 'nonce-{n}' 'strict-dynamic' " + TERCEROS_SCRIPT + "; "
     "style-src 'self' 'nonce-{n}' https://fonts.googleapis.com; "
     "style-src-attr 'unsafe-inline'; "
