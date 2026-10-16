@@ -13,5 +13,6 @@ if [ ! -f ./tailwindcss ]; then
   chmod +x tailwindcss
 fi
 ./tailwindcss -c tailwind.config.js -i static/css/input.css -o static/css/app.css --minify
+python3 minificar_js.py
 python3 manage.py collectstatic --noinput
 echo "Listo: static/css/app.css y staticfiles/ actualizados. Haz commit de ambos."

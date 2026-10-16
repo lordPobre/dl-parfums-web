@@ -14,5 +14,6 @@ if /I "%1"=="watch" (
     exit /b
 )
 tailwindcss.exe -c tailwind.config.js -i static/css/input.css -o static/css/app.css --minify || exit /b 1
+python minificar_js.py
 python manage.py collectstatic --noinput || exit /b 1
 echo Listo: static\css\app.css y staticfiles\ actualizados. Haz commit de ambos.

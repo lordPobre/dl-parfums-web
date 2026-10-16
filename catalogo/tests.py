@@ -552,3 +552,39 @@ class SEOSegundaRondaTests(TestCase):
         with override_settings(GOOGLE_SITE_VERIFICATION="abc123"):
             html = self.client.get(reverse("contacto")).content.decode()
         self.assertIn('name="google-site-verification" content="abc123"', html)
+
+
+# ---------- seo3: meta descripciones y JavaScript minificado ----------
+import html as _html
+import re as _re
+
+from django.test import SimpleTestCase
+
+
+class SEO3Tests(TestCase):
+    def descripcion(self, url):
+        html = self.client.get(url).content.decode()
+        m = _re.search(r'<meta name="description" content="([^"]*)"', html)
+        self.assertIsNotNone(m, f"{url} sin meta description")
+        return _html.unescape(m.group(1))
+
+    def test_descripciones_hasta_160_caracteres(self):
+        for nombre in ("home", "catalogo", "nosotros"):
+            with self.subTest(nombre):
+                d = self.descripcion(reverse(nombre))
+                self.assertLessEqual(len(d), 160, f"{nombre}: {len(d)} caracteres")
+                self.assertGreaterEqual(len(d), 70, f"{nombre}: {len(d)} caracteres")
+
+
+class JSMinificadoTests(SimpleTestCase):
+    def test_js_publicado_es_el_minificado_de_src(self):
+        from minificar_js import DEST, SRC, minificar
+        fuentes = sorted(SRC.glob("*.js"))
+        self.assertTrue(fuentes, "static/js/src/ está vacío")
+        for f in fuentes:
+            with self.subTest(f.name):
+                self.assertEqual(
+                    (DEST / f.name).read_text(encoding="utf-8"),
+                    minificar(f.read_text(encoding="utf-8")),
+                    f"static/js/{f.name} no coincide con src/: corre python minificar_js.py",
+                )
