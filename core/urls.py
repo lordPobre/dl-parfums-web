@@ -36,6 +36,7 @@ def robots_txt(request):
 
 
 urlpatterns = [
+    path('perseus-access-x12/2fa/', include('core.admin_2fa')),
     path('perseus-access-x12/', admin.site.urls),
     path('', include('catalogo.urls')),
     path('robots.txt', robots_txt),

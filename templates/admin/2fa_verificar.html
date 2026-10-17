@@ -1,0 +1,21 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}{% endblock %}
+{% block content %}
+<div style="max-width: 420px; margin: 48px auto; padding: 0 16px;">
+  <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 8px;">Verificación en dos pasos</h1>
+  <p style="margin: 0 0 20px; line-height: 1.5;">Abre tu app autenticadora e ingresa el código de 6 dígitos de Instinto Olfativo. Si no tienes el teléfono, usa uno de tus códigos de respaldo.</p>
+  {% if error %}<p role="alert" style="margin: 0 0 16px; color: #b91c1c;">{{ error }}</p>{% endif %}
+  <form method="post" style="display: flex; flex-direction: column; gap: 12px;">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <label for="codigo" style="font-weight: 500;">Código</label>
+    <input id="codigo" name="codigo" required autofocus autocomplete="one-time-code" inputmode="numeric" maxlength="16"
+           style="font-size: 20px; letter-spacing: 4px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+    <button type="submit" style="padding: 10px 16px; background: #111827; color: #fff; border: 0; border-radius: 6px; font-weight: 500; cursor: pointer;">Verificar</button>
+  </form>
+  <form method="post" action="{% url 'admin:logout' %}" style="margin-top: 20px;">
+    {% csrf_token %}
+    <button type="submit" style="background: none; border: 0; padding: 0; color: #4b5563; text-decoration: underline; cursor: pointer;">Cerrar sesión</button>
+  </form>
+</div>
+{% endblock %}

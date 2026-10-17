@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.postgres',   # búsqueda sin tildes y con tolerancia a errores
     'catalogo',
     'axes',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +52,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
+    'core.admin_2fa.Admin2FAMiddleware',  # A4: código del teléfono en el admin
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.security_headers.SecurityHeadersMiddleware', 
@@ -193,3 +198,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+
+# Segundo factor del admin (core/admin_2fa.py)
+OTP_TOTP_ISSUER = 'Instinto Olfativo'
+ADMIN_2FA_OBLIGATORIO = True

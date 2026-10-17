@@ -1,3 +1,4 @@
+from django.test import TestCase
 """Pruebas mínimas del sitio. Corren en el CI (GitHub Actions, con PostgreSQL) en cada push.
 
 Local:  DJANGO_SETTINGS_MODULE=core.settings_ci python manage.py test
@@ -324,7 +325,7 @@ class AdminUnfoldTests(TestCase):
 
     def setUp(self):
         from django.contrib.auth.models import User
-        self.client.force_login(User.objects.create_superuser("admin-ci", "ci@example.com", "x"))
+        entrar_admin_verificado(self.client, User.objects.create_superuser("admin-ci", "ci@example.com", "x"))
 
     def test_pantallas_cargan(self):
         for nombre in ("admin:index", "admin:panel_ventas", "admin:catalogo_perfume_changelist",
@@ -621,3 +622,68 @@ class RendimientoMovilTests(TestCase):
                 self.assertNotIn(".png", tag)
                 self.assertRegex(tag, r'\swidth="\d+"')
                 self.assertRegex(tag, r'\sheight="\d+"')
+
+
+def entrar_admin_verificado(client, usuario):
+    """Inicia sesión con el segundo factor ya validado (para pruebas del admin)."""
+    from django_otp import DEVICE_ID_SESSION_KEY
+    from django_otp.plugins.otp_totp.models import TOTPDevice
+    dispositivo = TOTPDevice.objects.create(user=usuario, name="pruebas", confirmed=True)
+    client.force_login(usuario)
+    sesion = client.session
+    sesion[DEVICE_ID_SESSION_KEY] = dispositivo.persistent_id
+    sesion.save()
+
+
+class Admin2FATests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.usuario = User.objects.create_superuser("admin-2fa", "2fa@example.com", "x")
+        self.inicio = reverse("admin:index")
+
+    def test_sin_dispositivo_pide_configurar(self):
+        self.client.force_login(self.usuario)
+        r = self.client.get(self.inicio)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r["Location"].startswith(reverse("admin2fa_configurar")))
+
+    def test_configurar_con_qr_y_codigos_de_respaldo(self):
+        from django_otp.oath import totp
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        self.client.force_login(self.usuario)
+        r = self.client.get(reverse("admin2fa_configurar"))
+        self.assertContains(r, "data:image/svg+xml;base64,")
+        d = TOTPDevice.objects.get(user=self.usuario)
+        r = self.client.post(reverse("admin2fa_configurar"), {"codigo": f"{totp(d.bin_key):06d}"})
+        self.assertContains(r, "Códigos de respaldo")
+        d.refresh_from_db()
+        self.assertTrue(d.confirmed)
+        self.assertEqual(self.client.get(self.inicio).status_code, 200)
+
+    def test_con_dispositivo_pide_codigo(self):
+        from django_otp.oath import totp
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        d = TOTPDevice.objects.create(user=self.usuario, name="app", confirmed=True)
+        self.client.force_login(self.usuario)
+        r = self.client.get(self.inicio)
+        self.assertTrue(r["Location"].startswith(reverse("admin2fa_verificar")))
+        malo = f"{(totp(d.bin_key) + 1) % 1000000:06d}"
+        self.assertContains(self.client.post(reverse("admin2fa_verificar"), {"codigo": malo}), "Código incorrecto")
+        d.throttle_reset()
+        r = self.client.post(reverse("admin2fa_verificar"), {"codigo": f"{totp(d.bin_key):06d}"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(self.client.get(self.inicio).status_code, 200)
+
+    def test_codigo_de_respaldo_sirve_una_vez(self):
+        from django_otp.plugins.otp_static.models import StaticDevice
+        d = StaticDevice.objects.create(user=self.usuario, name="respaldo", confirmed=True)
+        d.token_set.create(token="abcd2345")
+        self.client.force_login(self.usuario)
+        self.assertEqual(self.client.post(reverse("admin2fa_verificar"), {"codigo": "abcd2345"}).status_code, 302)
+        self.client.logout()
+        self.client.force_login(self.usuario)
+        self.assertContains(self.client.post(reverse("admin2fa_verificar"), {"codigo": "abcd2345"}), "Código incorrecto")
+
+    def test_sitio_publico_no_cambia(self):
+        self.client.force_login(self.usuario)
+        self.assertEqual(self.client.get("/").status_code, 200)
