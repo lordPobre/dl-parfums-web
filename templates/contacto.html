@@ -71,17 +71,17 @@
                     <label>No llenar <input type="text" name="sitio_web" tabindex="-1" autocomplete="off"></label>
                 </div>
                 <div>
-                    <label for="c-nombre" class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Nombre Completo</label>
+                    <label for="c-nombre" class="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Nombre Completo</label>
                     <input id="c-nombre" type="text" name="nombre" required maxlength="80" autocomplete="name" value="{{ form.nombre.value|default:'' }}" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light">
                     {% if form.nombre.errors %}<p style="margin:6px 0 0;font-size:12px;color:#b91c1c;">{{ form.nombre.errors.0 }}</p>{% endif %}
                 </div>
                 <div>
-                    <label for="c-email" class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Correo Electrónico</label>
+                    <label for="c-email" class="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Correo Electrónico</label>
                     <input id="c-email" type="email" name="email" required maxlength="120" autocomplete="email" value="{{ form.email.value|default:'' }}" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light">
                     {% if form.email.errors %}<p style="margin:6px 0 0;font-size:12px;color:#b91c1c;">{{ form.email.errors.0 }}</p>{% endif %}
                 </div>
                 <div>
-                    <label for="c-mensaje" class="block text-[10px] uppercase tracking-widest text-gray-400 mb-2">Mensaje</label>
+                    <label for="c-mensaje" class="block text-[10px] uppercase tracking-widest text-gray-500 mb-2">Mensaje</label>
                     <textarea id="c-mensaje" name="mensaje" rows="4" required maxlength="3000" class="w-full bg-transparent border-b border-gray-300 py-3 focus:border-gray-900 outline-none transition-colors text-sm font-light resize-none">{{ form.mensaje.value|default:'' }}</textarea>
                     {% if form.mensaje.errors %}<p style="margin:6px 0 0;font-size:12px;color:#b91c1c;">{{ form.mensaje.errors.0 }}</p>{% endif %}
                 </div>
