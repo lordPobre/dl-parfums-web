@@ -18,6 +18,10 @@ sitemaps_dict = {
 
 def robots_txt(request):
     lineas = [
+        "User-Agent: PetalBot",
+        "Disallow: /",
+        "",
+        "User-Agent: *",
         "User-Agent: *",
         "Allow: /",
         "Disallow: /api/",

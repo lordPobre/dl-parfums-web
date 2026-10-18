@@ -1,0 +1,13 @@
+name: Respaldo diario
+on:
+  schedule: [{ cron: "0 7 * * *" }]   # 04:00 Chile
+  workflow_dispatch:
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client-17 || sudo apt-get install -y postgresql-client
+      - run: pg_dump "$URL" -Fc --no-owner --no-acl -f respaldo.dump
+        env: { URL: "${{ secrets.DATABASE_URL_PRODUCCION }}" }
+      - uses: actions/upload-artifact@v4
+        with: { name: respaldo, path: respaldo.dump, retention-days: 14 }
