@@ -687,3 +687,77 @@ class Admin2FATests(TestCase):
     def test_sitio_publico_no_cambia(self):
         self.client.force_login(self.usuario)
         self.assertEqual(self.client.get("/").status_code, 200)
+
+
+class CombosTests(Base):
+    """Combo automático: 2 Smart Collection de 25 o 30 ml por $10.000 (cada uno vale $6.000)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        from .models import Promocion
+        cls.sc1 = cls._perfume("Smart Collection No.540", inspirado_en="Baccarat Rouge 540")
+        cls.sc1_25 = Presentacion.objects.create(perfume=cls.sc1, formato="frasco", ml=25, precio=6000, stock=10)
+        cls.sc1_30 = Presentacion.objects.create(perfume=cls.sc1, formato="frasco", ml=30, precio=6000, stock=10)
+        cls.sc1_100 = Presentacion.objects.create(perfume=cls.sc1, formato="frasco", ml=100, precio=20000, stock=10)
+        cls.sc2 = cls._perfume("Smart Collection No.475", inspirado_en="Good Girl de Carolina Herrera")
+        cls.sc2_30 = Presentacion.objects.create(perfume=cls.sc2, formato="frasco", ml=30, precio=6000, stock=10)
+        cls.promo = Promocion.objects.create(
+            titulo="2 Smart Collection por $10.000", precio=10000, unidades=50,
+            combo_cantidad=2, combo_ml="25,30", combo_nombre="Smart Collection",
+        )
+
+    def pedir(self, *pares):
+        items = [{"id": f"v-{p.pk}", "qty": q} for p, q in pares]
+        r = self.client.post(reverse("crear_pedido"), data=json.dumps({"items": items}), content_type="application/json")
+        return r.json()
+
+    def test_dos_smart_salen_a_10000(self):
+        d = self.pedir((self.sc1_30, 1), (self.sc2_30, 1))
+        self.assertEqual((d["total"], d["descuento"]), (10000, 2000))
+        pedido = Pedido.objects.get(pk=d["pedido_id"])
+        self.assertEqual(pedido.descuento, 2000)
+        self.assertIn("2 Smart Collection", pedido.detalle_descuento)
+
+    def test_mezcla_25_y_30_y_misma_linea(self):
+        self.assertEqual(self.pedir((self.sc1_25, 1), (self.sc2_30, 1))["total"], 10000)
+        self.assertEqual(self.pedir((self.sc2_30, 2))["total"], 10000)
+
+    def test_impar_paga_el_ultimo_normal(self):
+        self.assertEqual(self.pedir((self.sc1_30, 2), (self.sc2_30, 1))["total"], 16000)
+        self.assertEqual(self.pedir((self.sc1_30, 2), (self.sc2_30, 2))["total"], 20000)
+
+    def test_otros_tamanos_y_perfumes_no_califican(self):
+        self.assertEqual(self.pedir((self.sc1_100, 1), (self.sc2_30, 1))["total"], 26000)
+        self.assertEqual(self.pedir((self.sc2_30, 1), (self.p1_decant, 1))["total"], 12000)
+
+    def test_combo_vencido_no_descuenta(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        type(self.promo).objects.filter(pk=self.promo.pk).update(fecha_fin=timezone.localdate() - timedelta(days=1))
+        self.assertEqual(self.pedir((self.sc1_30, 1), (self.sc2_30, 1))["total"], 12000)
+
+    def test_combo_no_se_pide_como_linea(self):
+        cuerpo = json.dumps({"items": [{"id": f"promo-{self.promo.pk}"}]})
+        r = self.client.post(reverse("crear_pedido"), data=cuerpo, content_type="application/json")
+        self.assertEqual(r.status_code, 400)
+
+    def test_pedido_guarda_inspirado_en(self):
+        d = self.pedir((self.sc1_30, 1))
+        item = Pedido.objects.get(pk=d["pedido_id"]).items.get()
+        self.assertIn("inspirado en Baccarat Rouge 540", item.nombre)
+
+    def test_cotizar(self):
+        r = self.client.get(reverse("api_cotizar"), {"i": f"v-{self.sc1_30.pk}:1,v-{self.sc2_30.pk}:1,hack"})
+        d = r.json()
+        self.assertEqual((d["subtotal"], d["descuento"], d["total"]), (12000, 2000, 10000))
+        self.assertEqual(d["lineas"][0]["insp"], "Baccarat Rouge 540")
+        self.assertEqual(d["detalle"][0]["combos"], 1)
+
+    def test_validaciones_combo(self):
+        from django.core.exceptions import ValidationError
+        from .models import Promocion
+        with self.assertRaises(ValidationError):
+            Promocion(titulo="x", precio=10000, unidades=5, combo_cantidad=1).full_clean()
+        with self.assertRaises(ValidationError):
+            Promocion(titulo="x", precio=10000, unidades=5, combo_cantidad=2, combo_ml="25 ml").full_clean()

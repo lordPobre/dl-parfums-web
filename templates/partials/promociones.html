@@ -94,8 +94,13 @@ Los colores viven aquí como variables CSS: no dependen de recompilar Tailwind.
                                 {% if promo.descuento %}<span class="pt-tachado">{{ promo.precio_normal|clp }}</span>{% endif %}
                             </div>
                             {% if promo.ahorro %}<span class="pt-ahorro">Ahorras {{ promo.ahorro|clp }}</span>{% endif %}
+                            {% if promo.combo_cantidad %}<span class="pt-ahorro">Se descuenta solo al juntar {{ promo.combo_cantidad }} en tu selección</span>{% endif %}
                         </div>
                         <div class="flex items-center gap-4">
+                            {% if promo.combo_cantidad %}
+                            <a href="{% url 'catalogo' %}{% if promo.combo_nombre %}?q={{ promo.combo_nombre|urlencode }}{% endif %}"
+                               class="pt-btn text-[11px] tracking-[0.2em] uppercase px-3 py-1.5">Elegir perfumes</a>
+                            {% else %}
                             <button type="button" data-add-cart
                                     data-id="promo-{{ promo.id }}"
                                     data-nombre="{{ promo.titulo }}"
@@ -103,6 +108,7 @@ Los colores viven aquí como variables CSS: no dependen de recompilar Tailwind.
                                     data-precio="{{ promo.precio }}"
                                     data-img="{% if promo.imagen %}{{ promo.imagen.url|cl:160 }}{% endif %}"
                                     class="pt-btn text-[11px] tracking-[0.2em] uppercase px-3 py-1.5">Agregar</button>
+                            {% endif %}
                             <a href="https://wa.me/56962169898?text=Hola,%20me%20interesa%20la%20promoci%C3%B3n%20{{ promo.titulo|urlencode }}."
                                target="_blank" rel="noopener noreferrer"
                                class="pt-link text-[11px] tracking-[0.2em] uppercase pb-0.5">Lo quiero</a>

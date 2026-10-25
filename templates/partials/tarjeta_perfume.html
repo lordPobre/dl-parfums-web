@@ -48,7 +48,7 @@ así todas las tarjetas de una fila miden lo mismo y los botones quedan alineado
     <button type="button" data-add-cart
             data-id="{{ perfume.id }}"
             data-nombre="{{ perfume.nombre }}"
-            data-marca="{{ perfume.marca.nombre }}"
+            data-marca="{{ perfume.marca.nombre }}" data-insp="{{ perfume.inspirado_en }}"
             data-precio="{% if perfume.es_oferta and perfume.precio_oferta %}{{ perfume.precio_oferta }}{% else %}{{ perfume.precio }}{% endif %}"
             data-img="{% if perfume.imagen %}{{ perfume.imagen.url|cl:160 }}{% endif %}"
             class="mt-3 sm:mt-4 mx-auto w-full max-w-[220px] min-h-[44px] flex items-center justify-center border border-gray-900 text-gray-900 text-[10px] tracking-[0.16em] sm:tracking-[0.22em] uppercase hover:bg-gray-900 hover:text-white transition-colors">

@@ -358,6 +358,25 @@ class Promocion(models.Model):
     )
     orden = models.PositiveIntegerField(default=0, help_text="Menor número aparece primero.")
     activo = models.BooleanField(default=True)
+    # Combo automático (ej. 2 Smart Collection de 25 o 30 ml por $10.000): ver catalogo/combos.py
+    combo_cantidad = models.PositiveSmallIntegerField(
+        blank=True, null=True, verbose_name="Cantidad del combo",
+        help_text="Combo automático: cuántos perfumes forman el combo (ej. 2). Si lo llenas, el precio "
+                  "de la promoción se aplica solo en la selección y en el pedido cuando el cliente junta "
+                  "esa cantidad de perfumes que califican.",
+    )
+    combo_ml = models.CharField(
+        max_length=40, blank=True, verbose_name="Tamaños que califican (ml)",
+        help_text="Separados por coma, ej: 25,30. Vacío = cualquier tamaño.",
+    )
+    combo_nombre = models.CharField(
+        max_length=80, blank=True, verbose_name="Nombre empieza con",
+        help_text="Ej: Smart Collection. Vacío = cualquier perfume.",
+    )
+    combo_solo_incluidos = models.BooleanField(
+        default=False, verbose_name="Solo los perfumes incluidos",
+        help_text="Si lo marcas, solo califican los perfumes elegidos en «Perfumes».",
+    )
 
     class Meta:
         ordering = ['orden', 'id']
@@ -376,6 +395,10 @@ class Promocion(models.Model):
         if not self.fecha_fin and not self.unidades:
             errores['fecha_fin'] = ("Indica la fecha de término o las unidades disponibles: "
                                     "la ley exige informar cuánto dura la promoción.")
+        if self.combo_cantidad is not None and self.combo_cantidad < 2:
+            errores['combo_cantidad'] = "Un combo necesita al menos 2 perfumes."
+        if self.combo_ml and not all(p.strip().isdigit() for p in self.combo_ml.split(',') if p.strip()):
+            errores['combo_ml'] = "Escribe solo números separados por coma, ej: 25,30."
         if errores:
             raise ValidationError(errores)
 
@@ -403,6 +426,22 @@ class Promocion(models.Model):
     @property
     def ahorro(self):
         return self.precio_normal - self.precio if self.descuento else None
+
+    @property
+    def ml_combo(self):
+        return {int(p) for p in (self.combo_ml or '').replace(' ', '').split(',') if p.isdigit()}
+
+    def califica(self, presentacion):
+        """¿Esta presentación cuenta para el combo automático?"""
+        ml = self.ml_combo
+        if ml and presentacion.ml not in ml:
+            return False
+        prefijo = (self.combo_nombre or '').strip().lower()
+        if prefijo and not presentacion.perfume.nombre.lower().startswith(prefijo):
+            return False
+        if self.combo_solo_incluidos and presentacion.perfume_id not in {p.pk for p in self.perfumes.all()}:
+            return False
+        return True
 
 class ImagenPerfume(models.Model):
     """Imágenes adicionales de un perfume (galería). La imagen principal sigue
@@ -523,6 +562,8 @@ class Pedido(models.Model):
     estado = models.CharField(max_length=12, choices=ESTADOS, default='pendiente')
     total = models.PositiveIntegerField(default=0, help_text="Total en CLP.")
     stock_descontado = models.BooleanField(default=False, help_text="Marca interna: evita descontar stock dos veces.")
+    descuento = models.PositiveIntegerField(default=0, help_text="Descuento por combos automáticos (CLP). Ya está restado del total.")
+    detalle_descuento = models.CharField(max_length=255, blank=True, verbose_name="Detalle del descuento")
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 
@@ -539,7 +580,7 @@ class Pedido(models.Model):
         return f"IO-{self.pk:06d}" if self.pk else "—"
 
     def recalcular_total(self):
-        self.total = sum(i.subtotal for i in self.items.all())
+        self.total = max(0, sum(i.subtotal for i in self.items.all()) - (self.descuento or 0))
         return self.total
 
 

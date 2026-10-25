@@ -118,11 +118,18 @@
             var KEY = "io_cart";
             var cart = [];
             try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { cart = []; }
+            // Combos automáticos (ej. 2 Smart Collection por $10.000): los calcula el servidor en /api/cotizar/
+            var cot = { clave: "", descuento: 0, detalle: [] };
+            var cotEspera;
 
             function guardar() { try { localStorage.setItem(KEY, JSON.stringify(cart)); } catch (e) {} }
             function fmt(n) { return "$" + (n || 0).toLocaleString("es-CL"); }
+            function esc(s) { return String(s || "").replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
             function totalItems() { return cart.reduce(function (s, i) { return s + i.qty; }, 0); }
-            function totalPrecio() { return cart.reduce(function (s, i) { return s + i.precio * i.qty; }, 0); }
+            function subtotal() { return cart.reduce(function (s, i) { return s + i.precio * i.qty; }, 0); }
+            function clave() { return cart.map(function (i) { return i.id + ":" + i.qty; }).join(","); }
+            function vigente() { return cot.clave && cot.clave === clave() ? cot : { descuento: 0, detalle: [] }; }
+            function totalPrecio() { return Math.max(0, subtotal() - vigente().descuento); }
 
             var panel = document.getElementById("cart-panel");
             var overlay = document.getElementById("cart-overlay");
@@ -131,6 +138,9 @@
             var vacio = document.getElementById("cart-empty");
             var pie = document.getElementById("cart-footer");
             var elTotal = document.getElementById("cart-total");
+            var elDesc = document.createElement("div");
+            elDesc.className = "hidden mb-3 pb-3 border-b border-gray-100";
+            pie.insertBefore(elDesc, pie.firstChild);
 
             function abrir() { overlay.classList.remove("hidden"); panel.classList.remove("translate-x-full"); requestAnimationFrame(function () { overlay.classList.remove("opacity-0"); }); document.body.style.overflow = "hidden"; }
             function cerrar() { overlay.classList.add("opacity-0"); panel.classList.add("translate-x-full"); document.body.style.overflow = ""; setTimeout(function () { overlay.classList.add("hidden"); }, 300); }
@@ -143,7 +153,26 @@
                 t._to = setTimeout(function () { t.classList.add("opacity-0", "translate-y-2"); setTimeout(function () { t.classList.add("hidden"); }, 300); }, 1800);
             }
 
-            function render() {
+            function cotizar() {
+                clearTimeout(cotEspera);
+                var c = clave();
+                if (!c || c === cot.clave) return;
+                cotEspera = setTimeout(function () {
+                    fetch("/api/cotizar/?i=" + encodeURIComponent(c), { credentials: "same-origin" })
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (d) {
+                            if (!d || clave() !== c) return;
+                            cot = { clave: c, descuento: d.descuento || 0, detalle: d.detalle || [] };
+                            var insp = {};
+                            (d.lineas || []).forEach(function (l) { insp[l.id] = l.insp; });
+                            cart.forEach(function (i) { if (insp[i.id] && !i.insp) i.insp = insp[i.id]; });
+                            guardar(); pintar();
+                        })
+                        .catch(function () {});
+                }, 250);
+            }
+
+            function pintar() {
                 badge.textContent = totalItems();
                 badge.classList.toggle("hidden", totalItems() === 0);
                 if (!cart.length) {
@@ -152,6 +181,13 @@
                     return;
                 }
                 cont.classList.remove("hidden"); vacio.classList.add("hidden"); pie.classList.remove("hidden");
+                var c = vigente();
+                elDesc.classList.toggle("hidden", !c.descuento);
+                elDesc.innerHTML = c.detalle.map(function (d) {
+                    return '<div class="flex items-baseline justify-between gap-4 text-[13px] font-light text-gray-700">' +
+                        '<span>' + esc(d.titulo) + (d.combos > 1 ? " ×" + d.combos : "") + '</span>' +
+                        '<span class="whitespace-nowrap">−' + fmt(d.ahorro) + '</span></div>';
+                }).join("");
                 elTotal.textContent = fmt(totalPrecio());
                 cont.innerHTML = cart.map(function (i, idx) {
                     return '<div class="flex gap-4 items-start">' +
@@ -159,6 +195,7 @@
                         '<div class="flex-1 min-w-0">' +
                             '<p class="text-[9px] tracking-[0.2em] uppercase text-gray-500">' + (i.marca || "") + '</p>' +
                             '<h4 class="font-serif text-sm text-gray-900 leading-snug mb-1">' + i.nombre + '</h4>' +
+                            (i.insp ? '<p class="text-[12px] font-light text-gray-500 leading-snug mb-1">Inspirado en <em class="font-serif text-gray-800">' + esc(i.insp) + '</em></p>' : '') +
                             '<p class="text-[13px] text-gray-700 font-light">' + fmt(i.precio) + '</p>' +
                             '<div class="flex items-center gap-2 mt-2">' +
                                 '<button data-menos="' + idx + '" class="w-6 h-6 border border-gray-200 text-gray-600 hover:border-gray-900 flex items-center justify-center text-sm">−</button>' +
@@ -171,9 +208,12 @@
                 }).join("");
             }
 
+            function render() { pintar(); cotizar(); }
+
             window.agregarAlCarrito = function (p) {
                 var ex = cart.find(function (i) { return i.id === p.id; });
-                if (ex) { ex.qty += 1; } else { cart.push({ id: p.id, nombre: p.nombre, marca: p.marca, precio: Number(p.precio) || 0, img: p.img || "", qty: 1 }); }
+                if (ex) { ex.qty += 1; if (p.insp && !ex.insp) ex.insp = p.insp; }
+                else { cart.push({ id: p.id, nombre: p.nombre, marca: p.marca, insp: p.insp || "", precio: Number(p.precio) || 0, img: p.img || "", qty: 1 }); }
                 guardar(); render(); toast("Agregado a tu selección"); abrir();
             };
 
@@ -198,16 +238,21 @@
                 var w = window.open("", "_blank");
                 var enviado = false;
 
-                function mensaje(codigo, total) {
+                function mensaje(codigo, total, detalle) {
                     var lineas = ["Hola! Quiero solicitar los siguientes perfumes:", ""];
                     cart.forEach(function (i) {
                         lineas.push("• " + i.nombre + (i.marca ? " (" + i.marca + ")" : "") + " — " + i.qty + " x " + fmt(i.precio));
+                        if (i.insp) lineas.push("   Inspirado en " + i.insp);
                     });
                     lineas.push("");
+                    (detalle || []).forEach(function (d) {
+                        lineas.push("Promoción " + d.titulo + (d.combos > 1 ? " (x" + d.combos + ")" : "") + ": -" + fmt(d.ahorro));
+                    });
                     lineas.push("TOTAL: " + fmt(total));
                     if (codigo) lineas.push("N.º de pedido: " + codigo);
                     return "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(lineas.join("\n"));
                 }
+                function local() { return mensaje(null, totalPrecio(), vigente().detalle); }
                 function ir(url) {
                     if (enviado) return;
                     enviado = true;
@@ -215,7 +260,7 @@
                 }
 
                 // Si el servidor tarda más de 4 s, se envía igual sin número de pedido
-                var espera = setTimeout(function () { ir(mensaje(null, totalPrecio())); }, 4000);
+                var espera = setTimeout(function () { ir(local()); }, 4000);
 
                 window.obtenerCsrf().then(function (token) {
                     return fetch("/api/pedido/", {
@@ -228,9 +273,9 @@
                 .then(function (r) { return r.ok ? r.json() : null; })
                 .then(function (d) {
                     clearTimeout(espera);
-                    ir(d && d.ok ? mensaje(d.codigo, d.total) : mensaje(null, totalPrecio()));
+                    ir(d && d.ok ? mensaje(d.codigo, d.total, d.detalle) : local());
                 })
-                .catch(function () { clearTimeout(espera); ir(mensaje(null, totalPrecio())); });
+                .catch(function () { clearTimeout(espera); ir(local()); });
             });
 
             function getCookie(name) {
@@ -247,6 +292,7 @@
                     id: btn.getAttribute("data-id"),
                     nombre: btn.getAttribute("data-nombre"),
                     marca: btn.getAttribute("data-marca"),
+                    insp: btn.getAttribute("data-insp"),
                     precio: btn.getAttribute("data-precio"),
                     img: btn.getAttribute("data-img")
                 });

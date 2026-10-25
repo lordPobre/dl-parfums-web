@@ -223,6 +223,12 @@ class PromocionAdmin(ModelAdmin):
     fieldsets = (
         (None, {'fields': ('titulo', 'descripcion', 'perfumes', 'imagen')}),
         ('Precio', {'fields': ('precio', 'precio_normal')}),
+        ('Combo automático', {
+            'fields': ('combo_cantidad', 'combo_ml', 'combo_nombre', 'combo_solo_incluidos'),
+            'description': "Opcional. Con «Cantidad del combo», el precio de la promoción se aplica solo "
+                           "cuando el cliente junta esa cantidad de perfumes que califican "
+                           "(ej. 2 · 25,30 · Smart Collection). La tarjeta del home pasa a decir «Elegir perfumes».",
+        }),
         ('Estilo y vigencia', {
             'fields': ('tema', 'etiqueta', 'fecha_inicio', 'fecha_fin', 'unidades'),
             'description': "El tema define colores y adorno de la tarjeta. Si todas las promociones "
@@ -378,7 +384,7 @@ class PedidoAdmin(ModelAdmin):
     list_display = ('codigo', 'cliente', 'telefono', 'estado', 'total', 'stock_descontado', 'creado')
     list_filter = ('estado', 'creado')
     search_fields = ('id', 'cliente', 'telefono')
-    readonly_fields = ('codigo', 'total', 'stock_descontado', 'creado', 'actualizado')
+    readonly_fields = ('codigo', 'total', 'descuento', 'detalle_descuento', 'stock_descontado', 'creado', 'actualizado')
     inlines = [ItemPedidoInline]
     actions = [aprobar_pedidos, rechazar_pedidos]
 

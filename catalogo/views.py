@@ -494,10 +494,99 @@ def csrf_api(request):
     return JsonResponse({"token": get_token(request)})
 
 
+from . import combos  # noqa: E402
+
+
+def _normalizar(items):
+    """Líneas del carrito -> [(id_carrito, tipo, id, cantidad)]
+      "v-12"    -> presentación 12 (ficha con selector de tamaño)
+      "8"       -> perfume 8 (tarjeta con un solo tamaño, o carrito guardado antes del cambio)
+      "promo-3" -> promoción 3"""
+    pedidas = []
+    for it in items[:MAX_ITEMS]:
+        if not isinstance(it, dict):
+            continue
+        try:
+            qty = max(1, min(MAX_QTY, int(it.get("qty") or 1)))
+        except (TypeError, ValueError):
+            continue
+        pid = str(it.get("id") or "")
+        if pid.startswith("v-") and pid[2:].isdigit():
+            pedidas.append((pid, "presentacion", int(pid[2:]), qty))
+        elif pid.isdigit():
+            pedidas.append((pid, "perfume", int(pid), qty))
+        elif pid.startswith("promo-") and pid[6:].isdigit():
+            pedidas.append((pid, "promo", int(pid[6:]), qty))
+    return pedidas
+
+
+def _nombre_linea(pres):
+    nombre = f"{pres.perfume.nombre} · {pres.etiqueta}"
+    if pres.perfume.inspirado_en:
+        nombre += f" (inspirado en {pres.perfume.inspirado_en})"
+    return nombre[:200]
+
+
+def _lineas(pedidas):
+    """[(id_carrito, ItemPedido)] con los precios de la base de datos; lo no disponible se omite.
+    Las promociones con combo automático no se piden como línea: se descuentan solas (combos.py)."""
+    def ids(tipo):
+        return [i for _c, t, i, _q in pedidas if t == tipo]
+
+    disponibles = Presentacion.objects.filter(activo=True, stock__gt=0, perfume__activo=True).select_related("perfume")
+    por_id = disponibles.in_bulk(ids("presentacion"))
+    # Perfume -> su presentación disponible más barata (siguiendo fusiones)
+    destino = {p.pk: (p.fusionado_en_id or p.pk) for p in Perfume.objects.filter(pk__in=ids("perfume"))}
+    mas_barata = {}
+    for pres in disponibles.filter(perfume_id__in=set(destino.values())).order_by("precio"):
+        mas_barata.setdefault(pres.perfume_id, pres)
+    promos = Promocion.vigentes().filter(combo_cantidad__isnull=True).in_bulk(ids("promo"))
+
+    lineas = []
+    for cid, tipo, obj_id, qty in pedidas:
+        if tipo == "promo":
+            pr = promos.get(obj_id)
+            if pr:
+                lineas.append((cid, ItemPedido(perfume=None, nombre=f"Promoción: {pr.titulo}"[:200], precio=int(pr.precio), cantidad=qty)))
+            continue
+        pres = por_id.get(obj_id) if tipo == "presentacion" else mas_barata.get(destino.get(obj_id))
+        if pres:
+            lineas.append((cid, ItemPedido(
+                perfume=pres.perfume, presentacion=pres, nombre=_nombre_linea(pres),
+                precio=int(pres.precio_vigente), cantidad=qty,
+            )))
+    return lineas
+
+
+def api_cotizar(request):
+    """Vista previa del carrito: precios vigentes, «inspirado en» y descuentos de combos.
+    Solo lectura (no crea nada). Formato: ?i=v-12:2,v-15:1"""
+    items = []
+    for parte in (request.GET.get("i") or "").split(",")[:MAX_ITEMS]:
+        pid, _, qty = parte.partition(":")
+        items.append({"id": pid.strip(), "qty": qty})
+    lineas = _lineas(_normalizar(items))
+    descuento, detalle = combos.calcular([l for _, l in lineas])
+    subtotal = sum(l.subtotal for _, l in lineas)
+    resp = JsonResponse({
+        "lineas": [
+            {"id": cid, "precio": l.precio, "insp": l.perfume.inspirado_en if l.perfume_id else ""}
+            for cid, l in lineas
+        ],
+        "subtotal": subtotal,
+        "descuento": descuento,
+        "detalle": detalle,
+        "total": max(0, subtotal - descuento),
+    })
+    patch_cache_control(resp, public=True, max_age=0, s_maxage=300)
+    return resp
+
+
 @require_POST
 def crear_pedido(request):
     """Recibe el carrito (JSON) y crea un Pedido 'pendiente'.
     Los precios se leen SIEMPRE de la base de datos; los del navegador se ignoran.
+    Los combos automáticos (catalogo/combos.py) se restan del total.
     No descuenta stock: eso ocurre cuando el admin aprueba."""
     if _excede_limite(request, 'pedido', MAX_PEDIDOS, 600):
         return JsonResponse({"ok": False, "error": "Demasiados pedidos seguidos. Intenta en unos minutos."}, status=429)
@@ -510,61 +599,18 @@ def crear_pedido(request):
     except (ValueError, UnicodeDecodeError, AttributeError):
         return JsonResponse({"ok": False, "error": "Datos inválidos"}, status=400)
 
-    # Normaliza las líneas: (tipo, id, cantidad)
-    #   "v-12"    -> presentación 12 (ficha con selector de tamaño)
-    #   "8"       -> perfume 8 (tarjeta con un solo tamaño, o carrito guardado antes del cambio)
-    #   "promo-3" -> promoción 3
-    pedidas = []
-    for it in items[:MAX_ITEMS]:
-        if not isinstance(it, dict):
-            continue
-        try:
-            qty = max(1, min(MAX_QTY, int(it.get("qty") or 1)))
-        except (TypeError, ValueError):
-            continue
-        pid = str(it.get("id") or "")
-        if pid.startswith("v-") and pid[2:].isdigit():
-            pedidas.append(("presentacion", int(pid[2:]), qty))
-        elif pid.isdigit():
-            pedidas.append(("perfume", int(pid), qty))
-        elif pid.startswith("promo-") and pid[6:].isdigit():
-            pedidas.append(("promo", int(pid[6:]), qty))
-
-    disponibles = Presentacion.objects.filter(activo=True, stock__gt=0, perfume__activo=True).select_related("perfume")
-    por_id = disponibles.in_bulk([i for t, i, _ in pedidas if t == "presentacion"])
-    # Perfume -> su presentación disponible más barata (siguiendo fusiones)
-    destino = {
-        p.pk: (p.fusionado_en_id or p.pk)
-        for p in Perfume.objects.filter(pk__in=[i for t, i, _ in pedidas if t == "perfume"])
-    }
-    mas_barata = {}
-    for pres in disponibles.filter(perfume_id__in=set(destino.values())).order_by("precio"):
-        mas_barata.setdefault(pres.perfume_id, pres)
-    promos = Promocion.vigentes().in_bulk([i for t, i, _ in pedidas if t == "promo"])
-
-    lineas = []
-    for tipo, obj_id, qty in pedidas:
-        if tipo == "promo":
-            if obj_id in promos:
-                pr = promos[obj_id]
-                lineas.append(ItemPedido(perfume=None, nombre=f"Promoción: {pr.titulo}"[:200], precio=int(pr.precio), cantidad=qty))
-            continue
-        pres = por_id.get(obj_id) if tipo == "presentacion" else mas_barata.get(destino.get(obj_id))
-        if pres:
-            lineas.append(ItemPedido(
-                perfume=pres.perfume, presentacion=pres,
-                nombre=f"{pres.perfume.nombre} · {pres.etiqueta}"[:200],
-                precio=int(pres.precio_vigente), cantidad=qty,
-            ))
-
+    lineas = [l for _, l in _lineas(_normalizar(items))]
     if not lineas:
         return JsonResponse({"ok": False, "error": "El carrito no tiene productos disponibles"}, status=400)
+    descuento, detalle = combos.calcular(lineas)
 
     with transaction.atomic():
         pedido = Pedido.objects.create(
             cliente=str(data.get("cliente") or "")[:120],
             telefono=str(data.get("telefono") or "")[:40],
             estado="pendiente",
+            descuento=descuento,
+            detalle_descuento=combos.texto(detalle),
         )
         for l in lineas:
             l.pedido = pedido
@@ -577,4 +623,6 @@ def crear_pedido(request):
         "pedido_id": pedido.id,
         "codigo": pedido.codigo,
         "total": pedido.total,
+        "descuento": descuento,
+        "detalle": detalle,
     })
