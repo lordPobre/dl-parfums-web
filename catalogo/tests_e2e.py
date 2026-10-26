@@ -225,7 +225,8 @@ class CarritoTests(NavegadorBase):
         self.page.click("#btn-agregar")
         expect(panel).not_to_have_class(re.compile(r"translate-x-full"))
         expect(badge).to_have_text("1")
-        self.page.click('[data-mas="0"]')
+        with self.page.expect_response(lambda r: "/api/cotizar/" in r.url and "%3A2" in r.url):
+            self.page.click('[data-mas="0"]')
         expect(badge).to_have_text("2")
         self.page.click("#cart-close")
         expect(panel).to_have_class(re.compile(r"translate-x-full"))
