@@ -29,7 +29,7 @@ def excede_limite(request, accion, maximo, segundos):
     clave = _clave(accion, ip_cliente(request))
     LimiteSolicitud.objects.filter(creado__lt=ahora - timedelta(days=1)).delete()
     recientes = LimiteSolicitud.objects.filter(clave=clave, creado__gte=ahora - timedelta(seconds=segundos))
-    if recientes.count() >= maximo:
-        return True
+    # Primero se registra y después se cuenta: así varios envíos simultáneos no pasan todos.
+    # Los intentos rechazados también cuentan, de modo que insistir no acorta la espera.
     LimiteSolicitud.objects.create(clave=clave)
-    return False
+    return recientes.count() > maximo

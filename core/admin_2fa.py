@@ -13,6 +13,7 @@ import qrcode.image.svg
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.models import Group
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -23,6 +24,10 @@ from django_otp.plugins.otp_static.models import StaticDevice, StaticToken
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
 CODIGOS_RESPALDO = 10
+# Solo quien está en este grupo puede registrar un teléfono. Lo agrega un superusuario en el admin
+# o con «python manage.py autorizar_2fa <usuario>». Al confirmar su dispositivo sale del grupo.
+# Así, quien robe la contraseña de una cuenta sin 2FA no puede registrar su propio teléfono.
+GRUPO_ALTA = "Alta 2FA autorizada"
 
 
 class Admin2FAMiddleware:
@@ -89,6 +94,8 @@ def configurar(request):
     # un superusuario borra su dispositivo en el admin (OTP_TOTP › TOTP devices).
     if user_has_device(request.user):
         return redirect("admin2fa_verificar" if not request.user.is_verified() else _siguiente(request))
+    if not request.user.groups.filter(name=GRUPO_ALTA).exists():
+        return render(request, "admin/2fa_bloqueado.html", _contexto(request, title="Verificación en dos pasos"))
 
     dispositivo = (TOTPDevice.objects.filter(user=request.user, confirmed=False).first()
                    or TOTPDevice.objects.create(user=request.user, name="App autenticadora", confirmed=False))
@@ -98,6 +105,7 @@ def configurar(request):
             dispositivo.confirmed = True
             dispositivo.save(update_fields=["confirmed"])
             otp_login(request, dispositivo)
+            request.user.groups.remove(*Group.objects.filter(name=GRUPO_ALTA))
             return render(request, "admin/2fa_respaldo.html",
                           _contexto(request, title="Códigos de respaldo", codigos=_crear_codigos_respaldo(request.user)))
         error = "El código no coincide. Revisa que la hora del teléfono sea automática y prueba con el código siguiente."

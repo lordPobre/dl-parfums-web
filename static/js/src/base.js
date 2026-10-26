@@ -117,7 +117,15 @@
             var WHATSAPP = "56962169898";
             var KEY = "io_cart";
             var cart = [];
-            try { cart = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { cart = []; }
+            var MAX_QTY = 10;  // igual que el servidor (views.MAX_QTY)
+            // Lo que viene de localStorage o de los data-* se normaliza: textos, precio, imagen y cantidad
+            function urlImg(u) { return /^https:\/\/res\.cloudinary\.com\//.test(u || "") ? u : ""; }
+            function limpiar(i) {
+                return { id: String(i.id || ""), nombre: String(i.nombre || ""), marca: String(i.marca || ""),
+                         insp: String(i.insp || ""), precio: Number(i.precio) || 0, img: urlImg(i.img),
+                         qty: Math.max(1, Math.min(MAX_QTY, parseInt(i.qty, 10) || 1)) };
+            }
+            try { cart = (JSON.parse(localStorage.getItem(KEY)) || []).filter(function (i) { return i && i.id; }).map(limpiar); } catch (e) { cart = []; }
             // Combos automáticos (ej. 2 Smart Collection por $10.000): los calcula el servidor en /api/cotizar/
             var cot = { clave: "", descuento: 0, detalle: [] };
             var cotEspera;
@@ -164,8 +172,9 @@
                             if (!d || clave() !== c) return;
                             cot = { clave: c, descuento: d.descuento || 0, detalle: d.detalle || [] };
                             var insp = {};
-                            (d.lineas || []).forEach(function (l) { insp[l.id] = l.insp; });
-                            cart.forEach(function (i) { if (insp[i.id] && !i.insp) i.insp = insp[i.id]; });
+                            var precios = {};
+                            (d.lineas || []).forEach(function (l) { insp[l.id] = l.insp; precios[l.id] = l.precio; });
+                            cart.forEach(function (i) { if (insp[i.id] && !i.insp) i.insp = insp[i.id]; if (precios[i.id]) i.precio = precios[i.id]; });
                             guardar(); pintar();
                         })
                         .catch(function () {});
@@ -191,10 +200,10 @@
                 elTotal.textContent = fmt(totalPrecio());
                 cont.innerHTML = cart.map(function (i, idx) {
                     return '<div class="flex gap-4 items-start">' +
-                        (i.img ? '<div class="w-16 h-20 bg-[#f8f8f8] flex-shrink-0 flex items-center justify-center overflow-hidden"><img src="' + i.img + '" alt="" class="max-h-[85%] max-w-[85%] object-contain"></div>' : '') +
+                        (i.img ? '<div class="w-16 h-20 bg-[#f8f8f8] flex-shrink-0 flex items-center justify-center overflow-hidden"><img src="' + esc(i.img) + '" alt="" class="max-h-[85%] max-w-[85%] object-contain"></div>' : '') +
                         '<div class="flex-1 min-w-0">' +
-                            '<p class="text-[9px] tracking-[0.2em] uppercase text-gray-500">' + (i.marca || "") + '</p>' +
-                            '<h4 class="font-serif text-sm text-gray-900 leading-snug mb-1">' + i.nombre + '</h4>' +
+                            '<p class="text-[9px] tracking-[0.2em] uppercase text-gray-500">' + esc(i.marca) + '</p>' +
+                            '<h4 class="font-serif text-sm text-gray-900 leading-snug mb-1">' + esc(i.nombre) + '</h4>' +
                             (i.insp ? '<p class="text-[12px] font-light text-gray-500 leading-snug mb-1">Inspirado en <em class="font-serif text-gray-800">' + esc(i.insp) + '</em></p>' : '') +
                             '<p class="text-[13px] text-gray-700 font-light">' + fmt(i.precio) + '</p>' +
                             '<div class="flex items-center gap-2 mt-2">' +
@@ -212,14 +221,14 @@
 
             window.agregarAlCarrito = function (p) {
                 var ex = cart.find(function (i) { return i.id === p.id; });
-                if (ex) { ex.qty += 1; if (p.insp && !ex.insp) ex.insp = p.insp; }
-                else { cart.push({ id: p.id, nombre: p.nombre, marca: p.marca, insp: p.insp || "", precio: Number(p.precio) || 0, img: p.img || "", qty: 1 }); }
+                if (ex) { ex.qty = Math.min(MAX_QTY, ex.qty + 1); if (p.insp && !ex.insp) ex.insp = String(p.insp); }
+                else { cart.push(limpiar({ id: p.id, nombre: p.nombre, marca: p.marca, insp: p.insp, precio: p.precio, img: p.img, qty: 1 })); }
                 guardar(); render(); toast("Agregado a tu selección"); abrir();
             };
 
             cont.addEventListener("click", function (e) {
                 var t = e.target;
-                if (t.dataset.mas !== undefined) { cart[+t.dataset.mas].qty += 1; }
+                if (t.dataset.mas !== undefined) { var m = cart[+t.dataset.mas]; m.qty = Math.min(MAX_QTY, m.qty + 1); }
                 else if (t.dataset.menos !== undefined) { var i = +t.dataset.menos; cart[i].qty -= 1; if (cart[i].qty <= 0) cart.splice(i, 1); }
                 else if (t.dataset.quitar !== undefined) { cart.splice(+t.dataset.quitar, 1); }
                 else return;
@@ -238,21 +247,30 @@
                 var w = window.open("", "_blank");
                 var enviado = false;
 
-                function mensaje(codigo, total, detalle) {
+                function mensaje(d) {
+                    // d: respuesta de /api/pedido/ con precios validados por el servidor. Sin ella, el mensaje
+                    // no lleva precios (los del navegador se pueden editar) y pide confirmar el total.
                     var lineas = ["Hola! Quiero solicitar los siguientes perfumes:", ""];
-                    cart.forEach(function (i) {
-                        lineas.push("• " + i.nombre + (i.marca ? " (" + i.marca + ")" : "") + " — " + i.qty + " x " + fmt(i.precio));
-                        if (i.insp) lineas.push("   Inspirado en " + i.insp);
-                    });
-                    lineas.push("");
-                    (detalle || []).forEach(function (d) {
-                        lineas.push("Promoción " + d.titulo + (d.combos > 1 ? " (x" + d.combos + ")" : "") + ": -" + fmt(d.ahorro));
-                    });
-                    lineas.push("TOTAL: " + fmt(total));
-                    if (codigo) lineas.push("N.º de pedido: " + codigo);
+                    if (d && d.lineas) {
+                        d.lineas.forEach(function (l) {
+                            lineas.push("• " + l.nombre + " — " + l.cantidad + " x " + fmt(l.precio));
+                        });
+                        lineas.push("");
+                        (d.detalle || []).forEach(function (x) {
+                            lineas.push("Promoción " + x.titulo + (x.combos > 1 ? " (x" + x.combos + ")" : "") + ": -" + fmt(x.ahorro));
+                        });
+                        lineas.push("TOTAL: " + fmt(d.total));
+                        lineas.push("N.º de pedido: " + d.codigo);
+                    } else {
+                        cart.forEach(function (i) {
+                            lineas.push("• " + i.nombre + (i.marca ? " (" + i.marca + ")" : "") + " — " + i.qty + " u.");
+                            if (i.insp) lineas.push("   Inspirado en " + i.insp);
+                        });
+                        lineas.push("", "Total por confirmar: el pedido no alcanzó a registrarse en la web.");
+                    }
                     return "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(lineas.join("\n"));
                 }
-                function local() { return mensaje(null, totalPrecio(), vigente().detalle); }
+                function local() { return mensaje(null); }
                 function ir(url) {
                     if (enviado) return;
                     enviado = true;
@@ -273,7 +291,7 @@
                 .then(function (r) { return r.ok ? r.json() : null; })
                 .then(function (d) {
                     clearTimeout(espera);
-                    ir(d && d.ok ? mensaje(d.codigo, d.total, d.detalle) : local());
+                    ir(d && d.ok ? mensaje(d) : local());
                 })
                 .catch(function () { clearTimeout(espera); ir(local()); });
             });

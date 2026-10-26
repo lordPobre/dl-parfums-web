@@ -623,6 +623,7 @@ def crear_pedido(request):
         "pedido_id": pedido.id,
         "codigo": pedido.codigo,
         "total": pedido.total,
+        "lineas": [{"nombre": l.nombre, "cantidad": l.cantidad, "precio": l.precio} for l in lineas],
         "descuento": descuento,
         "detalle": detalle,
     })

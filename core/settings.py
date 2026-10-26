@@ -16,7 +16,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # Vercel define VERCEL=1 en sus funciones. En tu PC no existe, así que se activa el modo local.
 EN_PRODUCCION = os.environ.get('VERCEL') == '1'
-DEBUG = os.environ.get('DEBUG', 'False' if EN_PRODUCCION else 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # apagado salvo que lo pidas: en tu PC, DEBUG=True en .env
 
 ALLOWED_HOSTS = ['instintoolfativo.cl', 'www.instintoolfativo.cl', '.vercel.app', 'localhost', '127.0.0.1']
 
@@ -125,6 +125,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 12},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -202,3 +203,6 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 # Segundo factor del admin (core/admin_2fa.py)
 OTP_TOTP_ISSUER = 'Instinto Olfativo'
 ADMIN_2FA_OBLIGATORIO = True
+
+# Sesión de 8 horas. El sitio público no usa sesiones, así que solo afecta al admin.
+SESSION_COOKIE_AGE = 60 * 60 * 8

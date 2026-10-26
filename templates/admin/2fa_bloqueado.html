@@ -1,0 +1,13 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}{% endblock %}
+{% block content %}
+<div style="max-width: 420px; margin: 48px auto; padding: 0 16px;">
+  <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 8px;">Verificación en dos pasos</h1>
+  <p style="margin: 0 0 12px; line-height: 1.5;">Tu cuenta todavía no tiene una app autenticadora registrada. Por seguridad, el registro tiene que autorizarlo un administrador.</p>
+  <p style="margin: 0 0 20px; line-height: 1.5;">Pídele que te agregue al grupo «Alta 2FA autorizada» y vuelve a iniciar sesión.</p>
+  <form method="post" action="{% url 'admin:logout' %}">
+    {% csrf_token %}
+    <button type="submit" style="padding: 10px 16px; background: #111827; color: #fff; border: 0; border-radius: 6px; font-weight: 500; cursor: pointer;">Cerrar sesión</button>
+  </form>
+</div>
+{% endblock %}

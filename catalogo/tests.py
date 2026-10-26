@@ -650,6 +650,9 @@ class Admin2FATests(TestCase):
     def test_configurar_con_qr_y_codigos_de_respaldo(self):
         from django_otp.oath import totp
         from django_otp.plugins.otp_totp.models import TOTPDevice
+        import io
+        from django.core.management import call_command
+        call_command("autorizar_2fa", self.usuario.username, stdout=io.StringIO())
         self.client.force_login(self.usuario)
         r = self.client.get(reverse("admin2fa_configurar"))
         self.assertContains(r, "data:image/svg+xml;base64,")
@@ -761,3 +764,87 @@ class CombosTests(Base):
             Promocion(titulo="x", precio=10000, unidades=5, combo_cantidad=1).full_clean()
         with self.assertRaises(ValidationError):
             Promocion(titulo="x", precio=10000, unidades=5, combo_cantidad=2, combo_ml="25 ml").full_clean()
+
+
+# ---------- seguridad-critica: respaldo cifrado, carrito, WhatsApp y admin ----------
+class SeguridadCriticaTests(Base):
+    def test_respaldo_cifrado_y_sin_sesiones(self):
+        yml = Path(settings.BASE_DIR, ".github", "workflows", "respaldo.yml").read_text(encoding="utf-8")
+        self.assertIn("--exclude-table-data=django_session", yml)
+        self.assertIn('age -r "$AGE_PUBLICA"', yml)
+        self.assertIn("path: respaldo.dump.age", yml)
+        self.assertNotIn("path: respaldo.dump\n", yml)
+
+    def test_pedido_devuelve_lineas_con_precio_del_servidor(self):
+        cuerpo = json.dumps({"items": [{"id": f"v-{self.p1_frasco.pk}", "qty": 2, "precio": 1, "nombre": "<b>x</b>"}]})
+        d = self.client.post(reverse("crear_pedido"), data=cuerpo, content_type="application/json").json()
+        self.assertEqual(len(d["lineas"]), 1)
+        self.assertEqual((d["lineas"][0]["precio"], d["lineas"][0]["cantidad"]), (19990, 2))
+        self.assertIn("No. 101", d["lineas"][0]["nombre"])
+        self.assertNotIn("<b>", d["lineas"][0]["nombre"])
+
+    def test_carrito_escapa_textos_y_usa_precios_del_servidor(self):
+        js = Path(settings.BASE_DIR, "static", "js", "src", "base.js").read_text(encoding="utf-8")
+        for fragmento in ("esc(i.nombre)", "esc(i.marca)", "esc(i.img)", "function limpiar(",
+                          "mensaje(d) : local()", "precios[l.id] = l.precio"):
+            with self.subTest(fragmento):
+                self.assertIn(fragmento, js)
+        self.assertNotIn("+ i.nombre + '</h4>'", js)
+        self.assertNotIn("fmt(i.precio));", js)  # el mensaje ya no usa precios del navegador
+
+    def test_admin_sin_cdn_externo(self):
+        from django.contrib.staticfiles import finders
+        from core.security_headers import CSP_ADMIN
+        self.assertNotIn("jsdelivr", CSP_ADMIN)
+        html = Path(settings.BASE_DIR, "templates", "admin", "panel_ventas.html").read_text(encoding="utf-8")
+        self.assertNotIn("cdn.jsdelivr.net", html)
+        self.assertIsNotNone(finders.find("vendor/chart-4.4.1.umd.min.js"))
+
+    def test_sesion_de_8_horas_y_contrasenas_de_12(self):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError
+        self.assertEqual(settings.SESSION_COOKIE_AGE, 8 * 3600)
+        with self.assertRaises(ValidationError):
+            validate_password("Perfume2026")  # 11 caracteres
+
+    def test_limite_cuenta_tambien_los_rechazados(self):
+        from django.test import RequestFactory
+        from .limites import excede_limite
+        req = RequestFactory().post("/", REMOTE_ADDR="198.51.100.9")
+        self.assertEqual([excede_limite(req, "prueba-s12", 2, 600) for _ in range(4)], [False, False, True, True])
+
+
+class Alta2FAAutorizadaTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        self.usuario = User.objects.create_user("staff-nuevo", "s@example.com", "x", is_staff=True)
+        self.client.force_login(self.usuario)
+
+    def test_sin_autorizacion_no_muestra_qr(self):
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        r = self.client.get(reverse("admin2fa_configurar"))
+        self.assertContains(r, "autorizarlo un administrador")
+        self.assertNotContains(r, "data:image/svg+xml;base64,")
+        self.assertFalse(TOTPDevice.objects.filter(user=self.usuario).exists())
+
+    def test_con_autorizacion_registra_y_sale_del_grupo(self):
+        import io
+        from django.core.management import call_command
+        from django_otp.oath import totp
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        from core.admin_2fa import GRUPO_ALTA
+        call_command("autorizar_2fa", "staff-nuevo", stdout=io.StringIO())
+        r = self.client.get(reverse("admin2fa_configurar"))
+        self.assertContains(r, "data:image/svg+xml;base64,")
+        d = TOTPDevice.objects.get(user=self.usuario)
+        self.assertContains(self.client.post(reverse("admin2fa_configurar"), {"codigo": f"{totp(d.bin_key):06d}"}),
+                            "Códigos de respaldo")
+        self.assertFalse(self.usuario.groups.filter(name=GRUPO_ALTA).exists())
+
+    def test_reiniciar_borra_el_dispositivo_anterior(self):
+        import io
+        from django.core.management import call_command
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        TOTPDevice.objects.create(user=self.usuario, name="teléfono perdido", confirmed=True)
+        call_command("autorizar_2fa", "staff-nuevo", "--reiniciar", stdout=io.StringIO())
+        self.assertFalse(TOTPDevice.objects.filter(user=self.usuario).exists())

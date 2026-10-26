@@ -12,17 +12,30 @@ jobs:
     environment: production
     timeout-minutes: 10
     steps:
-      - name: pg_dump (Postgres 17)
+      # El respaldo se cifra con la clave PÚBLICA de age (secret RESPALDO_AGE_PUBLICA).
+      # Solo quien tiene la clave privada, guardada fuera de GitHub, puede abrirlo.
+      # Sin sesiones ni contadores de límite: una sesión copiada permite entrar al admin sin contraseña ni 2FA.
+      - name: pg_dump cifrado (Postgres 17)
         env:
           URL: ${{ secrets.DATABASE_URL_PRODUCCION }}
+          AGE_PUBLICA: ${{ secrets.RESPALDO_AGE_PUBLICA }}
         run: |
           test -n "$URL" || { echo "::error::DATABASE_URL_PRODUCCION vacío"; exit 1; }
+          case "$AGE_PUBLICA" in age1*) ;; *) echo "::error::RESPALDO_AGE_PUBLICA vacío o inválido (debe empezar con age1)"; exit 1;; esac
+          sudo apt-get update -qq && sudo apt-get install -y -qq age
           docker run --rm -e URL -v "$PWD:/b" postgres:17 \
-            sh -c 'pg_dump "$URL" -Fc --no-owner --no-acl -f /b/respaldo.dump'
-          ls -lh respaldo.dump
+            sh -c 'pg_dump "$URL" -Fc --no-owner --no-acl \
+                   --exclude-table-data=django_session \
+                   --exclude-table-data=catalogo_limitesolicitud \
+                   -f /b/respaldo.dump'
+          test -s respaldo.dump
+          age -r "$AGE_PUBLICA" -o respaldo.dump.age respaldo.dump
+          sudo shred -u respaldo.dump
+          ls -lh respaldo.dump.age
 
       - uses: actions/upload-artifact@v4
         with:
           name: respaldo-${{ github.run_number }}
-          path: respaldo.dump
+          path: respaldo.dump.age
           retention-days: 14
+          if-no-files-found: error
