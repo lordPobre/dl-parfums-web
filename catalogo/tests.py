@@ -12,7 +12,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
 from django.template import engines
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
 from .filtros import url_filtros
@@ -174,6 +174,7 @@ class CatalogoTests(Base):
         self.assertTrue(datos["ver_todos"].startswith(reverse("catalogo")))
 
 
+@override_settings(PEDIDO_EXIGE_DATOS=False)
 class PedidoTests(Base):
     def pedir(self, items, **extra):
         cuerpo = json.dumps({"items": items, "cliente": "CI", **extra})
@@ -272,6 +273,7 @@ class PlantillasTests(SimpleTestCase):
                 motor.get_template(nombre)
 
 
+@override_settings(PEDIDO_EXIGE_DATOS=False)
 class PromocionesTests(Base):
     def crear(self, **datos):
         from .models import Promocion
@@ -692,6 +694,7 @@ class Admin2FATests(TestCase):
         self.assertEqual(self.client.get("/").status_code, 200)
 
 
+@override_settings(PEDIDO_EXIGE_DATOS=False)
 class CombosTests(Base):
     """Combo automático: 2 Smart Collection de 25 o 30 ml por $10.000 (cada uno vale $6.000)."""
 
@@ -767,6 +770,7 @@ class CombosTests(Base):
 
 
 # ---------- seguridad-critica: respaldo cifrado, carrito, WhatsApp y admin ----------
+@override_settings(PEDIDO_EXIGE_DATOS=False)
 class SeguridadCriticaTests(Base):
     def test_respaldo_cifrado_y_sin_sesiones(self):
         yml = Path(settings.BASE_DIR, ".github", "workflows", "respaldo.yml").read_text(encoding="utf-8")
@@ -848,3 +852,98 @@ class Alta2FAAutorizadaTests(TestCase):
         TOTPDevice.objects.create(user=self.usuario, name="teléfono perdido", confirmed=True)
         call_command("autorizar_2fa", "staff-nuevo", "--reiniciar", stdout=io.StringIO())
         self.assertFalse(TOTPDevice.objects.filter(user=self.usuario).exists())
+
+
+# ---------- datos-pedido: datos del cliente y aviso por correo ----------
+from unittest import mock as _mock_dp
+
+from django.test import override_settings as _override_dp
+
+
+@_override_dp(PEDIDO_CORREO_SINCRONO=True, EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class DatosPedidoTests(Base):
+    DATOS = {
+        "nombre": "Ana", "apellido": "Pérez Soto", "rut": "11111111-1", "telefono": "+56 9 1234 5678",
+        "email": "ana@example.com", "region": "Los Lagos", "comuna": "Castro",
+        "direccion": "Calle Falsa 123, depto 4", "notas": "Dejar en conserjería",
+    }
+
+    def setUp(self):
+        super().setUp()
+        from django.core import mail
+        mail.outbox = []
+        limite = _mock_dp.patch("catalogo.views._excede_limite", return_value=False)
+        limite.start()
+        self.addCleanup(limite.stop)
+
+    def pedir(self, **cambios):
+        cuerpo = json.dumps({"items": [{"id": f"v-{self.p1_frasco.pk}", "qty": 1}], "cliente": {**self.DATOS, **cambios}})
+        return self.client.post(reverse("crear_pedido"), data=cuerpo, content_type="application/json")
+
+    def test_guarda_datos_y_avisa_solo_a_la_tienda(self):
+        from django.core import mail
+        d = self.pedir().json()
+        p = Pedido.objects.get(pk=d["pedido_id"])
+        self.assertEqual((p.cliente, p.apellido, p.rut, p.telefono, p.region, p.comuna),
+                         ("Ana", "Pérez Soto", "11.111.111-1", "+56 9 1234 5678", "Los Lagos", "Castro"))
+        self.assertEqual(len(mail.outbox), 1)
+        correo = mail.outbox[0]
+        self.assertIn(p.codigo, correo.subject)
+        self.assertNotIn("ana@example.com", correo.to)
+        self.assertEqual(correo.reply_to, ["ana@example.com"])
+        for texto in ("11.111.111-1", "Calle Falsa 123", "Castro", "Los Lagos", "conserjería", "No. 101", "19.990"):
+            self.assertIn(texto, correo.body)
+
+    def test_campos_obligatorios(self):
+        from django.core import mail
+        for campo in ("nombre", "apellido", "rut", "telefono", "email", "region", "comuna", "direccion"):
+            with self.subTest(campo):
+                r = self.pedir(**{campo: ""})
+                self.assertEqual(r.status_code, 400)
+                self.assertIn(campo, r.json()["errores"])
+        self.assertEqual(self.pedir(notas="").status_code, 200)
+        self.assertEqual(Pedido.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_sin_datos_no_crea_pedido(self):
+        cuerpo = json.dumps({"items": [{"id": f"v-{self.p1_frasco.pk}"}]})
+        r = self.client.post(reverse("crear_pedido"), data=cuerpo, content_type="application/json")
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(Pedido.objects.exists())
+
+    def test_valores_invalidos(self):
+        casos = {"rut": "11111111-2", "telefono": "1234", "region": "Narnia", "email": "no-es-correo"}
+        for campo, valor in casos.items():
+            with self.subTest(campo):
+                r = self.pedir(**{campo: valor})
+                self.assertEqual(r.status_code, 400)
+                self.assertIn(campo, r.json()["errores"])
+
+    def test_formatos(self):
+        from .forms import formatear_rut, formatear_telefono
+        self.assertEqual(formatear_rut("1000005k"), "1.000.005-K")
+        self.assertEqual(formatear_rut("12.345.678-5"), "12.345.678-5")
+        self.assertIsNone(formatear_rut("12.345.678-0"))
+        self.assertEqual(formatear_telefono("912345678"), "+56 9 1234 5678")
+        self.assertEqual(formatear_telefono("+56 9 1234 5678"), "+56 9 1234 5678")
+
+    def test_saltos_de_linea_no_llegan_al_asunto(self):
+        from django.core import mail
+        self.pedir(nombre="Ana\nBcc: otro@example.com")
+        self.assertNotIn("\n", mail.outbox[0].subject)
+
+    def test_si_el_correo_falla_el_pedido_igual_se_crea(self):
+        with _mock_dp.patch("catalogo.pedido_correo.EmailMessage.send", side_effect=OSError("Resend caído")):
+            with self.assertLogs("catalogo.pedido_correo", "ERROR"):
+                r = self.pedir()
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(Pedido.objects.filter(rut="11.111.111-1").exists())
+
+    def test_carrito_pide_los_datos(self):
+        html = Path(settings.BASE_DIR, "templates", "base.html").read_text(encoding="utf-8")
+        js = Path(settings.BASE_DIR, "static", "js", "src", "base.js").read_text(encoding="utf-8")
+        self.assertIn('id="cart-datos"', html)
+        self.assertIn("cliente: datos", js)
+        from .forms import REGIONES
+        for region in REGIONES:
+            self.assertIn(f"<option>{region}</option>", html)

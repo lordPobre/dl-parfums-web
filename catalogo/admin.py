@@ -381,12 +381,22 @@ def rechazar_pedidos(modeladmin, request, queryset):
 
 @admin.register(Pedido)
 class PedidoAdmin(ModelAdmin):
-    list_display = ('codigo', 'cliente', 'telefono', 'estado', 'total', 'stock_descontado', 'creado')
-    list_filter = ('estado', 'creado')
-    search_fields = ('id', 'cliente', 'telefono')
+    list_display = ('codigo', 'nombre_completo', 'rut', 'comuna', 'telefono', 'estado', 'total', 'stock_descontado', 'creado')
+    list_filter = ('estado', 'region', 'creado')
+    search_fields = ('id', 'cliente', 'apellido', 'rut', 'email', 'telefono')
+    fieldsets = (
+        ('Cliente', {'fields': ('cliente', 'apellido', 'rut', 'telefono', 'email')}),
+        ('Envío', {'fields': ('direccion', 'comuna', 'region', 'notas')}),
+        ('Venta', {'fields': ('codigo', 'estado', 'total', 'descuento', 'detalle_descuento',
+                              'stock_descontado', 'creado', 'actualizado')}),
+    )
     readonly_fields = ('codigo', 'total', 'descuento', 'detalle_descuento', 'stock_descontado', 'creado', 'actualizado')
     inlines = [ItemPedidoInline]
     actions = [aprobar_pedidos, rechazar_pedidos]
+
+    @admin.display(description="Cliente", ordering='cliente')
+    def nombre_completo(self, obj):
+        return obj.nombre_completo or "—"
 
     @admin.display(description="Código", ordering='id')
     def codigo(self, obj):

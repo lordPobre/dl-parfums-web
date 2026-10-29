@@ -557,8 +557,16 @@ class Pedido(models.Model):
         ('aprobado', 'Aprobado'),
         ('rechazado', 'Rechazado'),
     ]
-    cliente = models.CharField(max_length=120, blank=True, help_text="Nombre del cliente (opcional).")
+    cliente = models.CharField(max_length=120, blank=True, verbose_name="Nombre")
     telefono = models.CharField(max_length=40, blank=True)
+    # Datos que el cliente llena en el carrito antes de pasar a WhatsApp
+    apellido = models.CharField(max_length=60, blank=True)
+    rut = models.CharField(max_length=14, blank=True, verbose_name="RUT")
+    email = models.EmailField(max_length=120, blank=True)
+    region = models.CharField(max_length=60, blank=True, verbose_name="Región")
+    comuna = models.CharField(max_length=60, blank=True)
+    direccion = models.CharField(max_length=160, blank=True, verbose_name="Dirección")
+    notas = models.TextField(blank=True, help_text="Indicaciones del cliente para el envío.")
     estado = models.CharField(max_length=12, choices=ESTADOS, default='pendiente')
     total = models.PositiveIntegerField(default=0, help_text="Total en CLP.")
     stock_descontado = models.BooleanField(default=False, help_text="Marca interna: evita descontar stock dos veces.")
@@ -578,6 +586,10 @@ class Pedido(models.Model):
     @property
     def codigo(self):
         return f"IO-{self.pk:06d}" if self.pk else "—"
+
+    @property
+    def nombre_completo(self):
+        return " ".join(x for x in (self.cliente, self.apellido) if x)
 
     def recalcular_total(self):
         self.total = max(0, sum(i.subtotal for i in self.items.all()) - (self.descuento or 0))

@@ -146,6 +146,10 @@
             var vacio = document.getElementById("cart-empty");
             var pie = document.getElementById("cart-footer");
             var elTotal = document.getElementById("cart-total");
+            var formDatos = document.getElementById("cart-datos");
+            var titulo = document.getElementById("cart-titulo");
+            var totalDatos = document.getElementById("pedido-total");
+            var paso = "lista";  // "lista" (productos) o "datos" (formulario del cliente)
             var elDesc = document.createElement("div");
             elDesc.className = "hidden mb-3 pb-3 border-b border-gray-100";
             pie.insertBefore(elDesc, pie.firstChild);
@@ -187,9 +191,13 @@
                 if (!cart.length) {
                     cont.innerHTML = ""; cont.classList.add("hidden");
                     vacio.classList.remove("hidden"); pie.classList.add("hidden");
+                    paso = "lista"; formDatos.classList.add("hidden"); titulo.textContent = "Tu selección";
                     return;
                 }
-                cont.classList.remove("hidden"); vacio.classList.add("hidden"); pie.classList.remove("hidden");
+                var enDatos = paso === "datos";
+                cont.classList.toggle("hidden", enDatos); vacio.classList.add("hidden"); pie.classList.toggle("hidden", enDatos);
+                formDatos.classList.toggle("hidden", !enDatos); titulo.textContent = enDatos ? "Tus datos" : "Tu selección";
+                totalDatos.textContent = fmt(totalPrecio());
                 var c = vigente();
                 elDesc.classList.toggle("hidden", !c.descuento);
                 elDesc.innerHTML = c.detalle.map(function (d) {
@@ -223,7 +231,7 @@
                 var ex = cart.find(function (i) { return i.id === p.id; });
                 if (ex) { ex.qty = Math.min(MAX_QTY, ex.qty + 1); if (p.insp && !ex.insp) ex.insp = String(p.insp); }
                 else { cart.push(limpiar({ id: p.id, nombre: p.nombre, marca: p.marca, insp: p.insp, precio: p.precio, img: p.img, qty: 1 })); }
-                guardar(); render(); toast("Agregado a tu selección"); abrir();
+                paso = "lista"; guardar(); render(); toast("Agregado a tu selección"); abrir();
             };
 
             cont.addEventListener("click", function (e) {
@@ -235,13 +243,94 @@
                 guardar(); render();
             });
 
-            document.getElementById("cart-toggle").addEventListener("click", function () { render(); abrir(); });
+            document.getElementById("cart-toggle").addEventListener("click", function () { paso = "lista"; render(); abrir(); });
             document.getElementById("cart-close").addEventListener("click", cerrar);
             overlay.addEventListener("click", cerrar);
             document.getElementById("cart-clear").addEventListener("click", function () { cart = []; guardar(); render(); });
 
+            // Paso 2: datos del cliente. El pedido se registra con ellos, el servidor avisa a la tienda
+            // por correo y se abre WhatsApp con el código de venta.
+            var KEY_DATOS = "io_datos";
+            var CAMPOS = ["nombre", "apellido", "rut", "telefono", "email", "region", "comuna", "direccion", "notas"];
+            var RECORDAR = ["nombre", "apellido", "rut", "telefono", "email", "region", "comuna", "direccion"];
+            var enviarBtn = document.getElementById("pedido-enviar");
+            var errorGeneral = document.getElementById("pedido-error");
+
+            function campo(n) { return formDatos.elements[n]; }
+            function leerDatos() {
+                var d = {};
+                CAMPOS.forEach(function (n) { d[n] = campo(n).value.trim(); });
+                return d;
+            }
+            function cargarDatos() {
+                var g = null;
+                try { g = JSON.parse(localStorage.getItem(KEY_DATOS)); } catch (e) {}
+                if (!g || typeof g !== "object") return;
+                RECORDAR.forEach(function (n) { if (g[n] && !campo(n).value) campo(n).value = String(g[n]).slice(0, 160); });
+            }
+            function guardarDatos(d) {
+                try {
+                    if (campo("recordar").checked) {
+                        var g = {};
+                        RECORDAR.forEach(function (n) { g[n] = d[n]; });
+                        localStorage.setItem(KEY_DATOS, JSON.stringify(g));
+                    } else {
+                        localStorage.removeItem(KEY_DATOS);
+                    }
+                } catch (e) {}
+            }
+            function rutValido(v) {
+                var l = String(v || "").replace(/[^0-9kK]/g, "").toUpperCase();
+                if (l.length < 8 || l.length > 9 || !/^\d+$/.test(l.slice(0, -1))) return false;
+                var suma = 0, f = 2;
+                for (var i = l.length - 2; i >= 0; i--) { suma += +l[i] * f; f = f === 7 ? 2 : f + 1; }
+                var r = 11 - suma % 11;
+                return l.slice(-1) === (r === 11 ? "0" : r === 10 ? "K" : String(r));
+            }
+            function telValido(v) {
+                var d = String(v || "").replace(/\D/g, "");
+                if (d.length === 11 && d.indexOf("56") === 0) d = d.slice(2);
+                return d.length === 9;
+            }
+            function validar(d) {
+                var e = {};
+                CAMPOS.forEach(function (n) { if (n !== "notas" && !d[n]) e[n] = "Completa este campo."; });
+                if (d.rut && !rutValido(d.rut)) e.rut = "RUT no válido. Revisa el dígito verificador.";
+                if (d.telefono && !telValido(d.telefono)) e.telefono = "Escribe un celular de 9 dígitos, ej. 9 1234 5678.";
+                if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) e.email = "Revisa el correo.";
+                return e;
+            }
+            function marcarErrores(errores) {
+                var primero = null;
+                CAMPOS.forEach(function (n) {
+                    var msg = document.getElementById("err-" + n), e = errores[n] || "";
+                    if (msg) { msg.textContent = e; msg.classList.toggle("hidden", !e); }
+                    campo(n).setAttribute("aria-invalid", e ? "true" : "false");
+                    if (e && !primero) primero = n;
+                });
+                if (primero) campo(primero).focus();
+                return !primero;
+            }
+
             document.getElementById("cart-checkout").addEventListener("click", function () {
                 if (!cart.length) return;
+                paso = "datos";
+                cargarDatos();
+                errorGeneral.classList.add("hidden");
+                pintar();
+                document.getElementById("pedido-volver").focus();
+            });
+            document.getElementById("pedido-volver").addEventListener("click", function () { paso = "lista"; pintar(); });
+
+            formDatos.addEventListener("submit", function (ev) {
+                ev.preventDefault();
+                if (!cart.length || enviarBtn.disabled) return;
+                var datos = leerDatos();
+                errorGeneral.classList.add("hidden");
+                if (!marcarErrores(validar(datos))) return;
+                guardarDatos(datos);
+                enviarBtn.disabled = true;
+
                 // Se abre la pestaña en el mismo clic (evita el bloqueo de pop-ups) y se completa
                 // con el mensaje cuando el servidor devuelve el N.º de pedido y el total validado.
                 var w = window.open("", "_blank");
@@ -249,7 +338,7 @@
 
                 function mensaje(d) {
                     // d: respuesta de /api/pedido/ con precios validados por el servidor. Sin ella, el mensaje
-                    // no lleva precios (los del navegador se pueden editar) y pide confirmar el total.
+                    // no lleva precios (los del navegador se pueden editar) y lleva los datos del cliente.
                     var lineas = ["Hola! Quiero solicitar los siguientes perfumes:", ""];
                     if (d && d.lineas) {
                         d.lineas.forEach(function (l) {
@@ -261,12 +350,17 @@
                         });
                         lineas.push("TOTAL: " + fmt(d.total));
                         lineas.push("N.º de pedido: " + d.codigo);
+                        lineas.push("A nombre de: " + datos.nombre + " " + datos.apellido);
                     } else {
                         cart.forEach(function (i) {
                             lineas.push("• " + i.nombre + (i.marca ? " (" + i.marca + ")" : "") + " — " + i.qty + " u.");
                             if (i.insp) lineas.push("   Inspirado en " + i.insp);
                         });
-                        lineas.push("", "Total por confirmar: el pedido no alcanzó a registrarse en la web.");
+                        lineas.push("", "Total por confirmar: el pedido no alcanzó a registrarse en la web.", "",
+                            "Nombre: " + datos.nombre + " " + datos.apellido, "RUT: " + datos.rut,
+                            "Teléfono: " + datos.telefono, "Email: " + datos.email,
+                            "Dirección: " + datos.direccion + ", " + datos.comuna + ", " + datos.region);
+                        if (datos.notas) lineas.push("Notas: " + datos.notas);
                     }
                     return "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(lineas.join("\n"));
                 }
@@ -274,23 +368,37 @@
                 function ir(url) {
                     if (enviado) return;
                     enviado = true;
+                    enviarBtn.disabled = false;
                     if (w && !w.closed) { w.location.href = url; } else { window.location.href = url; }
                 }
+                function rechazado(d) {
+                    if (enviado) return;
+                    enviado = true;
+                    enviarBtn.disabled = false;
+                    if (w && !w.closed) w.close();
+                    if (d && d.errores) marcarErrores(d.errores);
+                    errorGeneral.textContent = (d && d.error) || "No pudimos registrar el pedido. Intenta nuevamente.";
+                    errorGeneral.classList.remove("hidden");
+                }
 
-                // Si el servidor tarda más de 4 s, se envía igual sin número de pedido
-                var espera = setTimeout(function () { ir(local()); }, 4000);
+                // Si el servidor tarda más de 6 s, se envía igual sin número de pedido
+                var espera = setTimeout(function () { ir(local()); }, 6000);
 
                 window.obtenerCsrf().then(function (token) {
                     return fetch("/api/pedido/", {
                         method: "POST",
                         credentials: "same-origin",
                         headers: { "Content-Type": "application/json", "X-CSRFToken": token },
-                        body: JSON.stringify({ items: cart.map(function (i) { return { id: i.id, qty: i.qty }; }) })
+                        body: JSON.stringify({ items: cart.map(function (i) { return { id: i.id, qty: i.qty }; }), cliente: datos })
                     });
                 })
-                .then(function (r) { return r.ok ? r.json() : null; })
-                .then(function (d) {
+                .then(function (r) {
+                    return r.json().catch(function () { return null; }).then(function (d) { return { status: r.status, d: d }; });
+                })
+                .then(function (res) {
                     clearTimeout(espera);
+                    var d = res.d;
+                    if (!(d && d.ok) && (res.status === 400 || res.status === 429)) return rechazado(d);
                     ir(d && d.ok ? mensaje(d) : local());
                 })
                 .catch(function () { clearTimeout(espera); ir(local()); });

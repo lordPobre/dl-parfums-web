@@ -244,10 +244,21 @@ class CarritoTests(NavegadorBase):
         self.ir(self.p1.get_absolute_url())
         self.page.click("#btn-agregar")
         self.page.click("#cart-checkout")
+        expect(self.page.locator("#cart-datos")).to_be_visible()
+        self.page.click("#pedido-enviar")
+        expect(self.page.locator("#err-rut")).to_be_visible()
+        self.assertEqual(self.whatsapp, [])
+        for campo, valor in (("nombre", "Ana"), ("apellido", "Pérez"), ("rut", "11.111.111-1"),
+                             ("telefono", "912345678"), ("email", "ana@example.com"),
+                             ("comuna", "Castro"), ("direccion", "Calle Falsa 123")):
+            self.page.fill(f'#cart-datos [name="{campo}"]', valor)
+        self.page.select_option('#cart-datos [name="region"]', "Los Lagos")
+        self.page.click("#pedido-enviar")
         self.esperar(lambda: self.whatsapp, "No se abrió WhatsApp")
-        self.assertEqual(Pedido.objects.count(), 1, "El servidor no creó el pedido (revisar /api/csrf/ y CSRF)")
+        pedido = Pedido.objects.get()
+        self.assertEqual((pedido.rut, pedido.comuna), ("11.111.111-1", "Castro"))
         texto = unquote(self.whatsapp[0])
-        self.assertIn(Pedido.objects.get().codigo, texto)
+        self.assertIn(pedido.codigo, texto)
         self.assertIn("TOTAL:", texto)
         self.sin_errores("checkout")
 

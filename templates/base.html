@@ -192,7 +192,7 @@
     <div id="cart-overlay" class="hidden fixed inset-0 z-[400] bg-gray-900/50 backdrop-blur-sm opacity-0 transition-opacity duration-300"></div>
     <aside id="cart-panel" class="fixed top-0 right-0 z-[401] h-full w-full max-w-[420px] bg-white shadow-2xl flex flex-col translate-x-full transition-transform duration-300">
         <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-            <h3 class="font-serif text-xl text-gray-900">Tu selección</h3>
+            <h3 id="cart-titulo" class="font-serif text-xl text-gray-900">Tu selección</h3>
             <button id="cart-close" type="button" aria-label="Cerrar" class="text-gray-500 hover:text-gray-900 transition-colors">
                 <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
             </button>
@@ -219,6 +219,95 @@
             <p style="margin:12px 0 0;font-size:11px;line-height:1.6;color:#6b7280;text-align:center;">Precios con IVA incluido. El envío se confirma por WhatsApp antes de pagar. Al solicitar aceptas los <a href="{% url 'terminos' %}" style="text-decoration:underline;">Términos</a> y la <a href="{% url 'privacidad' %}" style="text-decoration:underline;">Política de Privacidad</a>.</p>
             <button id="cart-clear" type="button" class="w-full mt-3 text-[10px] tracking-[0.18em] uppercase text-gray-500 hover:text-gray-700 transition-colors">Vaciar selección</button>
         </div>
+
+        <!-- Paso 2: datos del cliente. Se guardan con el pedido y llegan por correo a la tienda -->
+        <form id="cart-datos" class="hidden flex-1 min-h-0 flex flex-col" novalidate>
+            <div class="flex-1 overflow-y-auto px-6 py-5">
+                <button id="pedido-volver" type="button" class="mb-4 text-[10px] tracking-[0.18em] uppercase text-gray-500 hover:text-gray-900 transition-colors">← Volver a tu selección</button>
+                <p class="text-sm font-light text-gray-600 leading-relaxed mb-6">Completa tus datos para registrar el pedido. Después se abre WhatsApp con tu código de venta.</p>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-4">
+                    <div>
+                        <label for="pd-nombre" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">Nombre</label>
+                        <input id="pd-nombre" name="nombre" type="text" autocomplete="given-name" maxlength="60" required aria-describedby="err-nombre" class="w-full min-w-0 border border-gray-200 bg-white px-3 py-2.5 text-base font-light text-gray-900 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700">
+                        <p id="err-nombre" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <div>
+                        <label for="pd-apellido" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">Apellido</label>
+                        <input id="pd-apellido" name="apellido" type="text" autocomplete="family-name" maxlength="60" required aria-describedby="err-apellido" class="w-full min-w-0 border border-gray-200 bg-white px-3 py-2.5 text-base font-light text-gray-900 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700">
+                        <p id="err-apellido" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <div>
+                        <label for="pd-rut" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">RUT</label>
+                        <input id="pd-rut" name="rut" type="text" autocomplete="off" maxlength="14" placeholder="12.345.678-5" required aria-describedby="err-rut" class="w-full min-w-0 border border-gray-200 bg-white px-3 py-2.5 text-base font-light text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700">
+                        <p id="err-rut" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <div>
+                        <label for="pd-telefono" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">Teléfono</label>
+                        <input id="pd-telefono" name="telefono" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="9 1234 5678" required aria-describedby="err-telefono" class="w-full min-w-0 border border-gray-200 bg-white px-3 py-2.5 text-base font-light text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700">
+                        <p id="err-telefono" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="pd-email" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">Email</label>
+                        <input id="pd-email" name="email" type="email" autocomplete="email" maxlength="120" required aria-describedby="err-email" class="w-full min-w-0 border border-gray-200 bg-white px-3 py-2.5 text-base font-light text-gray-900 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700">
+                        <p id="err-email" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="pd-direccion" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">Dirección</label>
+                        <input id="pd-direccion" name="direccion" type="text" autocomplete="street-address" maxlength="160" placeholder="Calle, número, depto." required aria-describedby="err-direccion" class="w-full min-w-0 border border-gray-200 bg-white px-3 py-2.5 text-base font-light text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700">
+                        <p id="err-direccion" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <div>
+                        <label for="pd-comuna" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">Comuna</label>
+                        <input id="pd-comuna" name="comuna" type="text" autocomplete="address-level2" maxlength="60" required aria-describedby="err-comuna" class="w-full min-w-0 border border-gray-200 bg-white px-3 py-2.5 text-base font-light text-gray-900 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700">
+                        <p id="err-comuna" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <div>
+                        <label for="pd-region" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">Región</label>
+                        <select id="pd-region" name="region" autocomplete="address-level1" required aria-describedby="err-region" class="w-full min-w-0 border border-gray-200 bg-white px-2 py-2.5 text-base font-light text-gray-900 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700">
+                            <option value="">Elige</option>
+                            <option>Arica y Parinacota</option>
+                            <option>Tarapacá</option>
+                            <option>Antofagasta</option>
+                            <option>Atacama</option>
+                            <option>Coquimbo</option>
+                            <option>Valparaíso</option>
+                            <option>Metropolitana</option>
+                            <option>O'Higgins</option>
+                            <option>Maule</option>
+                            <option>Ñuble</option>
+                            <option>Biobío</option>
+                            <option>La Araucanía</option>
+                            <option>Los Ríos</option>
+                            <option>Los Lagos</option>
+                            <option>Aysén</option>
+                            <option>Magallanes</option>
+                        </select>
+                        <p id="err-region" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="pd-notas" class="block text-[10px] tracking-[0.2em] uppercase text-gray-500 mb-1.5">Notas del pedido (opcional)</label>
+                        <textarea id="pd-notas" name="notas" rows="2" maxlength="500" placeholder="Ej. dejar en conserjería" aria-describedby="err-notas" class="w-full min-w-0 border border-gray-200 bg-white px-3 py-2.5 text-base font-light text-gray-900 placeholder-gray-400 outline-none transition-colors focus:border-gray-900 aria-[invalid=true]:border-red-700"></textarea>
+                        <p id="err-notas" class="hidden mt-1 text-[11px] leading-snug text-red-700"></p>
+                    </div>
+                    <label class="col-span-2 flex items-start gap-2.5 text-[13px] font-light text-gray-600 leading-snug">
+                        <input name="recordar" type="checkbox" checked class="mt-0.5 h-4 w-4 flex-shrink-0 accent-gray-900">
+                        Recordar mis datos en este dispositivo
+                    </label>
+                </div>
+            </div>
+            <div class="border-t border-gray-100 px-6 py-5">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-[11px] tracking-[0.24em] uppercase text-gray-500">Total</span>
+                    <span id="pedido-total" class="font-serif text-2xl text-gray-900">$0</span>
+                </div>
+                <p id="pedido-error" role="alert" class="hidden mb-3 text-[12px] leading-snug text-red-700"></p>
+                <button id="pedido-enviar" type="submit" class="flex items-center justify-center gap-3 w-full bg-gray-900 text-white py-4 text-[12px] tracking-[0.22em] uppercase hover:bg-black transition-colors disabled:opacity-60">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.4A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1-.6.8-.8 1-.3.2-.5.1a6.5 6.5 0 0 1-1.9-1.2 7.3 7.3 0 0 1-1.3-1.7c-.1-.2 0-.4.1-.5l.4-.4.2-.4v-.4l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c2 .8 2 .5 2.4.5a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"></path></svg>
+                    Enviar pedido por WhatsApp
+                </button>
+                <p class="mt-3 text-[11px] leading-relaxed text-gray-500 text-center">Usamos estos datos solo para preparar y enviar tu pedido. Más información en la <a href="{% url 'privacidad' %}" class="underline">Política de Privacidad</a>.</p>
+            </div>
+        </form>
     </aside>
 
     <!-- Aviso "agregado" -->

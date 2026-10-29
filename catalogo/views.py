@@ -20,7 +20,8 @@ from django.db import transaction
 from django.core.cache import cache
 from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido, Presentacion, SlugAntiguo, Nota, PerfumeNota
 from .cache_cdn import cache_cdn
-from .forms import ContactoForm
+from .forms import ContactoForm, DatosPedidoForm
+from .pedido_correo import enviar_aviso_pedido
 from .models import ENCABEZADO_TEMA
 from .busqueda import buscar_perfumes, sugerir
 from .filtros import url_filtros
@@ -599,15 +600,27 @@ def crear_pedido(request):
     except (ValueError, UnicodeDecodeError, AttributeError):
         return JsonResponse({"ok": False, "error": "Datos inválidos"}, status=400)
 
+    # Datos del cliente (paso 2 del carrito). Las pruebas antiguas los desactivan con PEDIDO_EXIGE_DATOS=False.
+    form = None
+    if getattr(settings, "PEDIDO_EXIGE_DATOS", True):
+        cliente = data.get("cliente")
+        form = DatosPedidoForm(cliente if isinstance(cliente, dict) else {})
+        if not form.is_valid():
+            return JsonResponse({"ok": False, "error": "Revisa los datos marcados.",
+                                 "errores": {k: v[0] for k, v in form.errors.items()}}, status=400)
+
     lineas = [l for _, l in _lineas(_normalizar(items))]
     if not lineas:
         return JsonResponse({"ok": False, "error": "El carrito no tiene productos disponibles"}, status=400)
     descuento, detalle = combos.calcular(lineas)
 
     with transaction.atomic():
+        datos_cliente = form.campos_pedido() if form else {
+            "cliente": str(data.get("cliente") or "")[:120],
+            "telefono": str(data.get("telefono") or "")[:40],
+        }
         pedido = Pedido.objects.create(
-            cliente=str(data.get("cliente") or "")[:120],
-            telefono=str(data.get("telefono") or "")[:40],
+            **datos_cliente,
             estado="pendiente",
             descuento=descuento,
             detalle_descuento=combos.texto(detalle),
@@ -617,6 +630,9 @@ def crear_pedido(request):
         ItemPedido.objects.bulk_create(lineas)
         pedido.recalcular_total()
         pedido.save(update_fields=["total"])
+
+    if form:
+        enviar_aviso_pedido(pedido.pk)  # correo a la tienda con el código y los datos
 
     return JsonResponse({
         "ok": True,
