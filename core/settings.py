@@ -4,6 +4,7 @@ from pathlib import Path
 import mimetypes
 import dj_database_url
 import cloudinary
+from .admin_tema import UNFOLD  
 from dotenv import load_dotenv
 
 mimetypes.add_type("text/css", ".css", True)
@@ -14,20 +15,17 @@ load_dotenv(dotenv_path=env_path)
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-# Vercel define VERCEL=1 en sus funciones. En tu PC no existe, así que se activa el modo local.
-# Railway define RAILWAY_ENVIRONMENT_NAME en cada servicio. En tu PC no existe.
 EN_RAILWAY = bool(os.environ.get('RAILWAY_ENVIRONMENT_NAME'))
 EN_PRODUCCION = os.environ.get('VERCEL') == '1' or EN_RAILWAY
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # apagado salvo que lo pidas: en tu PC, DEBUG=True en .env
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'  
 
 ALLOWED_HOSTS = ['instintoolfativo.cl', 'www.instintoolfativo.cl', '.vercel.app',
                  '.up.railway.app', 'healthcheck.railway.app', 'localhost', '127.0.0.1']
 
-# Dominio canónico: se usa en <link rel="canonical">, og:url, JSON-LD y la redirección de *.vercel.app
 SITE_URL = 'https://www.instintoolfativo.cl'
 
 INSTALLED_APPS = [
-    'unfold',  # antes de django.contrib.admin
+    'unfold',  
     'unfold.contrib.filters',
     'unfold.contrib.forms',
     'cloudinary_storage', 
@@ -39,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sitemaps',
-    'django.contrib.postgres',   # búsqueda sin tildes y con tolerancia a errores
+    'django.contrib.postgres',   
     'catalogo',
     'axes',
     'django_otp',
@@ -56,11 +54,10 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django_otp.middleware.OTPMiddleware',
-    'core.admin_2fa.Admin2FAMiddleware',  # A4: código del teléfono en el admin
+    'core.admin_2fa.Admin2FAMiddleware',  
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.security_headers.SecurityHeadersMiddleware', 
-    # Debe ir al final: bloquea el login del admin tras varios intentos fallidos
     'axes.middleware.AxesMiddleware',
 ]
 
@@ -71,17 +68,14 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# django-axes: 5 intentos fallidos -> bloqueo de 1 hora para esa IP + usuario
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 1
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_PARAMETERS = [["ip_address", "username"]]
-# En Vercel la IP real del visitante llega en X-Forwarded-For
 AXES_IPWARE_PROXY_COUNT = 1 if EN_PRODUCCION else 0
 AXES_IPWARE_META_PRECEDENCE_ORDER = ["HTTP_X_FORWARDED_FOR", "REMOTE_ADDR"]
 
-# Admin: Unfold. Menú, colores e Inicio en core/admin_tema.py
-from .admin_tema import UNFOLD  # noqa: E402
+
 
 TEMPLATES = [
     {
@@ -108,10 +102,6 @@ if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL)
     }
-    # Serverless: sin conexiones persistentes entre invocaciones. Usa la URL con pooler
-    # de tu proveedor (Neon: host con '-pooler'; Supabase: puerto 6543).
-    # Vercel (serverless): una conexión por petición. Railway (servidor siempre encendido):
-    # la conexión se reutiliza 60 s, porque abrirla cuesta varios viajes hasta São Paulo.
     DATABASES['default']['CONN_MAX_AGE'] = 60 if EN_RAILWAY else 0
     DATABASES['default']['CONN_HEALTH_CHECKS'] = True
     DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
@@ -166,11 +156,8 @@ STORAGES = {
     },
 }
 
-# django-cloudinary-storage 0.3.0 reemplaza el comando collectstatic y todavía lee este
-# ajuste, que Django eliminó en 5.1. Django 6 lo ignora (manda STORAGES); solo evita el error.
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
-# Píxeles de publicidad: solo se cargan si el visitante acepta (partials/consentimiento.html)
 META_PIXEL_ID = os.environ.get('META_PIXEL_ID', '')
 TIKTOK_PIXEL_ID = os.environ.get('TIKTOK_PIXEL_ID', '')
 GOOGLE_SITE_VERIFICATION = os.environ.get('GOOGLE_SITE_VERIFICATION', '')
@@ -186,8 +173,6 @@ WHITENOISE_MAX_AGE = 86400
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# HTTPS obligatorio solo en Vercel. En local, runserver solo habla HTTP: si esto queda
-# en True, Django redirige a https:// y el servidor recibe tráfico TLS que no entiende.
 SECURE_SSL_REDIRECT = EN_PRODUCCION
 SESSION_COOKIE_SECURE = EN_PRODUCCION
 CSRF_COOKIE_SECURE = EN_PRODUCCION
@@ -205,17 +190,19 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
-# Segundo factor del admin (core/admin_2fa.py)
 OTP_TOTP_ISSUER = 'Instinto Olfativo'
 ADMIN_2FA_OBLIGATORIO = True
 
-# Sesión de 8 horas. El sitio público no usa sesiones, así que solo afecta al admin.
 SESSION_COOKIE_AGE = 60 * 60 * 8
 
-# --- Railway + Cloudflare ---
-# CSS e imágenes de /static: 1 hora en el navegador y en Cloudflare (igual que en Vercel).
 WHITENOISE_MAX_AGE = 3600
-# El healthcheck de Railway entra por HTTP interno; sin esto SECURE_SSL_REDIRECT lo manda a https y falla.
 SECURE_REDIRECT_EXEMPT = [r'^robots\.txt$']
-# django-axes: la IP real la entrega Cloudflare en CF-Connecting-IP.
 AXES_IPWARE_META_PRECEDENCE_ORDER = ('HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR')
+
+if os.environ.get('RESEND_API_KEY'):
+    INSTALLED_APPS += ['anymail']
+    EMAIL_BACKEND = 'anymail.backends.resend.EmailBackend'
+    ANYMAIL = {'RESEND_API_KEY': os.environ['RESEND_API_KEY']}
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Instinto Olfativo <contacto@instintoolfativo.cl>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+EMAIL_TIMEOUT = 10

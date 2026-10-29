@@ -419,7 +419,7 @@ def contacto(request):
             correo = EmailMessage(
                 subject=f"Nuevo mensaje de contacto en Instinto Olfativo de: {datos['nombre']}",
                 body=f"Nombre: {datos['nombre']}\nCorreo de contacto: {datos['email']}\n\nMensaje:\n{datos['mensaje']}",
-                from_email=buzon,
+                from_email=settings.DEFAULT_FROM_EMAIL,  # Resend solo envía desde el dominio verificado
                 to=[buzon],
                 reply_to=[datos['email']],   # «Responder» en Gmail le contesta al cliente
             )
