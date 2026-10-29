@@ -12,8 +12,10 @@ from django.utils import timezone
 
 
 def ip_cliente(request):
+    # Detrás de Cloudflare, CF-Connecting-IP es la IP del visitante (x-real-ip sería la de Cloudflare).
     # En Vercel, x-real-ip y el primer valor de x-forwarded-for los fija la plataforma.
-    ip = request.META.get("HTTP_X_REAL_IP") or request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+    ip = (request.META.get("HTTP_CF_CONNECTING_IP") or request.META.get("HTTP_X_REAL_IP")
+          or request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip())
     return ip or request.META.get("REMOTE_ADDR") or "anon"
 
 

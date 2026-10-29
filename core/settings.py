@@ -15,10 +15,13 @@ load_dotenv(dotenv_path=env_path)
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # Vercel define VERCEL=1 en sus funciones. En tu PC no existe, así que se activa el modo local.
-EN_PRODUCCION = os.environ.get('VERCEL') == '1'
+# Railway define RAILWAY_ENVIRONMENT_NAME en cada servicio. En tu PC no existe.
+EN_RAILWAY = bool(os.environ.get('RAILWAY_ENVIRONMENT_NAME'))
+EN_PRODUCCION = os.environ.get('VERCEL') == '1' or EN_RAILWAY
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'  # apagado salvo que lo pidas: en tu PC, DEBUG=True en .env
 
-ALLOWED_HOSTS = ['instintoolfativo.cl', 'www.instintoolfativo.cl', '.vercel.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['instintoolfativo.cl', 'www.instintoolfativo.cl', '.vercel.app',
+                 '.up.railway.app', 'healthcheck.railway.app', 'localhost', '127.0.0.1']
 
 # Dominio canónico: se usa en <link rel="canonical">, og:url, JSON-LD y la redirección de *.vercel.app
 SITE_URL = 'https://www.instintoolfativo.cl'
@@ -107,7 +110,9 @@ if DATABASE_URL:
     }
     # Serverless: sin conexiones persistentes entre invocaciones. Usa la URL con pooler
     # de tu proveedor (Neon: host con '-pooler'; Supabase: puerto 6543).
-    DATABASES['default']['CONN_MAX_AGE'] = 0
+    # Vercel (serverless): una conexión por petición. Railway (servidor siempre encendido):
+    # la conexión se reutiliza 60 s, porque abrirla cuesta varios viajes hasta São Paulo.
+    DATABASES['default']['CONN_MAX_AGE'] = 60 if EN_RAILWAY else 0
     DATABASES['default']['CONN_HEALTH_CHECKS'] = True
     DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
     DATABASES['default']['OPTIONS'] = {'sslmode': 'require'}
@@ -206,3 +211,11 @@ ADMIN_2FA_OBLIGATORIO = True
 
 # Sesión de 8 horas. El sitio público no usa sesiones, así que solo afecta al admin.
 SESSION_COOKIE_AGE = 60 * 60 * 8
+
+# --- Railway + Cloudflare ---
+# CSS e imágenes de /static: 1 hora en el navegador y en Cloudflare (igual que en Vercel).
+WHITENOISE_MAX_AGE = 3600
+# El healthcheck de Railway entra por HTTP interno; sin esto SECURE_SSL_REDIRECT lo manda a https y falla.
+SECURE_REDIRECT_EXEMPT = [r'^robots\.txt$']
+# django-axes: la IP real la entrega Cloudflare en CF-Connecting-IP.
+AXES_IPWARE_META_PRECEDENCE_ORDER = ('HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR')
