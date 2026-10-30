@@ -196,7 +196,7 @@ ADMIN_2FA_OBLIGATORIO = True
 SESSION_COOKIE_AGE = 60 * 60 * 8
 
 WHITENOISE_MAX_AGE = 3600
-SECURE_REDIRECT_EXEMPT = [r'^robots\.txt$']
+SECURE_REDIRECT_EXEMPT = [r'^robots\.txt$', r'^salud/$']
 AXES_IPWARE_META_PRECEDENCE_ORDER = ('HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR')
 
 if os.environ.get('RESEND_API_KEY'):
@@ -206,3 +206,16 @@ if os.environ.get('RESEND_API_KEY'):
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Instinto Olfativo <contacto@instintoolfativo.cl>')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 EMAIL_TIMEOUT = 10
+
+# Errores a la consola (logs de Railway). Sin esto, con DEBUG=False Django manda los 500
+# solo a mail_admins, que sin ADMINS no hace nada: el traceback no quedaba en ninguna parte.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"consola": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["consola"], "level": "WARNING"},
+    "loggers": {
+        "django.request": {"handlers": ["consola"], "level": "ERROR", "propagate": False},
+        "catalogo": {"handlers": ["consola"], "level": "INFO", "propagate": False},
+    },
+}

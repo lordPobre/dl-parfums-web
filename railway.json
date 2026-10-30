@@ -7,7 +7,7 @@
   "deploy": {
     "startCommand": "gunicorn core.wsgi --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 30 --max-requests 1000 --max-requests-jitter 100 --access-logfile -",
     "preDeployCommand": ["python manage.py migrate --noinput"],
-    "healthcheckPath": "/robots.txt",
+    "healthcheckPath": "/salud/",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5

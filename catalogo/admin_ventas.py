@@ -15,6 +15,7 @@ from django.urls import path
 from django.template.response import TemplateResponse
 from django.db.models import Sum
 from django.db.models.functions import TruncDate, TruncMonth, TruncYear
+from django.utils import timezone
 
 
 def _panel_ventas_view(admin_site):
@@ -22,7 +23,7 @@ def _panel_ventas_view(admin_site):
         from .models import Pedido
 
         aprobados = Pedido.objects.filter(estado='aprobado')
-        hoy = date.today()
+        hoy = timezone.localdate()  # hora de Chile (date.today() es la fecha UTC en Railway)
         inicio_mes = hoy.replace(day=1)
         inicio_anio = hoy.replace(month=1, day=1)
 

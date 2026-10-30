@@ -59,7 +59,7 @@
     </div>
     {% if marcas %}
     <div class="marquee group relative w-full overflow-hidden"
-         style="--marquee-duration: {{ marcas.count|add:marcas.count }}s;
+         style="--marquee-duration: {{ n_marcas|add:n_marcas }}s;
                 -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
                 mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);">
         <div class="marquee-track flex items-center w-max">

@@ -4,6 +4,7 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
+from core.salud import salud
 from catalogo.sitemaps import EstaticoSitemap, GeneroSitemap, FamiliaSitemap, CasaSitemap, NotaSitemap, PerfumeSitemap
 
 sitemaps_dict = {
@@ -44,6 +45,7 @@ urlpatterns = [
     path('perseus-access-x12/', admin.site.urls),
     path('', include('catalogo.urls')),
     path('robots.txt', robots_txt),
+    path('salud/', salud),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps_dict}, name='django.contrib.sitemaps.views.sitemap'),
 ]
 

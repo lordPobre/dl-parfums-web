@@ -947,3 +947,202 @@ class DatosPedidoTests(Base):
         from .forms import REGIONES
         for region in REGIONES:
             self.assertIn(f"<option>{region}</option>", html)
+
+
+# ---------- ingenieria-semana1: stock, consultas, healthcheck, logs y panel de ventas ----------
+from datetime import date as _date_is, datetime as _datetime_is
+from unittest import mock as _mock_is
+from zoneinfo import ZoneInfo as _ZoneInfo_is
+
+from django.db import connection as _connection_is
+from django.test.utils import CaptureQueriesContext as _Captura_is
+from django.utils import timezone as _tz_is
+
+from .admin import descontar_stock, devolver_stock
+from .models import ItemPedido, Resena
+
+
+class StockTests(Base):
+    """Aprobar descuenta stock una sola vez; rechazar lo repone una sola vez."""
+
+    def pedido(self, *lineas):
+        p = Pedido.objects.create(estado="pendiente")
+        for pres, cantidad in lineas:
+            ItemPedido.objects.create(pedido=p, perfume=pres.perfume, presentacion=pres, nombre=str(pres),
+                                      precio=pres.precio_vigente, cantidad=cantidad)
+        return p
+
+    def stock(self, pres):
+        pres.refresh_from_db()
+        return pres.stock
+
+    def test_aprobar_descuenta_y_actualiza_el_perfume(self):
+        p = self.pedido((self.p1_decant, 2), (self.p1_frasco, 1))
+        self.assertEqual(descontar_stock(p.pk), (True, []))
+        self.assertEqual((self.stock(self.p1_decant), self.stock(self.p1_frasco)), (8, 2))
+        p.refresh_from_db()
+        self.assertEqual((p.estado, p.stock_descontado), ("aprobado", True))
+        self.p1.refresh_from_db()
+        self.assertEqual(self.p1.stock, 10)
+
+    def test_aprobar_dos_veces_descuenta_una(self):
+        p = self.pedido((self.p1_decant, 2))
+        descontar_stock(p.pk)
+        self.assertEqual(descontar_stock(p.pk), (True, []))
+        self.assertEqual(self.stock(self.p1_decant), 8)
+
+    def test_sin_stock_queda_pendiente(self):
+        p = self.pedido((self.p1_frasco, 4))
+        ok, faltan = descontar_stock(p.pk)
+        self.assertFalse(ok)
+        self.assertEqual(len(faltan), 1)
+        p.refresh_from_db()
+        self.assertEqual((p.estado, p.stock_descontado), ("pendiente", False))
+        self.assertEqual(self.stock(self.p1_frasco), 3)
+
+    def test_ultima_unidad_no_se_vende_dos_veces(self):
+        a, b = self.pedido((self.p1_frasco, 3)), self.pedido((self.p1_frasco, 1))
+        self.assertTrue(descontar_stock(a.pk)[0])
+        self.assertFalse(descontar_stock(b.pk)[0])
+        self.assertEqual(self.stock(self.p1_frasco), 0)
+
+    def test_rechazar_aprobado_repone_una_vez(self):
+        p = self.pedido((self.p1_decant, 3))
+        descontar_stock(p.pk)
+        devolver_stock(p.pk)
+        devolver_stock(p.pk)
+        self.assertEqual(self.stock(self.p1_decant), 10)
+        p.refresh_from_db()
+        self.assertEqual((p.estado, p.stock_descontado), ("rechazado", False))
+
+    def test_rechazar_pendiente_no_toca_el_stock(self):
+        p = self.pedido((self.p1_decant, 3))
+        devolver_stock(p.pk)
+        self.assertEqual(self.stock(self.p1_decant), 10)
+
+
+class AdminPedidoTests(Base):
+    """Aprobar y rechazar desde el admin (acción de la lista y estado en la ficha)."""
+
+    def setUp(self):
+        super().setUp()
+        from django.contrib.auth.models import User
+        entrar_admin_verificado(self.client, User.objects.create_superuser("admin-stock", "s@example.com", "x"))
+        self.p = Pedido.objects.create(estado="pendiente", cliente="Ana")
+        self.item = ItemPedido.objects.create(pedido=self.p, perfume=self.p1, presentacion=self.p1_decant,
+                                              nombre="No. 101 · Decant 5 ml", precio=6000, cantidad=2)
+
+    def stock(self):
+        self.p1_decant.refresh_from_db()
+        return self.p1_decant.stock
+
+    def test_accion_aprobar_de_la_lista(self):
+        r = self.client.post(reverse("admin:catalogo_pedido_changelist"),
+                             {"action": "aprobar_pedidos", "_selected_action": [self.p.pk]})
+        self.assertEqual(r.status_code, 302)
+        self.p.refresh_from_db()
+        self.assertEqual(self.p.estado, "aprobado")
+        self.assertEqual(self.stock(), 8)
+
+    def guardar_ficha(self, estado):
+        datos = {
+            "cliente": "Ana", "apellido": "", "rut": "", "telefono": "", "email": "",
+            "direccion": "", "comuna": "", "region": "", "notas": "", "estado": estado,
+            "items-TOTAL_FORMS": "1", "items-INITIAL_FORMS": "1",
+            "items-MIN_NUM_FORMS": "0", "items-MAX_NUM_FORMS": "1000",
+            "items-0-id": str(self.item.pk), "items-0-pedido": str(self.p.pk),
+            "items-0-perfume": str(self.p1.pk), "items-0-presentacion": str(self.p1_decant.pk),
+            "items-0-nombre": self.item.nombre, "items-0-precio": "6000", "items-0-cantidad": "2",
+            "_save": "Guardar",
+        }
+        r = self.client.post(reverse("admin:catalogo_pedido_change", args=[self.p.pk]), datos)
+        errores = r.context.get("errors") if r.status_code == 200 and r.context else None
+        self.assertEqual(r.status_code, 302, errores)
+
+    def test_cambiar_estado_en_la_ficha(self):
+        self.guardar_ficha("aprobado")
+        self.p.refresh_from_db()
+        self.assertEqual((self.p.estado, self.p.stock_descontado, self.p.total), ("aprobado", True, 12000))
+        self.assertEqual(self.stock(), 8)
+        self.guardar_ficha("rechazado")
+        self.p.refresh_from_db()
+        self.assertEqual((self.p.estado, self.p.stock_descontado), ("rechazado", False))
+        self.assertEqual(self.stock(), 10)
+
+
+class ConsultasTests(Base):
+    """Sin consultas N+1: el número de consultas no crece con la cantidad de perfumes."""
+
+    def agregar(self, n, **extra):
+        for _ in range(n):
+            p = self._perfume(f"Extra {Perfume.objects.count()}", **extra)
+            Presentacion.objects.create(perfume=p, formato="frasco", ml=50, precio=9000, stock=4)
+
+    def capturar(self, url):
+        with _Captura_is(_connection_is) as ctx:
+            self.assertEqual(self.client.get(url).status_code, 200)
+        return [q["sql"] for q in ctx.captured_queries]
+
+    def test_home_no_crece_con_los_destacados(self):
+        self.agregar(1, destacado=True)
+        antes = len(self.capturar(reverse("home")))
+        self.agregar(4, destacado=True)
+        self.assertEqual(len(self.capturar(reverse("home"))), antes)
+
+    def test_ficha_sin_consultas_por_tarjeta(self):
+        self.agregar(2)
+        Resena.objects.create(perfume=self.p1, nombre="A", calificacion=5, comentario="Muy bueno", aprobado=True)
+        sql = self.capturar(self.p1.get_absolute_url())
+        sueltas = [q for q in sql if 'FROM "catalogo_marca"' in q or 'FROM "catalogo_familiaolfativa"' in q]
+        self.assertEqual(sueltas, [])
+        self.assertEqual(len([q for q in sql if 'FROM "catalogo_resena"' in q]), 1)
+
+    def test_ficha_solo_resenas_aprobadas(self):
+        Resena.objects.create(perfume=self.p1, nombre="Ana", calificacion=5, comentario="Muy bueno", aprobado=True)
+        Resena.objects.create(perfume=self.p1, nombre="Luis", calificacion=3, comentario="Bien", aprobado=True)
+        Resena.objects.create(perfume=self.p1, nombre="Spam", calificacion=1, comentario="x", aprobado=False)
+        r = self.client.get(self.p1.get_absolute_url())
+        self.assertEqual((r.context["total_resenas"], r.context["promedio"]), (2, 4))
+        self.assertNotContains(r, "Spam")
+
+
+class SaludTests(TestCase):
+    def test_ok_y_sin_cache(self):
+        r = self.client.get("/salud/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {"ok": True})
+        self.assertIn("no-store", r["Cache-Control"])
+
+    def test_migraciones_pendientes_da_503(self):
+        with _mock_is.patch("django.db.migrations.executor.MigrationExecutor.migration_plan",
+                            return_value=[("x", False)]):
+            with self.assertLogs("core.salud", "ERROR"):
+                r = self.client.get("/salud/")
+        self.assertEqual(r.status_code, 503)
+
+    @override_settings(SECURE_SSL_REDIRECT=True)
+    def test_no_redirige_a_https(self):
+        # Railway consulta el healthcheck por HTTP interno: un 301 haría fallar el deploy
+        self.assertEqual(self.client.get("/salud/").status_code, 200)
+        self.assertEqual(self.client.get("/perfumes/").status_code, 301)
+
+
+class LogsTests(SimpleTestCase):
+    def test_errores_500_van_a_la_consola(self):
+        import logging
+        self.assertTrue(logging.getLogger("django.request").handlers)
+
+
+class PanelVentasTests(TestCase):
+    def test_hoy_en_hora_de_chile(self):
+        from django.contrib.auth.models import User
+        entrar_admin_verificado(self.client, User.objects.create_superuser("admin-ventas", "v@example.com", "x"))
+        dia = _date_is(2026, 3, 10)
+        noche = _datetime_is(2026, 3, 10, 22, 30, tzinfo=_ZoneInfo_is("America/Santiago"))  # 01:30 UTC del 11
+        p = Pedido.objects.create(estado="aprobado", total=15000)
+        Pedido.objects.filter(pk=p.pk).update(creado=noche)
+        original = _tz_is.localdate
+        with _mock_is.patch("django.utils.timezone.localdate",
+                            side_effect=lambda value=None, timezone=None: dia if value is None else original(value, timezone)):
+            r = self.client.get(reverse("admin:panel_ventas"))
+        self.assertEqual(r.context["total_dia"], 15000)

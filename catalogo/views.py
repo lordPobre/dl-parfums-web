@@ -3,7 +3,7 @@ import json
 from django.http import JsonResponse, Http404
 from django.urls import reverse
 from django.core.paginator import Paginator
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q, Exists, OuterRef, Prefetch
 from django.db.models.functions import Coalesce
 from django.utils.cache import patch_cache_control
 from urllib.parse import urlencode
@@ -34,9 +34,11 @@ from .limites import excede_limite as _excede_limite, ip_cliente as _ip  # noqa:
 
 @cache_cdn()
 def home(request):
-    ofertas = Perfume.objects.filter(es_oferta=True, activo=True)[:4]
-    destacados = Perfume.objects.filter(destacado=True, activo=True, es_oferta=False)[:8]
-    marcas = Marca.objects.all()
+    # select_related: la tarjeta lee marca y familia (sin esto, 2 consultas por perfume)
+    base = Perfume.objects.filter(activo=True).select_related('marca', 'familia')
+    ofertas = list(base.filter(es_oferta=True)[:4])
+    destacados = list(base.filter(destacado=True, es_oferta=False)[:8])
+    marcas = list(Marca.objects.all())
     # Solo familias que tengan al menos un perfume activo (evita tarjetas vacías)
     familias = FamiliaOlfativa.objects.filter(perfume__activo=True).distinct()
     # Diapositivas del carrusel de portada (gestionadas desde el admin)
@@ -53,6 +55,7 @@ def home(request):
         'ofertas': ofertas,
         'destacados': destacados,
         'marcas': marcas,
+        'n_marcas': len(marcas),
         'familias': familias,
         'familias_data': familias_data,
         'portadas': portadas,
@@ -329,7 +332,10 @@ def redirigir_perfume_id(request, pk):
 def perfume_detalle(request, slug):
     perfume = (
         Perfume.objects.select_related('marca', 'familia', 'fusionado_en')
-        .prefetch_related('galeria', 'resenas', 'presentaciones', 'notas_perfume__nota')
+        .prefetch_related(
+            'galeria', 'presentaciones', 'notas_perfume__nota',
+            Prefetch('resenas', queryset=Resena.objects.filter(aprobado=True), to_attr='resenas_ok'),
+        )
         .filter(slug=slug).first()
     )
     if perfume is None:
@@ -369,11 +375,10 @@ def perfume_detalle(request, slug):
 
     # Galería: imagen principal + imágenes secundarias (para el visor multi-imagen)
     galeria = list(perfume.galeria.all())
-    # Reseñas aprobadas + promedio de calificación
-    resenas = perfume.resenas.filter(aprobado=True)
-    from django.db.models import Count
-    agg = resenas.aggregate(prom=Avg('calificacion'), n=Count('id'))
-    promedio = agg['prom']
+    # Reseñas aprobadas (vienen del prefetch) + promedio de calificación
+    resenas = perfume.resenas_ok
+    total_resenas = len(resenas)
+    promedio = sum(r.calificacion for r in resenas) / total_resenas if total_resenas else None
 
     # Presentaciones (tamaños): por defecto la primera con stock
     presentaciones = [p for p in perfume.presentaciones.all() if p.activo]
@@ -383,7 +388,7 @@ def perfume_detalle(request, slug):
         seleccion = next((p for p in presentaciones if p.ml == ml_pedido and p.stock > 0), seleccion)
 
     # Relacionados: primero la misma familia; si faltan, se completa con la misma marca.
-    base_rel = Perfume.objects.filter(activo=True).exclude(id=perfume.id).select_related('marca')
+    base_rel = Perfume.objects.filter(activo=True).exclude(id=perfume.id).select_related('marca', 'familia')
     relacionados = list(base_rel.filter(familia_id=perfume.familia_id)[:4]) if perfume.familia_id else []
     if len(relacionados) < 4:
         ya = [p.id for p in relacionados]
@@ -399,7 +404,7 @@ def perfume_detalle(request, slug):
         'seleccion': seleccion,
         'resenas': resenas,
         'promedio': promedio,
-        'total_resenas': agg['n'],
+        'total_resenas': total_resenas,
         'estado_resena': request.GET.get('resena'),
     }
     return render(request, 'detalle.html', context)
