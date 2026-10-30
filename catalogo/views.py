@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 from django.http import JsonResponse, Http404
 from django.urls import reverse
 from django.core.paginator import Paginator
@@ -16,7 +17,7 @@ from django.core.mail import EmailMessage
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg, Case, When, IntegerField, Count
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.core.cache import cache
 from .models import Perfume, Marca, FamiliaOlfativa, ImagenPortada, Promocion, Resena, PaginaNosotros, Pedido, ItemPedido, Presentacion, SlugAntiguo, Nota, PerfumeNota
 from .cache_cdn import cache_cdn
@@ -25,6 +26,7 @@ from .pedido_correo import enviar_aviso_pedido
 from .models import ENCABEZADO_TEMA
 from .busqueda import buscar_perfumes, sugerir
 from .filtros import url_filtros
+from .purga import CLAVE_FACETAS
 from .templatetags.cloudinary_wm import cl, clp
 
 
@@ -106,6 +108,36 @@ MIN_PERFUMES_NOTA = 3   # bajo esto, /nota/<slug>/ lleva noindex y no va al site
 MAX_NOTAS_FILTRO = 24
 
 
+FACETAS_SEGUNDOS = 300
+
+
+def _facetas():
+    """Listas de los filtros del catálogo (D3). Solo cambian al editar el catálogo, así que se guardan
+    5 minutos y catalogo/purga.py las borra al guardar. Antes eran unas 7 consultas en cada búsqueda."""
+    def calcular():
+        concentraciones = set(
+            Perfume.objects.filter(activo=True).exclude(concentracion='').values_list('concentracion', flat=True)
+        )
+        return {
+            'marcas': list(Marca.objects.filter(productos__activo=True).distinct().order_by('nombre')),
+            'familias': list(FamiliaOlfativa.objects.filter(perfume__activo=True).distinct().order_by('nombre')),
+            'tamanos': list(
+                Presentacion.objects.filter(activo=True, perfume__activo=True)
+                .values_list('ml', flat=True).distinct().order_by('ml')
+            ),
+            'formatos': [
+                (f, FORMATOS_TXT[f]) for f in FORMATOS_TXT
+                if Presentacion.objects.filter(activo=True, perfume__activo=True, formato=f).exists()
+            ],
+            'intensidades': [(c, e) for c, e, codigos in INTENSIDADES if concentraciones & set(codigos)],
+            'notas': list(
+                Nota.objects.annotate(n=Count('en_perfumes__perfume', filter=Q(en_perfumes__perfume__activo=True), distinct=True))
+                .filter(n__gte=2).order_by('-n', 'nombre')[:MAX_NOTAS_FILTRO]
+            ),
+        }
+    return cache.get_or_set(CLAVE_FACETAS, calcular, FACETAS_SEGUNDOS)
+
+
 def _catalogo(request, landing=None):
     """Catálogo con búsqueda, filtros combinables y orden. 'landing' fija un filtro desde
     la URL (/perfumes/mujer/, /familia/<slug>/, /casa/<slug>/) y aporta título e introducción."""
@@ -184,25 +216,11 @@ def _catalogo(request, landing=None):
     paginator = Paginator(perfumes, POR_PAGINA)
     page_obj = paginator.get_page(request.GET.get('page'))
 
-    # Datos para los filtros
-    marcas = list(Marca.objects.filter(productos__activo=True).distinct().order_by('nombre'))
-    familias = list(FamiliaOlfativa.objects.filter(perfume__activo=True).distinct().order_by('nombre'))
-    tamanos = list(
-        Presentacion.objects.filter(activo=True, perfume__activo=True)
-        .values_list('ml', flat=True).distinct().order_by('ml')
-    )
-    formatos = [
-        (f, FORMATOS_TXT[f]) for f in FORMATOS_TXT
-        if Presentacion.objects.filter(activo=True, perfume__activo=True, formato=f).exists()
-    ]
-    concentraciones = set(
-        Perfume.objects.filter(activo=True).exclude(concentracion='').values_list('concentracion', flat=True)
-    )
-    intensidades = [(c, e) for c, e, codigos in INTENSIDADES if concentraciones & set(codigos)]
-    notas_filtro = list(
-        Nota.objects.annotate(n=Count('en_perfumes__perfume', filter=Q(en_perfumes__perfume__activo=True), distinct=True))
-        .filter(n__gte=2).order_by('-n', 'nombre')[:MAX_NOTAS_FILTRO]
-    )
+    # Datos para los filtros (en caché 5 minutos, ver _facetas)
+    fac = _facetas()
+    marcas, familias, tamanos = fac['marcas'], fac['familias'], fac['tamanos']
+    formatos, intensidades = fac['formatos'], fac['intensidades']
+    notas_filtro = list(fac['notas'])
     if nota_id and nota_id not in {n.id for n in notas_filtro}:
         notas_filtro += list(Nota.objects.filter(pk=nota_id))
     notas_filtro.sort(key=lambda n: n.nombre)
@@ -588,6 +606,25 @@ def api_cotizar(request):
     return resp
 
 
+def _clave_envio(valor):
+    """UUID que el carrito genera por envío (C2). Cualquier otra cosa se ignora."""
+    try:
+        return uuid.UUID(str(valor)) if valor else None
+    except ValueError:
+        return None
+
+
+def _pedido_repetido(p):
+    """Envío repetido: el mismo pedido, sin crear otro ni reenviar el correo."""
+    items = list(p.items.select_related("presentacion__perfume").order_by("id"))
+    _, detalle = combos.calcular(items)
+    return JsonResponse({
+        "ok": True, "repetido": True, "pedido_id": p.id, "codigo": p.codigo, "total": p.total,
+        "lineas": [{"nombre": i.nombre, "cantidad": i.cantidad, "precio": i.precio} for i in items],
+        "descuento": p.descuento, "detalle": detalle,
+    })
+
+
 @require_POST
 def crear_pedido(request):
     """Recibe el carrito (JSON) y crea un Pedido 'pendiente'.
@@ -605,6 +642,11 @@ def crear_pedido(request):
     except (ValueError, UnicodeDecodeError, AttributeError):
         return JsonResponse({"ok": False, "error": "Datos inválidos"}, status=400)
 
+    # Mismo envío del carrito (doble toque o reintento): se devuelve el pedido ya creado
+    clave = _clave_envio(data.get("clave"))
+    if clave and (previo := Pedido.objects.filter(clave=clave).first()):
+        return _pedido_repetido(previo)
+
     # Datos del cliente (paso 2 del carrito). Las pruebas antiguas los desactivan con PEDIDO_EXIGE_DATOS=False.
     form = None
     if getattr(settings, "PEDIDO_EXIGE_DATOS", True):
@@ -619,22 +661,30 @@ def crear_pedido(request):
         return JsonResponse({"ok": False, "error": "El carrito no tiene productos disponibles"}, status=400)
     descuento, detalle = combos.calcular(lineas)
 
-    with transaction.atomic():
-        datos_cliente = form.campos_pedido() if form else {
-            "cliente": str(data.get("cliente") or "")[:120],
-            "telefono": str(data.get("telefono") or "")[:40],
-        }
-        pedido = Pedido.objects.create(
-            **datos_cliente,
-            estado="pendiente",
-            descuento=descuento,
-            detalle_descuento=combos.texto(detalle),
-        )
-        for l in lineas:
-            l.pedido = pedido
-        ItemPedido.objects.bulk_create(lineas)
-        pedido.recalcular_total()
-        pedido.save(update_fields=["total"])
+    try:
+        with transaction.atomic():
+            datos_cliente = form.campos_pedido() if form else {
+                "cliente": str(data.get("cliente") or "")[:120],
+                "telefono": str(data.get("telefono") or "")[:40],
+            }
+            pedido = Pedido.objects.create(
+                **datos_cliente,
+                clave=clave,
+                estado="pendiente",
+                descuento=descuento,
+                detalle_descuento=combos.texto(detalle),
+            )
+            for l in lineas:
+                l.pedido = pedido
+            ItemPedido.objects.bulk_create(lineas)
+            pedido.recalcular_total()
+            pedido.save(update_fields=["total"])
+    except IntegrityError:
+        # Dos envíos iguales al mismo tiempo: el segundo choca con la clave única y devuelve el primero
+        previo = Pedido.objects.filter(clave=clave).first() if clave else None
+        if previo is None:
+            raise
+        return _pedido_repetido(previo)
 
     if form:
         enviar_aviso_pedido(pedido.pk)  # correo a la tienda con el código y los datos

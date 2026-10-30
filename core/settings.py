@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'unfold',  
     'unfold.contrib.filters',
     'unfold.contrib.forms',
+    'django.contrib.staticfiles',
     'cloudinary_storage', 
     'cloudinary',
     'django.contrib.admin',
@@ -35,7 +36,6 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     'django.contrib.sitemaps',
     'django.contrib.postgres',   
     'catalogo',
@@ -152,10 +152,10 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        # Nombres con hash (base.3f2a….js): caché de 1 año y nada viejo después de un deploy
+        "BACKEND": "core.estaticos.EstaticosConHash",
     },
 }
-
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 
 META_PIXEL_ID = os.environ.get('META_PIXEL_ID', '')
@@ -168,7 +168,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 WHITENOISE_USE_FINDERS = True
-WHITENOISE_MAX_AGE = 86400
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

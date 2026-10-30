@@ -151,6 +151,9 @@ class Perfume(models.Model):
         Perfume.objects.filter(pk=self.pk).update(**datos)
         for campo, valor in datos.items():
             setattr(self, campo, valor)
+        # Cambió el precio o el stock: Cloudflare debe dejar de servir la ficha anterior
+        from .purga import purgar_al_confirmar
+        purgar_al_confirmar(self.get_absolute_url() if self.slug else None)
 
     @property
     def piramide(self):
@@ -572,6 +575,8 @@ class Pedido(models.Model):
     stock_descontado = models.BooleanField(default=False, help_text="Marca interna: evita descontar stock dos veces.")
     descuento = models.PositiveIntegerField(default=0, help_text="Descuento por combos automáticos (CLP). Ya está restado del total.")
     detalle_descuento = models.CharField(max_length=255, blank=True, verbose_name="Detalle del descuento")
+    clave = models.UUIDField(null=True, blank=True, unique=True, editable=False,
+                             help_text="Identificador del envío desde el carrito: evita pedidos duplicados.")
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)
 
@@ -626,3 +631,9 @@ class LimiteSolicitud(models.Model):
         verbose_name = "límite de solicitudes"
         verbose_name_plural = "límites de solicitudes"
         indexes = [models.Index(fields=["clave", "creado"], name="limite_clave_creado_idx")]
+
+
+# Purga de Cloudflare al guardar perfumes, reseñas, promociones, etc. (catalogo/purga.py)
+from .purga import conectar as _conectar_purga  # noqa: E402
+
+_conectar_purga()

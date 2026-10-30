@@ -16,3 +16,7 @@ STORAGES = {**STORAGES, "default": {"BACKEND": "django.core.files.storage.InMemo
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+# Sin caché: cada prueba ve los datos que crea (en producción los filtros del catálogo
+# se guardan 5 minutos; FacetasTests lo prueba con una caché real).
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"}}

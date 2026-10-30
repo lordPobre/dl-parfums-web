@@ -1,0 +1,19 @@
+# Cobertura de las pruebas (T3 de la auditoría). El CI falla si baja de fail_under.
+# ingenieria-semana2/medir_cobertura.py fija ese número a partir de tu medición local.
+[run]
+source =
+    catalogo
+    core
+omit =
+    */migrations/*
+    catalogo/tests.py
+    catalogo/tests_e2e.py
+    core/settings_*.py
+    core/asgi.py
+    core/wsgi.py
+branch = true
+
+[report]
+skip_covered = true
+show_missing = true
+fail_under = 74

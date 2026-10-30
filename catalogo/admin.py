@@ -5,6 +5,7 @@ from django.db.models import F, Count, Q
 from django.urls import reverse, path
 from .models import Marca, FamiliaOlfativa, Perfume, ImagenPortada, Promocion, ImagenPerfume, Resena,PaginaNosotros,Pedido, ItemPedido, Presentacion, Nota, PerfumeNota
 from .fusion import fusionar
+from .purga import purgar_al_confirmar
 from django.utils.html import format_html
 from datetime import date, timedelta
 from django.template.response import TemplateResponse
@@ -197,19 +198,27 @@ class PerfumeAdmin(PrevNextAdminMixin, ModelAdmin):
 
     @admin.action(description="Marcar como DESTACADO")
     def marcar_destacado(self, request, queryset):
+        rutas = [p.get_absolute_url() for p in queryset]
         queryset.update(destacado=True)
+        purgar_al_confirmar(*rutas)
 
     @admin.action(description="Quitar DESTACADO")
     def quitar_destacado(self, request, queryset):
+        rutas = [p.get_absolute_url() for p in queryset]
         queryset.update(destacado=False)
+        purgar_al_confirmar(*rutas)
 
     @admin.action(description="Marcar como ACTIVO")
     def marcar_activo(self, request, queryset):
+        rutas = [p.get_absolute_url() for p in queryset]
         queryset.update(activo=True)
+        purgar_al_confirmar(*rutas)
 
     @admin.action(description="Marcar como INACTIVO")
     def quitar_activo(self, request, queryset):
+        rutas = [p.get_absolute_url() for p in queryset]
         queryset.update(activo=False)
+        purgar_al_confirmar(*rutas)
     
     
 @admin.register(Promocion)

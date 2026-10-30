@@ -540,7 +540,7 @@ class SEOSegundaRondaTests(TestCase):
         self.assertLessEqual(len(titulo), 60)
         self.assertNotIn("<h3 data-test", html)
         self.assertIsNone(re.search(r"<h[1-6][^>]*>\s*</h[1-6]>", html))
-        self.assertIn("js/base.js", html)
+        self.assertRegex(html, r"js/base(\.[0-9a-f]{12})?\.js")  # con o sin hash del manifiesto
         self.assertNotIn("const btnMenu", html)
 
     def test_imagenes_con_src_y_alt(self):
@@ -1146,3 +1146,149 @@ class PanelVentasTests(TestCase):
                             side_effect=lambda value=None, timezone=None: dia if value is None else original(value, timezone)):
             r = self.client.get(reverse("admin:panel_ventas"))
         self.assertEqual(r.context["total_dia"], 15000)
+
+
+# ---------- ingenieria-semana2: pedidos sin duplicar, purga de Cloudflare, filtros en caché, estáticos ----------
+import os as _os_s2
+import uuid as _uuid_s2
+from unittest import mock as _mock_s2
+
+from django.core import mail as _mail_s2
+from django.db import connection as _connection_s2
+from django.test.utils import CaptureQueriesContext as _Captura_s2
+
+from . import purga as _purga_s2
+from .admin import descontar_stock as _descontar_s2
+from .models import ItemPedido as _Item_s2, Marca as _Marca_s2, Promocion as _Promocion_s2, Resena as _Resena_s2
+
+
+@override_settings(PEDIDO_CORREO_SINCRONO=True)
+class IdempotenciaTests(Base):
+    """C2: el mismo envío del carrito (doble toque, reintento) devuelve el pedido ya creado."""
+
+    def setUp(self):
+        super().setUp()
+        _mail_s2.outbox = []
+        limite = _mock_s2.patch("catalogo.views._excede_limite", return_value=False)
+        limite.start()
+        self.addCleanup(limite.stop)
+
+    def pedir(self, clave):
+        cuerpo = json.dumps({"items": [{"id": f"v-{self.p1_frasco.pk}", "qty": 1}],
+                             "cliente": DatosPedidoTests.DATOS, "clave": clave})
+        return self.client.post(reverse("crear_pedido"), data=cuerpo, content_type="application/json")
+
+    def test_mismo_envio_un_solo_pedido(self):
+        clave = str(_uuid_s2.uuid4())
+        a, b = self.pedir(clave).json(), self.pedir(clave).json()
+        self.assertEqual((b["codigo"], b["total"], b["lineas"]), (a["codigo"], a["total"], a["lineas"]))
+        self.assertTrue(b["repetido"])
+        self.assertEqual(Pedido.objects.count(), 1)
+        self.assertEqual(len(_mail_s2.outbox), 1)
+
+    def test_envios_distintos_son_pedidos_distintos(self):
+        self.pedir(str(_uuid_s2.uuid4()))
+        self.pedir(str(_uuid_s2.uuid4()))
+        self.assertEqual(Pedido.objects.count(), 2)
+
+    def test_clave_invalida_se_ignora(self):
+        self.assertEqual(self.pedir("no-es-uuid").status_code, 200)
+        self.assertIsNone(Pedido.objects.get().clave)
+
+    def test_carrito_manda_la_clave(self):
+        js = Path(settings.BASE_DIR, "static", "js", "src", "base.js").read_text(encoding="utf-8")
+        self.assertIn("clave: claveId", js)
+        self.assertIn("sessionStorage", js)
+
+
+@override_settings(PURGA_SINCRONA=True)
+class PurgaTests(Base):
+    """E3: al cambiar stock, precio o contenido se purgan la ficha, el home y /perfumes/."""
+    ENV = {"CF_ZONA_ID": "zona-ci", "CF_TOKEN_PURGA": "token-ci"}
+
+    def purgadas(self, accion):
+        with _mock_s2.patch.dict(_os_s2.environ, self.ENV), _mock_s2.patch("catalogo.purga.requests.post") as post:
+            post.return_value.status_code = 200
+            post.return_value.json.return_value = {"success": True}
+            with self.captureOnCommitCallbacks(execute=True):
+                accion()
+        return {u for c in post.call_args_list for u in c.kwargs["json"].get("files", [])}
+
+    def url(self, ruta):
+        return settings.SITE_URL + ruta
+
+    def test_cambio_de_stock_purga_ficha_home_y_catalogo(self):
+        def cambiar():
+            self.p1_decant.stock = 0
+            self.p1_decant.save()
+        urls = self.purgadas(cambiar)
+        for ruta in (self.p1.get_absolute_url(), "/", "/perfumes/"):
+            self.assertIn(self.url(ruta), urls)
+
+    def test_aprobar_pedido_purga_la_ficha(self):
+        p = Pedido.objects.create(estado="pendiente")
+        _Item_s2.objects.create(pedido=p, perfume=self.p1, presentacion=self.p1_decant,
+                                nombre="x", precio=6000, cantidad=1)
+        self.assertIn(self.url(self.p1.get_absolute_url()), self.purgadas(lambda: _descontar_s2(p.pk)))
+
+    def test_resena_y_promocion(self):
+        urls = self.purgadas(lambda: _Resena_s2.objects.create(perfume=self.p2, nombre="A", comentario="x", aprobado=True))
+        self.assertIn(self.url(self.p2.get_absolute_url()), urls)
+        urls = self.purgadas(lambda: _Promocion_s2.objects.create(titulo="Dúo", precio=5000, unidades=5))
+        self.assertIn(self.url("/"), urls)
+
+    def test_sin_variables_no_llama_a_cloudflare(self):
+        sin_cf = {k: v for k, v in _os_s2.environ.items() if k not in self.ENV}
+        with _mock_s2.patch.dict(_os_s2.environ, sin_cf, clear=True), \
+                _mock_s2.patch("catalogo.purga.requests.post") as post:
+            with self.captureOnCommitCallbacks(execute=True):
+                self.p1_decant.stock = 1
+                self.p1_decant.save()
+        post.assert_not_called()
+
+    def test_muchas_rutas_purga_todo(self):
+        with _mock_s2.patch.dict(_os_s2.environ, self.ENV), _mock_s2.patch("catalogo.purga.requests.post") as post:
+            post.return_value.status_code = 200
+            post.return_value.json.return_value = {"success": True}
+            _purga_s2._enviar([f"/perfume/p{i}/" for i in range(40)])
+        self.assertEqual(post.call_args.kwargs["json"], {"purge_everything": True})
+
+
+@override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                                       "LOCATION": "facetas-ci"}})
+class FacetasTests(Base):
+    """D3: los filtros del catálogo se calculan una vez y se borran al editar el catálogo."""
+
+    def consultas(self, url):
+        with _Captura_s2(_connection_s2) as ctx:
+            self.assertEqual(self.client.get(url).status_code, 200)
+        return len(ctx)
+
+    def test_segunda_visita_no_repite_los_filtros(self):
+        url = reverse("catalogo")
+        primera = self.consultas(url)
+        self.assertLessEqual(self.consultas(url), primera - 5)
+
+    def test_guardar_borra_los_filtros(self):
+        self.client.get(reverse("catalogo"))
+        with self.captureOnCommitCallbacks(execute=True):
+            marca = _Marca_s2.objects.create(nombre="Casa Nueva")
+            Perfume.objects.create(nombre="Nuevo", marca=marca, familia=self.familia,
+                                   descripcion="x", precio=0, imagen=IMG)
+        r = self.client.get(reverse("catalogo"))
+        self.assertIn("Casa Nueva", [m.nombre for m in r.context["marcas"]])
+
+
+class EstaticosTests(SimpleTestCase):
+    """E5: nombres con hash en producción, sin abortar por referencias que no existen."""
+
+    def test_produccion_usa_nombres_con_hash(self):
+        import core.settings as produccion
+        self.assertEqual(produccion.STORAGES["staticfiles"]["BACKEND"], "core.estaticos.EstaticosConHash")
+
+    def test_referencia_faltante_no_aborta(self):
+        import tempfile
+        from core.estaticos import EstaticosConHash
+        with tempfile.TemporaryDirectory() as carpeta:
+            s = EstaticosConHash(location=carpeta, base_url="/static/")
+            self.assertEqual(s.hashed_name("vendor/chart.umd.js.map"), "vendor/chart.umd.js.map")

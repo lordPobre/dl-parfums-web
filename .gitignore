@@ -43,3 +43,7 @@ railway-cloudflare/
 resend/
 datos-pedido/
 ingenieria-semana1/
+ingenieria-semana2/
+
+.coverage
+htmlcov/

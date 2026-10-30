@@ -312,6 +312,30 @@
                 return !primero;
             }
 
+            // Mismo carrito y mismos datos = mismo envío: el servidor devuelve el pedido ya creado
+            // en vez de crear otro (doble toque, reintento o volver a tocar «Enviar» al regresar).
+            var KEY_ENVIO = "io_envio";
+            function nuevoId() {
+                if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+                var b = crypto.getRandomValues(new Uint8Array(16));
+                b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+                var h = Array.prototype.map.call(b, function (x) { return (x + 256).toString(16).slice(1); }).join("");
+                return h.slice(0, 8) + "-" + h.slice(8, 12) + "-" + h.slice(12, 16) + "-" + h.slice(16, 20) + "-" + h.slice(20);
+            }
+            function huella(s) {
+                var h = 5381;
+                for (var i = 0; i < s.length; i++) h = (h * 33 + s.charCodeAt(i)) | 0;
+                return String(h);
+            }
+            function claveEnvio(datos) {
+                var firma = huella(clave() + "|" + JSON.stringify(datos)), ahora = Date.now(), g = null;
+                try { g = JSON.parse(sessionStorage.getItem(KEY_ENVIO)); } catch (e) {}
+                if (!g || g.firma !== firma || !(ahora - g.t < 30 * 60 * 1000)) g = { firma: firma, id: nuevoId() };
+                g.t = ahora;
+                try { sessionStorage.setItem(KEY_ENVIO, JSON.stringify(g)); } catch (e) {}
+                return g.id;
+            }
+
             document.getElementById("cart-checkout").addEventListener("click", function () {
                 if (!cart.length) return;
                 paso = "datos";
@@ -329,6 +353,7 @@
                 errorGeneral.classList.add("hidden");
                 if (!marcarErrores(validar(datos))) return;
                 guardarDatos(datos);
+                var claveId = claveEnvio(datos);
                 enviarBtn.disabled = true;
 
                 // Se abre la pestaña en el mismo clic (evita el bloqueo de pop-ups) y se completa
@@ -389,7 +414,7 @@
                         method: "POST",
                         credentials: "same-origin",
                         headers: { "Content-Type": "application/json", "X-CSRFToken": token },
-                        body: JSON.stringify({ items: cart.map(function (i) { return { id: i.id, qty: i.qty }; }), cliente: datos })
+                        body: JSON.stringify({ items: cart.map(function (i) { return { id: i.id, qty: i.qty }; }), cliente: datos, clave: claveId })
                     });
                 })
                 .then(function (r) {
